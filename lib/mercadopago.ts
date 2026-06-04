@@ -12,6 +12,19 @@ export type MercadoPagoPaymentResponse = {
   external_reference?: string;
 };
 
+export type MercadoPagoAuthorizedPaymentResponse = {
+  id: number;
+  status: string;
+  payment?: {
+    id?: number;
+    status?: string;
+    status_detail?: string;
+  };
+  external_reference?: string;
+  preapproval_id?: string;
+  transaction_amount?: number;
+};
+
 export type MercadoPagoPreapprovalResponse = {
   id: string;
   status: string;
@@ -106,6 +119,25 @@ export async function getMercadoPagoPreapproval(preapprovalId: string) {
 
   if (!response.ok) {
     throw new Error(data.message ?? data.error ?? "No se pudo leer la suscripcion de Mercado Pago.");
+  }
+
+  return data;
+}
+
+export async function getMercadoPagoAuthorizedPayment(authorizedPaymentId: string) {
+  const response = await fetch(`${MERCADOPAGO_API}/authorized_payments/${authorizedPaymentId}`, {
+    headers: {
+      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
+    },
+  });
+
+  const data = (await response.json()) as MercadoPagoAuthorizedPaymentResponse & {
+    message?: string;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(data.message ?? data.error ?? "No se pudo leer el pago autorizado de Mercado Pago.");
   }
 
   return data;

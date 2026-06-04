@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       external_reference: businessId,
       payer_email: mercadoPagoPayerEmail,
       back_url: `${origin}/negocio`,
+      notification_url: `${origin}/api/mercadopago/webhook`,
       status: "pending",
       auto_recurring: {
         frequency: 1,

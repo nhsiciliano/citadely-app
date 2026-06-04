@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { insforgeServer } from "@/lib/insforge-server";
-import { getMercadoPagoPayment, getMercadoPagoPreapproval, verifyMercadoPagoSignature } from "@/lib/mercadopago";
+import {
+  getMercadoPagoAuthorizedPayment,
+  getMercadoPagoPayment,
+  getMercadoPagoPreapproval,
+  verifyMercadoPagoSignature,
+} from "@/lib/mercadopago";
 
 type MercadoPagoWebhookBody = {
   type?: string;
@@ -27,12 +32,37 @@ export async function POST(request: NextRequest) {
       return Response.json({ received: true });
     }
 
-    if (body.type === "preapproval" || body.action?.startsWith("updated_preapproval")) {
+    if (
+      body.type === "preapproval" ||
+      body.type === "subscription_preapproval" ||
+      body.action?.includes("preapproval")
+    ) {
       const preapproval = await getMercadoPagoPreapproval(dataId);
       const { error } = await insforgeServer.database.rpc("sync_business_subscription_status", {
         p_external_id: preapproval.id,
         p_status: preapproval.status,
         p_current_period_end: preapproval.next_payment_date ?? null,
+      });
+
+      if (error) {
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+
+      return Response.json({ received: true });
+    }
+
+    if (body.type === "subscription_authorized_payment") {
+      const authorizedPayment = await getMercadoPagoAuthorizedPayment(dataId);
+      const businessId = authorizedPayment.external_reference;
+
+      if (!businessId) {
+        return Response.json({ received: true, ignored: "missing_external_reference" });
+      }
+
+      const { error } = await insforgeServer.database.rpc("sync_business_subscription_payment", {
+        p_business_id: businessId,
+        p_status: authorizedPayment.payment?.status ?? authorizedPayment.status,
+        p_current_period_end: null,
       });
 
       if (error) {
