@@ -1,0 +1,7 @@
+.env
+.env.*
+.insforge
+.interface-design
+.playwright-cli
+.vscode
+node_modules
