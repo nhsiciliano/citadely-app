@@ -1,8 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --agenda-paper: #f8f3ea;
+  --agenda-paper-deep: #efe4d2;
+  --surface: #fffaf1;
+  --surface-raised: #fffdf8;
+  --ink: #24211d;
+  --ink-soft: #6d6358;
+  --ink-muted: #9b8f81;
+  --line: rgba(63, 50, 37, 0.14);
+  --line-strong: rgba(63, 50, 37, 0.24);
+  --reception: #286f5b;
+  --reception-soft: #dcebe4;
+  --terracotta: #b96242;
+  --amber: #d89b32;
+  --clinical: #3e7791;
+  --danger: #b94444;
+  --background: var(--agenda-paper);
+  --foreground: var(--ink);
 }
 
 @theme inline {
@@ -12,15 +27,45 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(40, 111, 91, 0.24);
+  outline-offset: 2px;
+}
+
+.agenda-grid {
+  background-image:
+    linear-gradient(rgba(63, 50, 37, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(63, 50, 37, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+.number-tabular {
+  font-variant-numeric: tabular-nums;
 }

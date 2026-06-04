@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+.playwright-auth-config.toml
 
 # next.js
 /.next/
@@ -39,3 +42,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# InsForge & AI agent skills
+.insforge
+.agent
+.agents
+.interface-design
+.playwright-cli
+.augment
+.claude
+.cline
+.vscode
+.github/copilot*
+.kilocode
+.qoder
+.qwen
+.roo
+.trae
+.windsurf
