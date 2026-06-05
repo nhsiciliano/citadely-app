@@ -595,10 +595,8 @@ function ServicesPanel({
           <Field label="Nombre" name="name" placeholder="Consulta psicologica" />
           <Field label="Descripción detallada" name="description" placeholder="Que incluye, preparacion previa o indicaciones para el cliente" required={false} />
           <Field label="Imagen del servicio" name="image_url" placeholder="https://..." type="url" required={false} />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Duracion en minutos" name="duration_minutes" type="number" defaultValue="30" />
-            <Field label="Precio" name="price" type="number" defaultValue="0" />
-          </div>
+          <Field label="Duracion en minutos" name="duration_minutes" type="number" defaultValue="30" />
+          <Field label="Precio" name="price" type="number" defaultValue="0" />
           <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
             Cobro al reservar
             <select className="min-h-12 rounded-2xl border border-[var(--line)] bg-white/70 px-4 text-base font-medium" name="deposit_type">
