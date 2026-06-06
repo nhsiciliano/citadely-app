@@ -4,14 +4,16 @@ import type { ReactNode } from "react";
 export function LogoMark() {
   return (
     <Link className="flex items-center gap-3" href="/" aria-label="Citadely">
-      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] text-lg font-semibold text-[var(--reception)] shadow-sm">
+      <span className="relative flex h-12 w-12 items-center justify-center rounded-full border-2 border-[var(--ink)] bg-[var(--surface-raised)] text-xl font-semibold tracking-[-0.08em] text-[var(--ink)] shadow-sm">
         C
+        <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-[var(--reception)]" />
+        <span className="absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-[var(--surface-raised)] bg-[var(--ink)]" />
       </span>
       <span className="leading-tight">
-        <span className="block text-lg font-semibold tracking-[-0.03em]">
+        <span className="block text-xl font-semibold tracking-[-0.04em]">
           Citadely
         </span>
-        <span className="block text-xs font-medium uppercase tracking-[0.18em] text-[var(--ink-muted)]">
+        <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
           agenda viva
         </span>
       </span>
