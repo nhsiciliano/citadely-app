@@ -12,7 +12,6 @@ import {
   type ServiceAvailabilitySlot,
 } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
-import { insforge } from "@/lib/insforge";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
 export function PublicBookingForm({
@@ -71,32 +70,41 @@ export function PublicBookingForm({
 
     const form = new FormData(formElement);
     const startsAt = new Date(selectedSlot);
-    const { data: bookingData, error: bookingError } = await insforge.database.rpc("create_public_booking", {
-      p_business_id: business.id,
-      p_service_id: selectedService.id,
-      p_starts_at: startsAt.toISOString(),
-      p_client_name: String(form.get("name") ?? ""),
-      p_client_email: String(form.get("email") ?? ""),
-      p_client_phone: String(form.get("phone") ?? ""),
-      p_client_message: String(form.get("message") ?? ""),
+    const response = await fetch("/api/public-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        businessId: business.id,
+        serviceId: selectedService.id,
+        startsAt: startsAt.toISOString(),
+        clientName: String(form.get("name") ?? ""),
+        clientEmail: String(form.get("email") ?? ""),
+        clientPhone: String(form.get("phone") ?? ""),
+        clientMessage: String(form.get("message") ?? ""),
+      }),
     });
+    const bookingData = (await response.json().catch(() => null)) as
+      | {
+          amount_cents?: number | null;
+          deposit_expires_at?: string | null;
+          status?: string | null;
+          error?: string | null;
+        }
+      | null;
 
-    if (bookingError) {
+    if (!response.ok) {
       setPending(false);
-      setError(getErrorMessage(bookingError));
+      setError(bookingData?.error ? getErrorMessage(bookingData.error) : "No pudimos crear la reserva.");
       return;
     }
 
-    const booking = (Array.isArray(bookingData) ? bookingData[0] : bookingData) as
-      | { amount_cents?: number | null; deposit_expires_at?: string | null; status?: string | null }
-      | undefined;
-    const amountCents = booking?.amount_cents ?? getBookingAmountCents(selectedService);
+    const amountCents = bookingData?.amount_cents ?? getBookingAmountCents(selectedService);
 
     setPending(false);
     setSuccess(
       amountCents > 0
-        ? `Pre-reserva creada. Transferí ${formatCurrency(amountCents, business.currency)} en los próximos 30 minutos y el negocio confirmará tu turno cuando reciba la seña.${booking?.deposit_expires_at ? ` Vence ${new Date(booking.deposit_expires_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}.` : ""}`
-        : "Reserva confirmada. El negocio ya puede verla en su agenda.",
+        ? `Pre-reserva creada. Transferí ${formatCurrency(amountCents, business.currency)} en los próximos 30 minutos y el negocio confirmará tu turno cuando reciba la seña.${bookingData?.deposit_expires_at ? ` Vence ${new Date(bookingData.deposit_expires_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}.` : ""}`
+        : "Reserva confirmada. Te enviamos los datos del turno por email y el negocio ya puede verla en su agenda.",
     );
     formElement.reset();
     setSelectedSlot("");

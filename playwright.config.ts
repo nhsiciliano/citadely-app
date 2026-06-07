@@ -12,6 +12,9 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run dev -- --hostname 127.0.0.1 --port 3002",
+    env: {
+      RESEND_SKIP_DELIVERY: "true",
+    },
     url: "http://127.0.0.1:3002",
     reuseExistingServer: true,
     timeout: 120_000,

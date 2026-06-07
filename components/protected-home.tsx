@@ -18,6 +18,7 @@ import {
 } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
+import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
 import { Field, FormMessage, LogoMark, SubmitButton } from "@/components/ui";
 
 export function BusinessHome() {
@@ -86,12 +87,14 @@ function ProtectedHome() {
       }
 
       setBusiness(created as Business);
+      await saveBusinessNotificationEmail((created as Business).id, data.user.email);
       await loadBusinessData((created as Business).id);
       setLoading(false);
       return;
     }
 
     setBusiness(businessData as Business);
+    await saveBusinessNotificationEmail((businessData as Business).id, data.user.email);
     await loadBusinessData((businessData as Business).id);
     setLoading(false);
   }

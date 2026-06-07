@@ -12,10 +12,11 @@ require_uppercase = false
 require_special_char = false
 
 [auth.smtp]
-enabled = false
-host = ""
+enabled = true
+host = "smtp.resend.com"
 port = 465
-username = ""
-sender_email = ""
-sender_name = ""
+username = "resend"
+password = "env(SMTP_PASSWORD)"
+sender_email = "reservas@citadely.com.ar"
+sender_name = "Citadely"
 min_interval_seconds = 60

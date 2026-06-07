@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
+import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
 export function OnboardingForm() {
@@ -80,17 +81,36 @@ export function OnboardingForm() {
       slug: businessSlug,
     };
 
-    const { error: businessError } = existingBusiness
+    const { data: savedBusiness, error: businessError } = existingBusiness
       ? await insforge.database
           .from("businesses")
           .update(businessPayload)
           .eq("id", existingBusiness.id)
-      : await insforge.database.from("businesses").insert([businessPayload]);
+          .select("id")
+          .single()
+      : await insforge.database
+          .from("businesses")
+          .insert([businessPayload])
+          .select("id")
+          .single();
 
     if (businessError) {
       setPending(false);
       setError(getErrorMessage(businessError));
       return;
+    }
+
+    const businessId = existingBusiness?.id ?? savedBusiness?.id;
+
+    if (businessId) {
+      const { error: notificationError } =
+        (await saveBusinessNotificationEmail(businessId, userData.user.email)) ?? {};
+
+      if (notificationError) {
+        setPending(false);
+        setError(getErrorMessage(notificationError));
+        return;
+      }
     }
 
     const { error: profileError } = await insforge.auth.setProfile({

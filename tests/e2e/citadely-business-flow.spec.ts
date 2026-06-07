@@ -43,7 +43,7 @@ test("business onboarding, dashboard CRUD, and public booking", async ({ page })
   const availabilityDay = String(availabilityDate.getDate()).padStart(2, "0");
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /gestiona citas/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /gestiona tus citas/i })).toBeVisible();
 
   await page.getByRole("link", { name: "Crear cuenta" }).first().click();
   await expect(page.getByRole("heading", { name: "Crea tu cuenta" })).toBeVisible();
