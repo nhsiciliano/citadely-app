@@ -7,7 +7,6 @@ import {
 } from "@/lib/booking-email";
 import { type Business, type Service } from "@/lib/citadely-db";
 import { insforgeAdmin, hasInsforgeAdminKey } from "@/lib/insforge-admin";
-import { insforge } from "@/lib/insforge";
 
 export const runtime = "nodejs";
 
@@ -85,9 +84,13 @@ export async function POST(request: Request) {
     return badRequest("El horario seleccionado no es válido.");
   }
 
+  if (!insforgeAdmin) {
+    return NextResponse.json({ error: "InsForge admin no está configurado." }, { status: 500 });
+  }
+
   const [businessResult, serviceResult] = await Promise.all([
-    insforge.database.from("businesses").select("*").eq("id", businessId).maybeSingle(),
-    insforge.database.from("services").select("*").eq("id", serviceId).eq("business_id", businessId).maybeSingle(),
+    insforgeAdmin.database.from("businesses").select("*").eq("id", businessId).maybeSingle(),
+    insforgeAdmin.database.from("services").select("*").eq("id", serviceId).eq("business_id", businessId).maybeSingle(),
   ]);
 
   if (businessResult.error || !businessResult.data) {
@@ -101,7 +104,7 @@ export async function POST(request: Request) {
   const business = businessResult.data as Business;
   const service = serviceResult.data as Service;
 
-  const { data: bookingData, error: bookingError } = await insforge.database.rpc("create_public_booking", {
+  const { data: bookingData, error: bookingError } = await insforgeAdmin.database.rpc("create_public_booking", {
     p_business_id: business.id,
     p_service_id: service.id,
     p_starts_at: startsAtDate.toISOString(),
