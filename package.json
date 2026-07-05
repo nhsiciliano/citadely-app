@@ -15,7 +15,8 @@
     "@insforge/sdk": "^1.2.9",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "vercel": "^54.20.1"
   },
   "devDependencies": {
     "@insforge/cli": "^0.1.81",
