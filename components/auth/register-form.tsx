@@ -60,12 +60,15 @@ export function RegisterForm() {
   return (
     <div className="grid gap-5">
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
-      <form className="grid gap-4" onSubmit={handleSubmit}>
-        <Field label="Nombre" name="name" placeholder="Tu nombre" />
-        <Field label="Email" name="email" placeholder="tu@email.com" type="email" />
-        <Field label="Contrasena" name="password" placeholder="Minimo 6 caracteres" type="password" />
+      <form className="grid gap-4 rounded-[1.5rem] border border-[var(--line)] bg-white/45 p-4" onSubmit={handleSubmit}>
+        <Field autoComplete="name" label="Nombre" name="name" placeholder="Tu nombre" />
+        <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
+        <Field autoComplete="new-password" label="Contrasena" name="password" placeholder="Minimo 6 caracteres" type="password" />
         <SubmitButton pending={pending}>Crear cuenta</SubmitButton>
       </form>
+      <p className="rounded-2xl border border-[var(--line)] bg-white/55 px-4 py-3 text-xs font-medium leading-5 text-[var(--ink-muted)]">
+        Tu cuenta queda preparada para agenda, reservas publicas y recordatorios por email.
+      </p>
       <p className="text-sm text-[var(--ink-soft)]">
         Ya tenes cuenta?{" "}
         <Link className="font-semibold text-[var(--reception)]" href="/login">

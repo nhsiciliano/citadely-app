@@ -285,19 +285,24 @@ function BusinessWorkspace({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("Copiar link");
   const stats = calculateStats(appointments, services);
   const subscription = getSubscriptionState(business);
   const publicUrl = getBusinessPublicUrl(business.slug);
-  const upcomingToday = appointments.filter((appointment) => {
+  const now = new Date();
+  const todayAppointments = appointments.filter((appointment) => {
     const startsAt = new Date(appointment.starts_at);
-    const now = new Date();
     return (
       startsAt.toDateString() === now.toDateString() &&
       startsAt >= now &&
       appointment.status !== "cancelled"
     );
-  }).length;
+  });
+  const upcomingToday = todayAppointments.length;
   const pendingDeposits = appointments.filter((appointment) => appointment.status === "pending_payment").length;
+  const nextAppointment = appointments.find((appointment) => new Date(appointment.starts_at) >= now && appointment.status !== "cancelled");
+  const subscriptionLabel = business.subscription_status === "active" ? "Plan activo" : subscription.isTrialing ? `${subscription.trialDaysLeft}d prueba` : "Pago requerido";
+  const subscriptionTone = business.subscription_status === "active" ? "text-[var(--reception)]" : subscription.isTrialing ? "text-[var(--clinical)]" : "text-[var(--danger)]";
   const navItems = [
     { label: "Dashboard", href: "#dashboard", marker: "D", hint: "control" },
     { label: "Página pública", href: "#pagina", marker: "P", hint: "marca" },
@@ -305,6 +310,12 @@ function BusinessWorkspace({
     { label: "Servicios", href: "#servicios", marker: "S", hint: `${services.filter((service) => service.is_active).length} activos` },
     { label: "Clientes", href: "#clientes", marker: "C", hint: `${clients.length} fichas` },
   ];
+
+  async function copyPublicUrl() {
+    await navigator.clipboard.writeText(publicUrl);
+    setCopyMessage("Copiado");
+    window.setTimeout(() => setCopyMessage("Copiar link"), 1600);
+  }
 
   return (
     <section className={`grid gap-4 lg:gap-6 ${sidebarCollapsed ? "lg:grid-cols-[88px_minmax(0,1fr)]" : "lg:grid-cols-[292px_minmax(0,1fr)]"}`}>
@@ -356,9 +367,10 @@ function BusinessWorkspace({
           </nav>
 
           <div className={`${mobileMenuOpen ? "grid" : "hidden"} mt-4 gap-3 border-t border-[var(--line)] pt-4 lg:grid ${sidebarCollapsed ? "lg:justify-items-center" : ""}`}>
-            <div className={`rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] p-3 ${sidebarCollapsed ? "lg:w-12 lg:px-0 lg:text-center" : ""}`}>
+            <div className={`grid gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] p-3 ${sidebarCollapsed ? "lg:w-12 lg:px-0 lg:text-center" : ""}`}>
+              <p className={`text-xs font-bold uppercase tracking-[0.14em] ${subscriptionTone} ${sidebarCollapsed ? "lg:hidden" : ""}`}>{subscriptionLabel}</p>
               <p className="number-tabular text-lg font-semibold tracking-[-0.04em] text-[var(--ink)]">{pendingDeposits}</p>
-              <p className={`mt-1 text-xs font-semibold text-[var(--ink-muted)] ${sidebarCollapsed ? "lg:hidden" : ""}`}>señas pendientes</p>
+              <p className={`text-xs font-semibold text-[var(--ink-muted)] ${sidebarCollapsed ? "lg:hidden" : ""}`}>señas pendientes</p>
             </div>
             <Link
               className={`inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--reception)] px-4 text-sm font-semibold text-white hover:bg-[#215d4d] ${sidebarCollapsed ? "lg:h-11 lg:w-11 lg:px-0" : ""}`}
@@ -374,17 +386,25 @@ function BusinessWorkspace({
       <div className="grid min-w-0 gap-4 lg:gap-6">
         <section id="dashboard" className="overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-[var(--surface)] shadow-sm">
           <div className="agenda-grid border-b border-[var(--line)] bg-[var(--agenda-paper-deep)] p-4 sm:p-6 lg:p-7">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-end">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">Recepción operativa</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="rounded-full bg-white/65 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[var(--terracotta)]">Recepción operativa</p>
+                  <p className={`rounded-full bg-white/65 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] ${subscriptionTone}`}>{subscriptionLabel}</p>
+                </div>
                 <h1 className="mt-3 text-3xl font-semibold tracking-[-0.055em] text-[var(--ink)] sm:text-5xl">{business.name}</h1>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ink-soft)] sm:text-base">
-                  Agenda, servicios, señas y clientes en un panel preparado para revisar rápido y actuar.
+                  Agenda clínica, servicios y reservas ordenadas para resolver el día sin perseguir mensajes.
                 </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <a className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--reception)] px-5 text-sm font-semibold text-white hover:bg-[#215d4d]" href="#agenda">Ver agenda de hoy</a>
+                  <button className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--line-strong)] bg-white/75 px-5 text-sm font-semibold text-[var(--ink)] hover:border-[var(--reception)]" onClick={copyPublicUrl} type="button">{copyMessage}</button>
+                </div>
               </div>
-              <div className="text-sm lg:text-right">
+              <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/70 p-4 text-sm shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-muted)]">URL pública</p>
-                <p className="mt-1 break-all font-semibold text-[var(--reception)]">{publicUrl}</p>
+                <p className="mt-2 break-all font-semibold leading-6 text-[var(--reception)]">{publicUrl}</p>
+                <Link className="mt-3 inline-flex min-h-10 items-center rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--ink-soft)] hover:border-[var(--reception)]" href={publicUrl}>Abrir perfil publico</Link>
               </div>
             </div>
           </div>
@@ -404,6 +424,21 @@ function BusinessWorkspace({
                 <p className="mt-2 text-sm text-[var(--ink-muted)]">{hint}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="grid gap-4 rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm lg:grid-cols-[1fr_1fr_1fr]">
+          <div className="lg:col-span-2">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--clinical)]">Hoy</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">Próxima acción</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              {nextAppointment ? `${formatAppointmentTime(nextAppointment.starts_at)} · ${nextAppointment.clients?.name ?? "Cliente"} · ${nextAppointment.services?.name ?? "Servicio"}` : "No hay turnos pendientes en la agenda inmediata."}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <a className="rounded-2xl border border-[var(--line)] bg-white/65 p-4 text-sm font-semibold hover:border-[var(--reception)]" href="#agenda"><span className="block text-2xl tracking-[-0.05em]">{upcomingToday}</span>turnos hoy</a>
+            <a className="rounded-2xl border border-[var(--line)] bg-white/65 p-4 text-sm font-semibold hover:border-[var(--terracotta)]" href="#agenda"><span className="block text-2xl tracking-[-0.05em]">{pendingDeposits}</span>señas</a>
+            <a className="rounded-2xl border border-[var(--line)] bg-white/65 p-4 text-sm font-semibold hover:border-[var(--clinical)]" href="#servicios"><span className="block text-2xl tracking-[-0.05em]">{services.filter((service) => service.is_active).length}</span>servicios</a>
           </div>
         </section>
 
@@ -893,10 +928,10 @@ function ServicesPanel({
         </div>
       </div>
 
-      <form className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]" onSubmit={addService}>
-        <div className="grid content-start gap-3 rounded-[1.5rem] border border-[var(--line)] bg-white/45 p-4">
+      <form className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr]" onSubmit={addService}>
+        <div className="grid content-start gap-3 rounded-[1.5rem] border border-[var(--line)] bg-white/65 p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">Datos del servicio</p>
-          <Field label="Nombre" name="name" placeholder="Consulta psicologica" />
+          <Field label="Nombre" name="name" placeholder="Consulta clinica general" />
           <Field label="Descripción detallada" name="description" placeholder="Que incluye, preparacion previa o indicaciones para el cliente" required={false} />
           <Field label="Imagen del servicio" name="image_url" placeholder="https://..." type="url" required={false} />
           <Field label="Duracion en minutos" name="duration_minutes" type="number" defaultValue="30" />
@@ -915,7 +950,7 @@ function ServicesPanel({
           {message ? <FormMessage type={message.includes("guardad") ? "success" : "error"}>{message}</FormMessage> : null}
         </div>
 
-        <div className="grid gap-4 rounded-[1.5rem] border border-[var(--line)] bg-white/45 p-4">
+        <div className="grid gap-4 rounded-[1.5rem] border border-[var(--line)] bg-white/65 p-4 shadow-sm">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">Disponibilidad</p>
@@ -1005,8 +1040,8 @@ function ServicesPanel({
         </div>
       </form>
 
-      <div className="grid content-start gap-3">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">Servicios</p>
+      <div className="grid content-start gap-3 rounded-[1.5rem] border border-[var(--line)] bg-white/45 p-4">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">Servicios publicados</p>
         {services.length === 0 ? <EmptyState title="Sin servicios" text="Agrega el primer servicio para comenzar a reservar turnos." /> : null}
         {services.map((service) => (
           <article className="rounded-2xl border border-[var(--line)] bg-white/60 p-4" key={service.id}>
@@ -1112,6 +1147,13 @@ function ClientsAndAgendaPanel({ business, services, clients, appointments, disa
     else await onChanged();
   }
 
+  function statusClasses(status: Appointment["status"]) {
+    if (status === "confirmed") return "border-[var(--reception-soft)] bg-[var(--reception-soft)] text-[var(--reception)]";
+    if (status === "pending_payment") return "border-orange-200 bg-orange-50 text-[var(--terracotta)]";
+    if (status === "cancelled") return "border-red-200 bg-red-50 text-[var(--danger)]";
+    return "border-[var(--line)] bg-white text-[var(--ink-soft)]";
+  }
+
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div id="clientes" className="rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm sm:p-6">
@@ -1158,12 +1200,12 @@ function ClientsAndAgendaPanel({ business, services, clients, appointments, disa
         <div className="mt-5 grid gap-3">
           {appointments.length === 0 ? <EmptyState title="Agenda vacia" text="Crea una cita para ver la linea de agenda." /> : null}
           {appointments.map((appointment) => (
-            <article className="rounded-2xl border border-[var(--line)] bg-white/70 p-4" key={appointment.id}>
-              <div className="flex items-start justify-between gap-3">
+            <article className="rounded-[1.35rem] border border-[var(--line)] bg-white/80 p-4 shadow-sm" key={appointment.id}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="number-tabular text-sm font-semibold text-[var(--ink-muted)]">{formatAppointmentTime(appointment.starts_at)}</p>
                   <p className="mt-1 font-semibold">{appointment.services?.name ?? "Servicio"}</p>
-                  <p className="mt-1 text-sm text-[var(--ink-soft)]">{appointment.clients?.name ?? "Cliente"}</p>
+                  <p className="mt-1 text-sm text-[var(--ink-soft)]">{appointment.clients?.name ?? "Cliente"}{appointment.clients?.phone ? ` · ${appointment.clients.phone}` : ""}</p>
                   {appointment.status === "pending_payment" && appointment.deposit_amount_cents > 0 ? (
                     <p className="mt-2 text-sm font-semibold text-[var(--terracotta)]">
                       Seña pendiente: {formatCurrency(appointment.deposit_amount_cents, business.currency)}
@@ -1171,7 +1213,7 @@ function ClientsAndAgendaPanel({ business, services, clients, appointments, disa
                     </p>
                   ) : null}
                 </div>
-                <select className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold" disabled={disabled} value={appointment.status} onChange={(event) => updateAppointmentStatus(appointment, event.target.value as Appointment["status"])}>
+                <select className={`min-h-10 rounded-full border px-3 text-xs font-bold ${statusClasses(appointment.status)}`} disabled={disabled} value={appointment.status} onChange={(event) => updateAppointmentStatus(appointment, event.target.value as Appointment["status"])}>
                   <option value="pending_payment">Pendiente seña</option>
                   <option value="confirmed">Confirmada</option>
                   <option value="cancelled">Cancelada</option>

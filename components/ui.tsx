@@ -43,6 +43,17 @@ export function SecondaryLink({ href, children }: { href: string; children: Reac
   );
 }
 
+export function GoogleIcon() {
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
+      <path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3.1-4.3 3.1-7.4Z" fill="#4285F4" />
+      <path d="M12 22c2.7 0 5-0.9 6.7-2.4l-3.2-2.5c-.9.6-2 1-3.5 1-2.7 0-4.9-1.8-5.7-4.2H3v2.6A10 10 0 0 0 12 22Z" fill="#34A853" />
+      <path d="M6.3 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.3-2.6Z" fill="#FBBC05" />
+      <path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A9.8 9.8 0 0 0 12 2a10 10 0 0 0-9 5.5l3.3 2.6C7.1 7.7 9.3 5.9 12 5.9Z" fill="#EA4335" />
+    </svg>
+  );
+}
+
 export function AuthShell({
   title,
   subtitle,
@@ -55,10 +66,10 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-[var(--agenda-paper)] px-5 py-6 sm:px-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(62,119,145,0.14),transparent_32%),var(--agenda-paper)] px-5 py-6 sm:px-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <LogoMark />
-        <section className="grid overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] shadow-sm lg:grid-cols-[1fr_0.9fr]">
+        <section className="grid overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] shadow-[0_24px_80px_rgba(36,33,29,0.08)] lg:grid-cols-[1fr_0.9fr]">
           <div className="p-6 sm:p-10 lg:p-12">
             <div className="mb-9 max-w-xl">
               <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">
@@ -73,7 +84,7 @@ export function AuthShell({
             </div>
             {children}
           </div>
-          <aside className="agenda-grid border-t border-[var(--line)] bg-[var(--agenda-paper-deep)] p-6 sm:p-10 lg:border-l lg:border-t-0">
+          <aside className="agenda-grid border-t border-[var(--line)] bg-[linear-gradient(135deg,var(--agenda-paper-deep),#eef5f2)] p-6 sm:p-10 lg:border-l lg:border-t-0">
             {aside}
           </aside>
         </section>
@@ -89,6 +100,7 @@ export function Field({
   placeholder,
   required = true,
   defaultValue,
+  autoComplete,
 }: {
   label: string;
   name: string;
@@ -96,6 +108,7 @@ export function Field({
   placeholder?: string;
   required?: boolean;
   defaultValue?: string;
+  autoComplete?: string;
 }) {
   return (
     <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
@@ -107,6 +120,7 @@ export function Field({
         placeholder={placeholder}
         required={required}
         defaultValue={defaultValue}
+        autoComplete={autoComplete}
       />
     </label>
   );

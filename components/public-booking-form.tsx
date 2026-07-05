@@ -68,6 +68,15 @@ export function PublicBookingForm({
     (selectedDateKey ? calendarDays.find((day) => day.dateKey === selectedDateKey) : null) ?? calendarDays[0] ?? null;
   const selectedDaySlots = selectedDay?.slots ?? [];
   const selectedSlotData = slots.find((slot) => slot.startsAt === selectedSlot) ?? null;
+  const selectedAmountCents = selectedService ? getBookingAmountCents(selectedService) : 0;
+  const serviceSlotCount = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const slot of availabilitySlots) {
+      if (!slot.is_active || new Date(slot.starts_at) <= new Date()) continue;
+      counts.set(slot.service_id, (counts.get(slot.service_id) ?? 0) + 1);
+    }
+    return counts;
+  }, [availabilitySlots]);
   const whatsAppUrl = getWhatsAppUrl(
     business.whatsapp_phone,
     `Hola ${business.name}, quiero enviar el comprobante de seña para ${selectedService?.name ?? "mi reserva"}${selectedSlotData ? ` del ${selectedSlotData.label}` : ""}.`,
@@ -130,10 +139,11 @@ export function PublicBookingForm({
 
   if (services.length === 0) {
     return (
-      <div className="rounded-[2rem] border border-dashed border-[var(--line-strong)] bg-[var(--surface)] p-6">
-        <h2 className="text-2xl font-semibold tracking-[-0.04em]">Reservas pausadas</h2>
+      <div className="rounded-[2rem] border border-dashed border-[var(--line-strong)] bg-[var(--surface)] p-6 shadow-sm">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--clinical)]">Sin servicios publicados</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">Reservas online aún no disponibles</h2>
         <p className="mt-3 text-[var(--ink-soft)]">
-          Este negocio todavía no publicó servicios activos.
+          El negocio todavía está preparando su agenda pública. Volvé pronto para elegir servicio, día y horario.
         </p>
       </div>
     );
@@ -154,9 +164,10 @@ export function PublicBookingForm({
           <div className="mt-5 grid gap-4">
             {services.map((service) => (
               <button
+                aria-pressed={service.id === selectedServiceId}
                 className={`group overflow-hidden rounded-[1.5rem] border text-left shadow-sm ${
                   service.id === selectedServiceId
-                    ? "border-[var(--reception)] bg-white"
+                    ? "border-[var(--reception)] bg-white ring-2 ring-[var(--reception-soft)]"
                     : "border-[var(--line)] bg-white/60 hover:border-[var(--line-strong)]"
                 }`}
                 key={service.id}
@@ -189,6 +200,17 @@ export function PublicBookingForm({
                       </span>
                       <span className="rounded-full bg-[var(--reception-soft)] px-3 py-1 text-xs font-semibold text-[var(--reception)]">
                         {getBookingPaymentLabel(service, business.currency)}
+                      </span>
+                    </span>
+                    <span className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+                      <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 font-semibold text-[var(--ink)]">
+                        {formatCurrency(service.price_cents, business.currency)}
+                      </span>
+                      <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 font-semibold text-[var(--ink-soft)]">
+                        {service.duration_minutes} min
+                      </span>
+                      <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 font-semibold text-[var(--ink-soft)]">
+                        {serviceSlotCount.get(service.id) ?? 0} horarios
                       </span>
                     </span>
                     {service.description ? (
@@ -232,13 +254,13 @@ export function PublicBookingForm({
           </p>
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             {calendarDays.length === 0 ? (
-              <p className="col-span-full rounded-2xl border border-dashed border-[var(--line-strong)] bg-white/50 p-4 text-sm text-[var(--ink-soft)]">
-                No hay horarios disponibles para este servicio en los próximos días.
+              <p className="col-span-full rounded-2xl border border-dashed border-[var(--line-strong)] bg-white/60 p-5 text-sm leading-6 text-[var(--ink-soft)]">
+                Este servicio no tiene horarios disponibles ahora. Probá otro servicio o volvé cuando el negocio publique nueva agenda.
               </p>
             ) : null}
             {calendarDays.map((day) => (
               <button
-                className={`rounded-2xl border px-3 py-4 text-center ${
+                  className={`min-h-20 rounded-2xl border px-3 py-4 text-center ${
                   day.dateKey === selectedDay?.dateKey
                     ? "border-[var(--ink)] bg-[var(--ink)] text-white"
                     : "border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--line-strong)]"
@@ -265,7 +287,7 @@ export function PublicBookingForm({
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {selectedDaySlots.map((slot) => (
                   <button
-                    className={`rounded-2xl border px-4 py-3 text-center text-sm font-semibold ${
+                    className={`min-h-12 rounded-2xl border px-4 py-3 text-center text-sm font-semibold ${
                       slot.startsAt === selectedSlot
                         ? "border-[var(--reception)] bg-[var(--reception)] text-white"
                         : "border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--line-strong)]"
@@ -283,11 +305,11 @@ export function PublicBookingForm({
         </section>
       </div>
 
-      <section className="h-fit rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm sm:p-6 lg:sticky lg:top-6">
+      <section className="h-fit rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_rgba(36,33,29,0.08)] sm:p-6 lg:sticky lg:top-6">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--clinical)]">
           03 · Confirmá
         </p>
-        <div className="mt-5 rounded-[1.5rem] border border-[var(--line)] bg-white/70 p-4">
+        <div className="mt-5 rounded-[1.5rem] border border-[var(--line)] bg-white/80 p-4">
           <p className="text-sm font-semibold text-[var(--ink-soft)]">Tu turno</p>
           <p className="mt-2 text-xl font-semibold tracking-[-0.04em]">
             {selectedService?.name ?? "Seleccioná un servicio"}
@@ -295,13 +317,26 @@ export function PublicBookingForm({
           <p className="mt-1 text-sm text-[var(--ink-soft)]">
             {selectedSlotData ? `${selectedSlotData.label} · ${selectedService?.duration_minutes ?? 0} min` : "Elegí día y horario en el calendario"}
           </p>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <span className="rounded-2xl bg-[var(--surface)] p-3 font-semibold">
+              <span className="block text-xs uppercase tracking-[0.12em] text-[var(--ink-muted)]">Precio</span>
+              {selectedService ? formatCurrency(selectedService.price_cents, business.currency) : "-"}
+            </span>
+            <span className="rounded-2xl bg-[var(--surface)] p-3 font-semibold">
+              <span className="block text-xs uppercase tracking-[0.12em] text-[var(--ink-muted)]">Al reservar</span>
+              {selectedService ? selectedAmountCents > 0 ? formatCurrency(selectedAmountCents, business.currency) : "Sin seña" : "-"}
+            </span>
+          </div>
         </div>
         <div className="mt-5 grid gap-4">
-          <Field label="Nombre y apellido" name="name" placeholder="Tu nombre y apellido" />
-          <Field label="Email" name="email" placeholder="tu@email.com" type="email" />
-          <Field label="Teléfono" name="phone" placeholder="Tu teléfono" />
+          <Field autoComplete="name" label="Nombre y apellido" name="name" placeholder="Tu nombre y apellido" />
+          <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
+          <Field autoComplete="tel" label="Teléfono" name="phone" placeholder="Tu teléfono" type="tel" />
           <Field label="Nota para el negocio" name="message" placeholder="Opcional" required={false} />
         </div>
+        <p className="mt-4 rounded-2xl border border-[var(--line)] bg-white/60 px-4 py-3 text-xs font-medium leading-5 text-[var(--ink-muted)]">
+          Revisá que el email esté bien escrito. Ahí llega la confirmación del turno.
+        </p>
         <div className="mt-6">
           <SubmitButton pending={pending}>Confirmar reserva</SubmitButton>
         </div>

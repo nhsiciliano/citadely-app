@@ -13,6 +13,6 @@ export function proxy(request: NextRequest) {
   return NextResponse.rewrite(url);
 }
 
-export const proxyConfig = {
+export const config = {
   matcher: ["/((?!api|_next|favicon.ico|.*\\..*).*)"],
 };

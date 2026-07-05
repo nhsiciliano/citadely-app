@@ -80,7 +80,7 @@ export default async function PublicBookingPage({
   const attentionSummary =
     availabilitySlots.length > 0
       ? `${availableDateCount} dia${availableDateCount === 1 ? "" : "s"} con turnos publicados. Elegi un servicio para ver horarios exactos.`
-      : "El negocio todavia no publico horarios para sus servicios.";
+      : "Todavia no hay horarios publicados. Volve a revisar pronto o contacta al negocio.";
 
   return (
     <main className="min-h-screen bg-[#f6f0e6] px-5 py-6 text-[var(--ink)] sm:px-8">
@@ -92,7 +92,7 @@ export default async function PublicBookingPage({
           </Link>
         </header>
 
-        <section className="overflow-hidden rounded-[2.25rem] border border-[var(--line)] bg-[var(--surface)] shadow-sm">
+        <section className="overflow-hidden rounded-[2.25rem] border border-[var(--line)] bg-[var(--surface)] shadow-[0_24px_80px_rgba(36,33,29,0.08)]">
           {pago ? (
             <div className="m-6 rounded-2xl border border-[var(--line)] bg-white/80 p-4 text-sm font-semibold text-[var(--ink-soft)]">
               {pago === "aprobado"
@@ -104,16 +104,16 @@ export default async function PublicBookingPage({
           ) : null}
           <div className="relative">
             <div
-              className="relative min-h-[360px] overflow-hidden bg-cover bg-center sm:min-h-[420px]"
+              className="relative min-h-[430px] overflow-hidden bg-cover bg-center sm:min-h-[470px]"
               style={{
                 backgroundColor: brandColor,
                 backgroundImage: business.cover_image_url
-                  ? `radial-gradient(circle at 18% 18%, rgba(255,255,255,.26), transparent 30%), linear-gradient(135deg, ${brandColor} 0%, rgba(0,0,0,.16) 42%, rgba(0,0,0,.68) 100%), url(${business.cover_image_url})`
-                  : `radial-gradient(circle at 18% 20%, rgba(255,255,255,.28), transparent 32%), radial-gradient(circle at 78% 16%, ${brandColor}, transparent 34%), linear-gradient(135deg, ${brandColor}, #1d201d 74%)`,
+                  ? `linear-gradient(90deg, rgba(8,14,12,.86), rgba(8,14,12,.58) 45%, rgba(8,14,12,.28)), linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.52)), url(${business.cover_image_url})`
+                  : `radial-gradient(circle at 18% 20%, rgba(255,255,255,.22), transparent 32%), linear-gradient(135deg, ${brandColor}, #17231f 76%)`,
               }}
             >
-              <div className="absolute inset-0 agenda-grid opacity-25" />
-              <div className="absolute bottom-0 left-0 right-0 p-5 pb-20 sm:p-8 sm:pb-24 lg:p-10 lg:pb-28">
+              <div className="absolute inset-0 agenda-grid opacity-20" />
+              <div className="absolute inset-x-0 bottom-0 p-5 pb-24 sm:p-8 sm:pb-28 lg:p-10 lg:pb-32">
                 <div className="max-w-3xl text-white">
                   <p className="inline-flex rounded-full border border-white/20 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] shadow-sm backdrop-blur">
                     Reserva online · {categoryLabel}
@@ -124,6 +124,14 @@ export default async function PublicBookingPage({
                   <p className="mt-5 max-w-2xl text-base leading-7 text-white/82 sm:text-lg">
                     {business.description || "Elegí un servicio, revisá el calendario disponible y confirmá tu turno sin crear cuenta."}
                   </p>
+                  <div className="mt-7 flex flex-wrap gap-3">
+                    <a className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-bold text-[var(--ink)] shadow-sm hover:-translate-y-0.5" href="#reservar">
+                      Reservar turno
+                    </a>
+                    <span className="inline-flex min-h-12 items-center rounded-full border border-white/20 bg-white/12 px-5 text-sm font-semibold text-white/85 backdrop-blur">
+                      Confirmación por email
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -190,13 +198,30 @@ export default async function PublicBookingPage({
           </div>
         </section>
 
+        <section className="grid gap-3 rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm sm:grid-cols-3 sm:p-6">
+          {[
+            ["1", "Elegí servicio", "Compará duración, precio y condiciones antes de reservar."],
+            ["2", "Seleccioná horario", "Solo mostramos turnos publicados y todavía disponibles."],
+            ["3", "Confirmá tus datos", "Recibís el detalle por email; si hay seña, enviás comprobante."],
+          ].map(([step, title, text]) => (
+            <article className="rounded-[1.35rem] border border-[var(--line)] bg-white/60 p-4" key={step}>
+              <span className="grid h-9 w-9 place-items-center rounded-full text-sm font-bold text-white" style={{ backgroundColor: brandColor }}>{step}</span>
+              <h2 className="mt-4 text-lg font-semibold tracking-[-0.04em]">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{text}</p>
+            </article>
+          ))}
+        </section>
+
         {subscription.hasAccess ? (
-          <PublicBookingForm appointments={appointments} availabilitySlots={availabilitySlots} business={business} services={services} />
+          <div id="reservar">
+            <PublicBookingForm appointments={appointments} availabilitySlots={availabilitySlots} business={business} services={services} />
+          </div>
         ) : (
-          <div className="rounded-[2rem] border border-dashed border-[var(--line-strong)] bg-[var(--surface)] p-6">
-            <h2 className="text-2xl font-semibold tracking-[-0.04em]">Reservas pausadas</h2>
+          <div id="reservar" className="rounded-[2rem] border border-dashed border-[var(--line-strong)] bg-[var(--surface)] p-6 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--danger)]">Plan inactivo</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">Reservas pausadas temporalmente</h2>
             <p className="mt-3 text-[var(--ink-soft)]">
-              Este negocio debe activar su plan mensual de Citadely para volver a recibir reservas online.
+              Este negocio todavía no puede recibir reservas online. Podés volver más tarde o contactarlo por sus canales habituales.
             </p>
           </div>
         )}
