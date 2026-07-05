@@ -6,7 +6,7 @@
       "command": [
         "sh",
         "-lc",
-        "exec npx -y mcp-remote https://mcp.mercadopago.com/mcp --header \"Authorization: Bearer ${MERCADOPAGO_ACCESS_TOKEN}\""
+        "if [ -f .env.local ]; then set -a; . ./.env.local; set +a; fi; : \"${MERCADOPAGO_ACCESS_TOKEN:?MERCADOPAGO_ACCESS_TOKEN is required}\"; exec npx -y mcp-remote https://mcp.mercadopago.com/mcp --header \"Authorization: Bearer $MERCADOPAGO_ACCESS_TOKEN\""
       ],
       "enabled": true,
       "timeout": 30000

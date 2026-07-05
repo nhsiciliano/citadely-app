@@ -73,6 +73,8 @@ export default async function PublicBookingPage({
   const appointments = (appointmentRows ?? []) as Appointment[];
   const availabilitySlots = (availabilityRows ?? []) as ServiceAvailabilitySlot[];
   const minPrice = services.length > 0 ? Math.min(...services.map((service) => service.price_cents)) : 0;
+  const brandColor = business.brand_color || "#286f5b";
+  const categoryLabel = business.category.replaceAll("_", " ");
   const weekdayNames = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
   const availableDateCount = new Set(availabilitySlots.map((slot) => new Date(slot.starts_at).toISOString().slice(0, 10))).size;
   const attentionSummary =
@@ -90,9 +92,9 @@ export default async function PublicBookingPage({
           </Link>
         </header>
 
-        <section className="overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[var(--ink)] text-white shadow-sm">
+        <section className="overflow-hidden rounded-[2.25rem] border border-[var(--line)] bg-[var(--surface)] shadow-sm">
           {pago ? (
-            <div className="m-6 rounded-2xl border border-white/15 bg-white/10 p-4 text-sm font-semibold text-white/80">
+            <div className="m-6 rounded-2xl border border-[var(--line)] bg-white/80 p-4 text-sm font-semibold text-[var(--ink-soft)]">
               {pago === "aprobado"
                 ? "Pago aprobado. Tu cita quedo confirmada."
                 : pago === "fallido"
@@ -100,33 +102,88 @@ export default async function PublicBookingPage({
                   : "El pago quedo pendiente de confirmacion."}
             </div>
           ) : null}
-          <div className="grid gap-0 lg:grid-cols-[1fr_390px]">
-            <div className="p-6 sm:p-10">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f0c676]">
-                Reserva online
-              </p>
-              <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-[-0.06em] sm:text-6xl">
-                {business.name}
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-white/70">
-                Elegí un servicio, revisá el calendario disponible y confirmá tu turno sin crear cuenta.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3 text-sm font-semibold">
-                <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2">{services.length} servicios activos</span>
-                <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2">Desde {formatCurrency(minPrice, business.currency)}</span>
+          <div className="relative">
+            <div
+              className="relative min-h-[360px] overflow-hidden bg-cover bg-center sm:min-h-[420px]"
+              style={{
+                backgroundColor: brandColor,
+                backgroundImage: business.cover_image_url
+                  ? `radial-gradient(circle at 18% 18%, rgba(255,255,255,.26), transparent 30%), linear-gradient(135deg, ${brandColor} 0%, rgba(0,0,0,.16) 42%, rgba(0,0,0,.68) 100%), url(${business.cover_image_url})`
+                  : `radial-gradient(circle at 18% 20%, rgba(255,255,255,.28), transparent 32%), radial-gradient(circle at 78% 16%, ${brandColor}, transparent 34%), linear-gradient(135deg, ${brandColor}, #1d201d 74%)`,
+              }}
+            >
+              <div className="absolute inset-0 agenda-grid opacity-25" />
+              <div className="absolute bottom-0 left-0 right-0 p-5 pb-20 sm:p-8 sm:pb-24 lg:p-10 lg:pb-28">
+                <div className="max-w-3xl text-white">
+                  <p className="inline-flex rounded-full border border-white/20 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] shadow-sm backdrop-blur">
+                    Reserva online · {categoryLabel}
+                  </p>
+                  <h1 className="mt-5 text-4xl font-semibold leading-none tracking-[-0.07em] drop-shadow-sm sm:text-7xl">
+                    {business.name}
+                  </h1>
+                  <p className="mt-5 max-w-2xl text-base leading-7 text-white/82 sm:text-lg">
+                    {business.description || "Elegí un servicio, revisá el calendario disponible y confirmá tu turno sin crear cuenta."}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="border-t border-white/10 bg-white/[0.06] p-6 sm:p-8 lg:border-l lg:border-t-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Atención</p>
-              <p className="mt-3 text-2xl font-semibold tracking-[-0.04em]">Días y horarios publicados</p>
-              <p className="mt-4 text-sm leading-6 text-white/70">{attentionSummary}</p>
-              <div className="mt-7 rounded-3xl border border-white/10 bg-[#f8f3ea] p-2 text-[var(--ink)]">
-                <div className="grid grid-cols-7 gap-1">
-                  {weekdayNames.map((weekday) => (
-                    <span className="rounded-2xl px-2 py-3 text-center text-xs font-semibold text-[var(--ink-muted)]" key={weekday}>
-                      {weekday}
-                    </span>
-                  ))}
+
+            <div className="grid gap-5 p-5 pt-5 sm:p-8 sm:pt-6 lg:grid-cols-[1fr_390px] lg:p-10 lg:pt-6">
+              <div className="relative -mt-6 rounded-[2rem] border border-[var(--line)] bg-white/88 p-5 shadow-sm backdrop-blur sm:-mt-8 sm:p-6 lg:-mt-10">
+                <span className="absolute inset-x-8 top-0 h-1 rounded-b-full" style={{ background: `linear-gradient(90deg, transparent, ${brandColor}, transparent)` }} />
+                <div className="flex flex-wrap items-end gap-4">
+                  <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-[2rem] border-4 border-white bg-[var(--surface-raised)] shadow-sm sm:h-32 sm:w-32">
+                    {business.logo_url ? (
+                      <span
+                        aria-label={`${business.name} logo`}
+                        className="block h-full w-full bg-cover bg-center"
+                        role="img"
+                        style={{ backgroundImage: `url(${business.logo_url})` }}
+                      />
+                    ) : (
+                      <span className="text-5xl font-semibold tracking-[-0.08em]" style={{ color: brandColor }}>
+                        {business.name.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">Perfil del negocio</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.05em] sm:text-3xl">{business.name}</h2>
+                    <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                      Página oficial de reservas. Seleccioná servicio, día y horario disponible.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 text-sm font-semibold">
+                    <span className="block text-2xl tracking-[-0.05em]">{services.length}</span>
+                    servicios activos
+                  </span>
+                  <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 text-sm font-semibold">
+                    <span className="block text-2xl tracking-[-0.05em]">{formatCurrency(minPrice, business.currency)}</span>
+                    precio desde
+                  </span>
+                  <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 text-sm font-semibold">
+                    <span className="block text-2xl tracking-[-0.05em]">{availableDateCount}</span>
+                    días publicados
+                  </span>
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[var(--ink)] p-6 text-white shadow-sm lg:-mt-10">
+                <span className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at 82% 8%, ${brandColor}, transparent 42%)` }} />
+                <span className="absolute right-5 top-5 h-10 w-10 rounded-full opacity-80" style={{ backgroundColor: brandColor }} />
+                <p className="relative text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Atención</p>
+                <p className="relative mt-3 max-w-xs text-2xl font-semibold tracking-[-0.04em]">Días y horarios publicados</p>
+                <p className="relative mt-4 text-sm leading-6 text-white/70">{attentionSummary}</p>
+                <div className="relative mt-7 rounded-3xl border border-white/10 bg-[#f8f3ea] p-2 text-[var(--ink)]">
+                  <div className="grid grid-cols-7 gap-1">
+                    {weekdayNames.map((weekday) => (
+                      <span className="rounded-2xl px-2 py-3 text-center text-xs font-semibold text-[var(--ink-muted)]" key={weekday}>
+                        {weekday}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

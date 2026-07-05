@@ -19,7 +19,97 @@ import {
 import { insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
-import { Field, FormMessage, LogoMark, SubmitButton } from "@/components/ui";
+import { Field, FormMessage, LogoMark, SubmitButton, TextArea } from "@/components/ui";
+
+const BUSINESS_ASSETS_BUCKET = "business-assets";
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+const COVER_MAX_BYTES = 5 * 1024 * 1024;
+
+function sanitizeStorageFileName(value: string) {
+  const clean = value.toLowerCase().replace(/[^a-z0-9.]+/g, "-").replace(/^-+|-+$/g, "");
+  return clean || "image";
+}
+
+function getUploadFile(form: FormData, name: string) {
+  const file = form.get(name);
+  return file instanceof File && file.size > 0 ? file : null;
+}
+
+function validateImage(file: File, maxBytes: number) {
+  if (!IMAGE_TYPES.includes(file.type)) {
+    return "Subi una imagen JPG, PNG o WebP.";
+  }
+
+  if (file.size > maxBytes) {
+    return `La imagen no puede superar ${Math.round(maxBytes / 1024 / 1024)} MB.`;
+  }
+
+  return null;
+}
+
+function normalizeWhatsAppPhone(value: FormDataEntryValue | null) {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
+function FileDropField({
+  title,
+  name,
+  currentUrl,
+  recommendation,
+  maxSize,
+}: {
+  title: string;
+  name: string;
+  currentUrl?: string | null;
+  recommendation: string;
+  maxSize: string;
+}) {
+  return (
+    <label className="group grid gap-4 rounded-[1.5rem] border border-dashed border-[var(--line-strong)] bg-white/55 p-4 text-sm font-semibold text-[var(--ink)] hover:border-[var(--reception)] hover:bg-white/80 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-center">
+      <span className="grid min-h-36 place-items-center overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] sm:min-h-32">
+        {currentUrl ? (
+          <span aria-hidden="true" className="block h-36 w-full bg-cover bg-center transition group-hover:scale-[1.02] sm:h-32" style={{ backgroundImage: `url(${currentUrl})` }} />
+        ) : (
+          <span className="px-5 text-center text-sm font-medium text-[var(--ink-muted)]">Arrastrá visualmente tu imagen desde el selector del sistema</span>
+        )}
+      </span>
+      <span className="grid min-w-0 gap-3">
+        <span className="flex flex-wrap items-start justify-between gap-3">
+          <span>
+            <span className="block text-base font-semibold">{title}</span>
+            <span className="mt-1 block text-xs font-medium leading-5 text-[var(--ink-muted)]">{recommendation}</span>
+          </span>
+          <span className="rounded-full bg-[var(--reception-soft)] px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[var(--reception)]">
+            {maxSize}
+          </span>
+        </span>
+        <input accept="image/jpeg,image/png,image/webp" className="w-full min-w-0 text-sm font-medium text-[var(--ink-soft)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--ink)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" name={name} type="file" />
+        <span className="text-xs font-medium leading-5 text-[var(--ink-muted)]">JPG, PNG o WebP. Si subís una nueva imagen, reemplaza la actual.</span>
+      </span>
+    </label>
+  );
+}
+
+async function uploadBusinessImage(businessId: string, folder: "logo" | "cover", file: File, previousKey?: string | null) {
+  const error = validateImage(file, folder === "logo" ? LOGO_MAX_BYTES : COVER_MAX_BYTES);
+
+  if (error) throw new Error(error);
+
+  const key = `${businessId}/${folder}/${Date.now()}-${sanitizeStorageFileName(file.name)}`;
+  const bucket = insforge.storage.from(BUSINESS_ASSETS_BUCKET);
+  const uploaded = await bucket.upload(key, file);
+
+  if (uploaded.error || !uploaded.data) {
+    throw new Error(uploaded.error?.message ?? "No se pudo subir la imagen.");
+  }
+
+  if (previousKey && previousKey !== uploaded.data.key) {
+    void bucket.remove(previousKey);
+  }
+
+  return uploaded.data;
+}
 
 export function BusinessHome() {
   return <ProtectedHome />;
@@ -193,57 +283,133 @@ function BusinessWorkspace({
   userEmail: string;
   availabilitySlots: ServiceAvailabilitySlot[];
 }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const stats = calculateStats(appointments, services);
   const subscription = getSubscriptionState(business);
   const publicUrl = getBusinessPublicUrl(business.slug);
+  const upcomingToday = appointments.filter((appointment) => {
+    const startsAt = new Date(appointment.starts_at);
+    const now = new Date();
+    return (
+      startsAt.toDateString() === now.toDateString() &&
+      startsAt >= now &&
+      appointment.status !== "cancelled"
+    );
+  }).length;
+  const pendingDeposits = appointments.filter((appointment) => appointment.status === "pending_payment").length;
+  const navItems = [
+    { label: "Dashboard", href: "#dashboard", marker: "D", hint: "control" },
+    { label: "Página pública", href: "#pagina", marker: "P", hint: "marca" },
+    { label: "Agenda", href: "#agenda", marker: "A", hint: `${upcomingToday} hoy` },
+    { label: "Servicios", href: "#servicios", marker: "S", hint: `${services.filter((service) => service.is_active).length} activos` },
+    { label: "Clientes", href: "#clientes", marker: "C", hint: `${clients.length} fichas` },
+  ];
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[260px_1fr]">
-      <aside className="rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm">
-        <p className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ink-muted)]">{business.name}</p>
-        <nav className="mt-4 grid gap-2 text-sm font-semibold">
-          {["Dashboard", "Agenda", "Servicios", "Clientes"].map((item) => (
-            <a className="rounded-2xl px-3 py-3 text-[var(--ink-soft)] hover:bg-[var(--reception-soft)] hover:text-[var(--reception)]" href={`#${item.toLowerCase()}`} key={item}>
-              {item}
-            </a>
-          ))}
-        </nav>
+    <section className={`grid gap-4 lg:gap-6 ${sidebarCollapsed ? "lg:grid-cols-[88px_minmax(0,1fr)]" : "lg:grid-cols-[292px_minmax(0,1fr)]"}`}>
+      <aside className="lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)]">
+        <div className="rounded-[1.75rem] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-sm sm:p-4 lg:flex lg:h-full lg:flex-col">
+          <div className={`flex items-center gap-3 ${sidebarCollapsed ? "lg:justify-center" : "justify-between"}`}>
+            <div className={`min-w-0 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+              <p className="truncate text-sm font-semibold tracking-[-0.03em] text-[var(--ink)]">{business.name}</p>
+              <p className="mt-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">Panel negocio</p>
+            </div>
+            <div className={`flex items-center gap-2 ${sidebarCollapsed ? "lg:grid" : ""}`}>
+              <button
+                aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                aria-expanded={mobileMenuOpen}
+                className="grid h-10 w-10 place-items-center rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--ink-soft)] hover:border-[var(--line-strong)] hover:text-[var(--ink)] lg:hidden"
+                onClick={() => setMobileMenuOpen((current) => !current)}
+                type="button"
+              >
+                {mobileMenuOpen ? "×" : "☰"}
+              </button>
+              <button
+                aria-label={sidebarCollapsed ? "Expandir menú" : "Colapsar menú"}
+                className="hidden h-10 w-10 place-items-center rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--ink-soft)] hover:border-[var(--line-strong)] hover:text-[var(--ink)] lg:grid"
+                onClick={() => setSidebarCollapsed((current) => !current)}
+                type="button"
+              >
+                {sidebarCollapsed ? "→" : "←"}
+              </button>
+            </div>
+          </div>
+
+          <nav className={`${mobileMenuOpen ? "grid" : "hidden"} mt-4 gap-2 text-sm font-semibold lg:grid`}>
+            {navItems.map((item) => (
+              <a
+                className={`group flex min-h-12 items-center gap-3 rounded-2xl border border-transparent px-3 text-[var(--ink-soft)] hover:border-[var(--line)] hover:bg-[var(--surface-raised)] hover:text-[var(--ink)] ${sidebarCollapsed ? "lg:justify-center lg:px-0" : ""}`}
+                href={item.href}
+                key={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[var(--reception-soft)] text-xs font-bold text-[var(--reception)] group-hover:bg-[var(--reception)] group-hover:text-white">
+                  {item.marker}
+                </span>
+                <span className={`min-w-0 flex-1 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                  <span className="block">{item.label}</span>
+                  <span className="mt-0.5 block text-xs font-medium text-[var(--ink-muted)]">{item.hint}</span>
+                </span>
+              </a>
+            ))}
+          </nav>
+
+          <div className={`${mobileMenuOpen ? "grid" : "hidden"} mt-4 gap-3 border-t border-[var(--line)] pt-4 lg:grid ${sidebarCollapsed ? "lg:justify-items-center" : ""}`}>
+            <div className={`rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] p-3 ${sidebarCollapsed ? "lg:w-12 lg:px-0 lg:text-center" : ""}`}>
+              <p className="number-tabular text-lg font-semibold tracking-[-0.04em] text-[var(--ink)]">{pendingDeposits}</p>
+              <p className={`mt-1 text-xs font-semibold text-[var(--ink-muted)] ${sidebarCollapsed ? "lg:hidden" : ""}`}>señas pendientes</p>
+            </div>
+            <Link
+              className={`inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--reception)] px-4 text-sm font-semibold text-white hover:bg-[#215d4d] ${sidebarCollapsed ? "lg:h-11 lg:w-11 lg:px-0" : ""}`}
+              href={publicUrl}
+            >
+              <span className={sidebarCollapsed ? "lg:hidden" : ""}>Ver página pública</span>
+              <span className={`hidden ${sidebarCollapsed ? "lg:inline" : ""}`}>↗</span>
+            </Link>
+          </div>
+        </div>
       </aside>
 
-      <div className="grid gap-6">
-        <section id="dashboard" className="rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-sm sm:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">Dashboard conectado</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">{business.name}</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--ink-soft)]">
-                Gestion inicial de servicios, clientes y citas sobre InsForge DB con RLS por propietario.
-              </p>
-              <p className="mt-3 text-sm font-semibold text-[var(--reception)]">{publicUrl}</p>
+      <div className="grid min-w-0 gap-4 lg:gap-6">
+        <section id="dashboard" className="overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-[var(--surface)] shadow-sm">
+          <div className="agenda-grid border-b border-[var(--line)] bg-[var(--agenda-paper-deep)] p-4 sm:p-6 lg:p-7">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">Recepción operativa</p>
+                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.055em] text-[var(--ink)] sm:text-5xl">{business.name}</h1>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ink-soft)] sm:text-base">
+                  Agenda, servicios, señas y clientes en un panel preparado para revisar rápido y actuar.
+                </p>
+              </div>
+              <div className="text-sm lg:text-right">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-muted)]">URL pública</p>
+                <p className="mt-1 break-all font-semibold text-[var(--reception)]">{publicUrl}</p>
+              </div>
             </div>
-            <Link className="rounded-full bg-[var(--reception)] px-5 py-3 text-sm font-semibold text-white hover:bg-[#215d4d]" href={publicUrl}>
-              Ver pagina publica
-            </Link>
+          </div>
+          <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
+            {[
+              ["Citas de hoy", String(stats.todayAppointments), "agenda operativa", "Hoy"],
+              ["Próximas", String(stats.upcomingAppointments), "desde ahora", "7d"],
+              ["Ingresos del mes", formatCurrency(stats.monthlyRevenueCents, business.currency), "por servicios agendados", "$"],
+              ["Ocupación", `${stats.occupancy}%`, "base 8 horas/día", "%"],
+            ].map(([label, value, hint, marker]) => (
+              <article className="rounded-[1.35rem] border border-[var(--line)] bg-[var(--surface-raised)] p-4" key={label}>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-semibold text-[var(--ink-soft)]">{label}</p>
+                  <span className="grid h-8 min-w-8 place-items-center rounded-xl bg-[var(--agenda-paper-deep)] px-2 text-xs font-bold text-[var(--ink-muted)]">{marker}</span>
+                </div>
+                <p className="number-tabular mt-4 text-3xl font-semibold tracking-[-0.055em] text-[var(--ink)]">{value}</p>
+                <p className="mt-2 text-sm text-[var(--ink-muted)]">{hint}</p>
+              </article>
+            ))}
           </div>
         </section>
 
         <BillingPanel business={business} onChanged={onChanged} subscription={subscription} userEmail={userEmail} />
 
-        <section className="grid gap-4 md:grid-cols-4">
-          {[
-            ["Citas de hoy", String(stats.todayAppointments), "agenda operativa"],
-            ["Proximas", String(stats.upcomingAppointments), "desde ahora"],
-            ["Ingresos del mes", formatCurrency(stats.monthlyRevenueCents, business.currency), "por servicios agendados"],
-            ["Ocupacion", `${stats.occupancy}%`, "base 8 horas/dia"],
-          ].map(([label, value, hint]) => (
-            <article className="rounded-[1.5rem] border border-[var(--line)] bg-[var(--surface-raised)] p-5 shadow-sm" key={label}>
-              <p className="text-sm font-semibold text-[var(--ink-soft)]">{label}</p>
-              <p className="number-tabular mt-4 text-3xl font-semibold tracking-[-0.05em]">{value}</p>
-              <p className="mt-2 text-sm text-[var(--ink-muted)]">{hint}</p>
-            </article>
-          ))}
-        </section>
-
+        <PublicProfilePanel business={business} disabled={!subscription.hasAccess} onChanged={onChanged} publicUrl={publicUrl} />
         <PaymentSettingsPanel business={business} disabled={!subscription.hasAccess} onChanged={onChanged} />
         <ServicesPanel availabilitySlots={availabilitySlots} business={business} disabled={!subscription.hasAccess} onChanged={onChanged} services={services} />
         <ClientsAndAgendaPanel appointments={appointments} business={business} clients={clients} disabled={!subscription.hasAccess} onChanged={onChanged} services={services} />
@@ -331,6 +497,136 @@ function BillingPanel({
   );
 }
 
+function PublicProfilePanel({
+  business,
+  disabled,
+  onChanged,
+  publicUrl,
+}: {
+  business: Business;
+  disabled: boolean;
+  onChanged: () => Promise<void>;
+  publicUrl: string;
+}) {
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function savePublicProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (disabled) return;
+
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const logoFile = getUploadFile(form, "logo_file");
+    const coverFile = getUploadFile(form, "cover_file");
+    setPending(true);
+    setMessage(null);
+
+    try {
+      const [logoUpload, coverUpload] = await Promise.all([
+        logoFile ? uploadBusinessImage(business.id, "logo", logoFile, business.logo_key) : Promise.resolve(null),
+        coverFile ? uploadBusinessImage(business.id, "cover", coverFile, business.cover_image_key) : Promise.resolve(null),
+      ]);
+
+      const { error } = await insforge.database
+        .from("businesses")
+        .update({
+          description: String(form.get("description") ?? ""),
+          brand_color: String(form.get("brand_color") ?? "#286f5b"),
+          ...(logoUpload ? { logo_url: logoUpload.url, logo_key: logoUpload.key } : {}),
+          ...(coverUpload ? { cover_image_url: coverUpload.url, cover_image_key: coverUpload.key } : {}),
+        })
+        .eq("id", business.id);
+
+      if (error) throw new Error(getErrorMessage(error));
+
+      setPending(false);
+      setMessage("Página pública actualizada.");
+      formElement.reset();
+      await onChanged();
+    } catch (error) {
+      setPending(false);
+      setMessage(getErrorMessage(error));
+    }
+  }
+
+  return (
+    <section id="pagina" className="overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] shadow-sm">
+      <div className="grid">
+        <div className="agenda-grid border-b border-[var(--line)] bg-[var(--agenda-paper-deep)] p-5 sm:p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">Página pública</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">Perfil premium de tu negocio</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--ink-soft)]">
+            Personaliza la primera impresión: logo, portada, color de marca y una descripción completa para que tu página de reservas se sienta propia.
+          </p>
+          <div className="mt-5 overflow-hidden rounded-[1.5rem] border border-[var(--line)] bg-white shadow-sm">
+            <div
+              className="h-36 bg-cover bg-center"
+              style={{
+                backgroundColor: business.brand_color ?? "var(--reception)",
+                backgroundImage: business.cover_image_url ? `linear-gradient(180deg, transparent, rgba(0,0,0,.28)), url(${business.cover_image_url})` : undefined,
+              }}
+            />
+            <div className="relative p-4 pt-0">
+              <div className="-mt-10 grid h-20 w-20 place-items-center overflow-hidden rounded-3xl border-4 border-white bg-[var(--surface-raised)] shadow-sm">
+                {business.logo_url ? (
+                  <span aria-hidden="true" className="block h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${business.logo_url})` }} />
+                ) : (
+                  <span className="text-2xl font-semibold" style={{ color: business.brand_color ?? "var(--reception)" }}>{business.name.slice(0, 1).toUpperCase()}</span>
+                )}
+              </div>
+              <p className="mt-3 text-lg font-semibold tracking-[-0.04em]">{business.name}</p>
+              <p className="mt-1 line-clamp-2 text-sm leading-6 text-[var(--ink-soft)]">{business.description || "Agrega una descripción para contar qué hace especial a tu negocio."}</p>
+              <a className="mt-4 inline-flex rounded-full border border-[var(--line)] px-4 py-2 text-xs font-semibold text-[var(--ink-soft)]" href={publicUrl} rel="noreferrer" target="_blank">
+                Ver página pública
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <form className="grid gap-4 p-5 sm:p-6" onSubmit={savePublicProfile}>
+          <TextArea
+            defaultValue={business.description ?? ""}
+            label="Descripción completa"
+            name="description"
+            placeholder="Cuenta la historia, especialidad, ambiente, ubicación o cualquier dato útil para quien reserva."
+            required={false}
+            rows={5}
+          />
+          <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
+            Color de marca
+            <input
+              className="h-12 w-24 rounded-2xl border border-[var(--line)] bg-white p-1"
+              defaultValue={business.brand_color ?? "#286f5b"}
+              name="brand_color"
+              type="color"
+            />
+          </label>
+          <div className="grid gap-4">
+            <FileDropField
+              currentUrl={business.logo_url}
+              maxSize="2 MB"
+              name="logo_file"
+              recommendation="Recomendado 512x512 px, formato cuadrado. Ideal PNG o WebP con buen contraste."
+              title="Logo del negocio"
+            />
+            <FileDropField
+              currentUrl={business.cover_image_url}
+              maxSize="5 MB"
+              name="cover_file"
+              recommendation="Recomendado 1600x600 px o 1920x720 px. Mantené lo importante centrado."
+              title="Portada estilo cover"
+            />
+          </div>
+          <SubmitButton disabled={disabled} pending={pending}>Guardar perfil público</SubmitButton>
+          {disabled ? <FormMessage type="error">Activa el plan mensual para personalizar la página pública.</FormMessage> : null}
+          {message ? <FormMessage type={message.includes("actualizada") ? "success" : "error"}>{message}</FormMessage> : null}
+        </form>
+      </div>
+    </section>
+  );
+}
+
 function PaymentSettingsPanel({ business, disabled, onChanged }: { business: Business; disabled: boolean; onChanged: () => Promise<void> }) {
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -345,11 +641,12 @@ function PaymentSettingsPanel({ business, disabled, onChanged }: { business: Bus
 
     const { error } = await insforge.database
       .from("businesses")
-      .update({
-        payment_alias: String(form.get("payment_alias") ?? ""),
-        payment_cbu: String(form.get("payment_cbu") ?? ""),
-        payment_instructions: String(form.get("payment_instructions") ?? ""),
-      })
+        .update({
+          payment_alias: String(form.get("payment_alias") ?? ""),
+          payment_cbu: String(form.get("payment_cbu") ?? ""),
+          payment_instructions: String(form.get("payment_instructions") ?? ""),
+          whatsapp_phone: normalizeWhatsAppPhone(form.get("whatsapp_phone")),
+        })
       .eq("id", business.id);
 
     setPending(false);
@@ -370,9 +667,13 @@ function PaymentSettingsPanel({ business, disabled, onChanged }: { business: Bus
       <form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={savePaymentSettings}>
         <Field defaultValue={business.payment_alias ?? ""} label="Alias" name="payment_alias" placeholder="mi.alias.mp" required={false} />
         <Field defaultValue={business.payment_cbu ?? ""} label="CBU/CVU" name="payment_cbu" placeholder="00000031000..." required={false} />
+        <Field defaultValue={business.whatsapp_phone ?? ""} label="WhatsApp para comprobantes" name="whatsapp_phone" placeholder="5491123456789" required={false} />
         <div className="sm:col-span-2">
           <Field defaultValue={business.payment_instructions ?? ""} label="Instrucciones de pago" name="payment_instructions" placeholder="Enviar comprobante por WhatsApp luego de reservar" required={false} />
         </div>
+        <p className="rounded-2xl border border-[var(--line)] bg-white/55 px-4 py-3 text-xs font-medium leading-5 text-[var(--ink-muted)] sm:col-span-2">
+          Incluí código de país, sin +, espacios ni guiones. Ejemplo Argentina: 5491123456789. En la página pública se mostrará un botón directo para enviar comprobantes.
+        </p>
         <div className="sm:col-span-2">
           <SubmitButton disabled={disabled} pending={pending}>Guardar datos de seña</SubmitButton>
           {message ? <div className="mt-3"><FormMessage type={message.includes("guardados") ? "success" : "error"}>{message}</FormMessage></div> : null}

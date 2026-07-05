@@ -4,9 +4,16 @@ export type Business = {
   name: string;
   slug: string;
   category: string;
+  description: string | null;
   payment_alias: string | null;
   payment_cbu: string | null;
   payment_instructions: string | null;
+  whatsapp_phone: string | null;
+  logo_url: string | null;
+  logo_key: string | null;
+  cover_image_url: string | null;
+  cover_image_key: string | null;
+  brand_color: string | null;
   trial_ends_at: string;
   subscription_status: "trialing" | "active" | "past_due" | "cancelled" | "expired";
   subscription_provider: string | null;

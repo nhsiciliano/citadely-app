@@ -112,6 +112,36 @@ export function Field({
   );
 }
 
+export function TextArea({
+  label,
+  name,
+  placeholder,
+  required = true,
+  defaultValue,
+  rows = 4,
+}: {
+  label: string;
+  name: string;
+  placeholder?: string;
+  required?: boolean;
+  defaultValue?: string;
+  rows?: number;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
+      {label}
+      <textarea
+        className="min-h-28 resize-y rounded-2xl border border-[var(--line)] bg-white/70 px-4 py-3 text-base font-medium leading-7 text-[var(--ink)] placeholder:text-[var(--ink-muted)] hover:border-[var(--line-strong)]"
+        defaultValue={defaultValue}
+        name={name}
+        placeholder={placeholder}
+        required={required}
+        rows={rows}
+      />
+    </label>
+  );
+}
+
 export function SubmitButton({ children, pending, disabled = false }: { children: ReactNode; pending: boolean; disabled?: boolean }) {
   return (
     <button

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { insforgeServer } from "@/lib/insforge-server";
+import { insforgeAdmin } from "@/lib/insforge-admin";
 
 export async function POST(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -9,7 +9,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const { data, error } = await insforgeServer.database.rpc("cancel_expired_deposit_bookings");
+  if (!insforgeAdmin) {
+    return Response.json({ error: "InsForge admin no esta configurado." }, { status: 500 });
+  }
+
+  const { data, error } = await insforgeAdmin.database.rpc("cancel_expired_deposit_bookings");
 
   if (error) {
     return Response.json({ error: error.message }, { status: 400 });

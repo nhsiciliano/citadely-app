@@ -154,11 +154,11 @@ export function verifyMercadoPagoSignature({
 }) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
   if (!secret) return true;
-  if (!dataId || !requestId || !signature) return false;
+  if (!signature) return false;
 
   const parts = Object.fromEntries(
     signature.split(",").map((part) => {
-      const [key, value] = part.split("=");
+      const [key, value] = part.split("=", 2);
       return [key?.trim(), value?.trim()];
     }),
   );
@@ -167,8 +167,15 @@ export function verifyMercadoPagoSignature({
   const hash = parts.v1;
   if (!timestamp || !hash) return false;
 
-  const manifest = `id:${dataId};request-id:${requestId};ts:${timestamp};`;
+  const manifestParts = [];
+  if (dataId) manifestParts.push(`id:${dataId.toLowerCase()}`);
+  if (requestId) manifestParts.push(`request-id:${requestId}`);
+  manifestParts.push(`ts:${timestamp}`);
+
+  const manifest = `${manifestParts.join(";")};`;
   const expected = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
+
+  if (expected.length !== hash.length) return false;
 
   return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(hash));
 }

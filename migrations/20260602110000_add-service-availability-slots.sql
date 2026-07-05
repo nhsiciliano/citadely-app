@@ -17,11 +17,16 @@ create index if not exists service_availability_slots_business_id_idx
 create index if not exists service_availability_slots_service_starts_at_idx
   on public.service_availability_slots(service_id, starts_at);
 
+drop trigger if exists service_availability_slots_updated_at on public.service_availability_slots;
+
 create trigger service_availability_slots_updated_at
   before update on public.service_availability_slots
   for each row execute function public.set_updated_at();
 
 alter table public.service_availability_slots enable row level security;
+
+drop policy if exists "public can read active service availability slots"
+on public.service_availability_slots;
 
 create policy "public can read active service availability slots"
 on public.service_availability_slots
@@ -38,6 +43,9 @@ using (
       and s.is_active = true
   )
 );
+
+drop policy if exists "owners manage service availability slots"
+on public.service_availability_slots;
 
 create policy "owners manage service availability slots"
 on public.service_availability_slots

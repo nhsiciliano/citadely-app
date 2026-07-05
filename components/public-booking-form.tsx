@@ -14,6 +14,20 @@ import {
 import { getErrorMessage } from "@/lib/auth";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
+function getWhatsAppUrl(phone: string | null | undefined, message: string) {
+  const cleanPhone = String(phone ?? "").replace(/\D/g, "");
+  if (!cleanPhone) return null;
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12.04 2a9.9 9.9 0 0 0-8.46 15.04L2.5 21.5l4.58-1.05A9.96 9.96 0 1 0 12.04 2Zm0 1.8a8.16 8.16 0 0 1 6.9 12.5 8.12 8.12 0 0 1-10.95 2.62l-.32-.18-2.45.56.58-2.37-.2-.34A8.1 8.1 0 0 1 12.04 3.8Zm-3.17 3.94c-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27 0 1.34.97 2.63 1.1 2.8.14.18 1.88 3.01 4.64 4.1 2.29.9 2.76.72 3.26.68.5-.04 1.62-.66 1.85-1.3.23-.63.23-1.18.16-1.3-.07-.11-.25-.18-.52-.31-.27-.14-1.62-.8-1.87-.89-.25-.09-.43-.14-.61.14-.18.27-.7.89-.86 1.07-.16.18-.32.2-.59.07-.27-.14-1.14-.42-2.18-1.34-.8-.72-1.35-1.6-1.51-1.87-.16-.27-.02-.42.12-.56.12-.12.27-.32.41-.48.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.61-.47h-.52Z" />
+    </svg>
+  );
+}
+
 export function PublicBookingForm({
   business,
   services,
@@ -54,6 +68,10 @@ export function PublicBookingForm({
     (selectedDateKey ? calendarDays.find((day) => day.dateKey === selectedDateKey) : null) ?? calendarDays[0] ?? null;
   const selectedDaySlots = selectedDay?.slots ?? [];
   const selectedSlotData = slots.find((slot) => slot.startsAt === selectedSlot) ?? null;
+  const whatsAppUrl = getWhatsAppUrl(
+    business.whatsapp_phone,
+    `Hola ${business.name}, quiero enviar el comprobante de seña para ${selectedService?.name ?? "mi reserva"}${selectedSlotData ? ` del ${selectedSlotData.label}` : ""}.`,
+  );
 
   async function reserveAppointment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -193,6 +211,17 @@ export function PublicBookingForm({
                 <p className="mt-2">El negocio todavía no cargó alias o CBU/CVU. Reservá y coordiná el pago directamente con el negocio.</p>
               ) : null}
               <p className="mt-2">La pre-reserva se mantiene por 30 minutos hasta que el negocio confirme la seña.</p>
+              {whatsAppUrl ? (
+                <a
+                  className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-bold text-white shadow-sm hover:-translate-y-0.5 hover:bg-[#1ebe5d]"
+                  href={whatsAppUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <WhatsAppIcon />
+                  Enviar comprobante por WhatsApp
+                </a>
+              ) : null}
             </div>
           ) : null}
         </section>

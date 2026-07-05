@@ -7,12 +7,7 @@ export async function saveBusinessNotificationEmail(businessId: string, email?: 
 
   if (!normalizedEmail) return null;
 
-  await insforge.database
-    .from("business_notification_settings")
-    .delete()
-    .eq("business_id", businessId);
-
   return insforge.database
     .from("business_notification_settings")
-    .insert([{ business_id: businessId, email: normalizedEmail }]);
+    .upsert([{ business_id: businessId, email: normalizedEmail }], { onConflict: "business_id" });
 }
