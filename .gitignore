@@ -15,6 +15,7 @@
 /playwright-report
 /test-results
 .playwright-auth-config.toml
+.local-run/
 
 # next.js
 /.next/
