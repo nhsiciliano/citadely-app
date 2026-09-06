@@ -4,8 +4,8 @@ import { AuthShell } from "@/components/ui";
 export default function OnboardingPage() {
   return (
     <AuthShell
-      title="Configura tu acceso"
-      subtitle="Completa el rol y, si sos negocio, define la marca que tendra su pagina publica de reservas."
+      title="Configurá tu negocio"
+      subtitle="Definí el nombre, el rubro y la dirección que tendrá tu página pública de reservas."
       aside={<OnboardingAside />}
     >
       <OnboardingForm />
@@ -16,14 +16,11 @@ export default function OnboardingPage() {
 function OnboardingAside() {
   return (
     <div className="grid gap-5">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--reception)]">
-        Puesta en marcha
-      </p>
-      <h2 className="text-3xl font-semibold tracking-[-0.05em]">
-        El negocio unico simplifica el MVP.
+      <h2 className="font-display text-3xl font-semibold tracking-[-0.035em]">
+        Tu central empieza con una identidad clara.
       </h2>
-      <p className="leading-7 text-[var(--ink-soft)]">
-        En fase 3 esta informacion pasara a tablas dedicadas de InsForge DB con politicas por usuario.
+      <p className="leading-7 text-white/70">
+        Esta información presenta tu negocio y genera el enlace que compartirás con tus clientes.
       </p>
     </div>
   );

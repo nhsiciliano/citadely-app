@@ -55,13 +55,13 @@ export function LoginForm() {
     <div className="grid gap-5">
       {searchParams.get("verified") === "1" ? (
         <FormMessage type="success">
-          Email verificado. Ya podes ingresar con tu cuenta.
+          Email verificado. Ya podés ingresar con tu cuenta.
         </FormMessage>
       ) : null}
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
-      <form className="grid gap-4 rounded-[1.5rem] border border-[var(--line)] bg-white/45 p-4" onSubmit={handlePasswordLogin}>
+      <form className="grid gap-4" onSubmit={handlePasswordLogin}>
         <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
-        <Field autoComplete="current-password" label="Contrasena" name="password" placeholder="Tu contrasena" type="password" />
+        <Field autoComplete="current-password" label="Contraseña" name="password" placeholder="Tu contraseña" type="password" />
         <SubmitButton pending={pending}>Ingresar</SubmitButton>
       </form>
       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
@@ -70,7 +70,7 @@ export function LoginForm() {
         <span className="h-px flex-1 bg-[var(--line)]" />
       </div>
       <button
-        className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-[var(--line-strong)] bg-white/80 px-6 text-sm font-semibold text-[var(--ink)] shadow-sm hover:border-[var(--reception)] hover:bg-white disabled:opacity-60"
+        className="button-secondary"
         disabled={pending}
         onClick={handleGoogleLogin}
         type="button"
@@ -83,7 +83,7 @@ export function LoginForm() {
           Olvide mi contraseña
         </Link>
         <span>
-          No tenes cuenta?{" "}
+          ¿No tenés cuenta?{" "}
           <Link className="font-semibold text-[var(--reception)]" href="/registro">
             Crear cuenta
           </Link>

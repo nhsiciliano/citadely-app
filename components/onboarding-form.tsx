@@ -64,7 +64,7 @@ export function OnboardingForm() {
 
     if (userError || !userData.user) {
       setPending(false);
-      setError("Tu sesion expiro. Volve a ingresar para continuar.");
+      setError("Tu sesión expiró. Volvé a ingresar para continuar.");
       return;
     }
 
@@ -135,35 +135,35 @@ export function OnboardingForm() {
     <div className="grid gap-5">
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
       <form className="grid gap-5" onSubmit={handleSubmit}>
-        <div className="grid gap-4 rounded-[1.5rem] border border-[var(--line)] bg-white/50 p-4 sm:p-5">
+        <div className="grid gap-4">
           <Field
             label="Nombre del negocio"
             name="business_name"
             placeholder="Barberia Norte"
             defaultValue={name}
           />
-          <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
+          <label className="form-label">
             Rubro
             <select
-              className="min-h-12 rounded-2xl border border-[var(--line)] bg-white/70 px-4 text-base font-medium text-[var(--ink)]"
+              className="form-control"
               name="business_category"
               required
             >
-              <option value="barberia">Barberia / peluqueria</option>
-              <option value="salud">Consultorio medico</option>
-              <option value="spa">Spa / estetica</option>
+              <option value="barberia">Barbería / peluquería</option>
+              <option value="salud">Consultorio médico</option>
+              <option value="spa">Spa / estética</option>
               <option value="fitness">Fitness / bienestar</option>
               <option value="otros">Otros servicios</option>
             </select>
           </label>
           <Field
-            label="URL publica"
+            label="URL pública"
             name="business_slug"
             placeholder="barberia-norte"
             defaultValue={slug || slugifyBusinessName(name)}
           />
           <p className="text-sm leading-6 text-[var(--ink-soft)]">
-            Tu pagina publica quedara disponible como subdominio, por ejemplo <strong>{getBusinessPublicUrl(slug || slugifyBusinessName(name) || "tu-negocio")}</strong>. Incluye 7 dias de uso gratuito sin restricciones.
+            Tu página pública quedará disponible en <strong>{getBusinessPublicUrl(slug || slugifyBusinessName(name) || "tu-negocio")}</strong>. Incluye 7 días de uso gratuito sin restricciones.
           </p>
         </div>
 

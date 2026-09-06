@@ -1,5 +1,5 @@
-import { BusinessHome } from "@/components/protected-home";
+import { OverviewScreen } from "@/components/business/screens/overview-screen";
 
 export default function BusinessPage() {
-  return <BusinessHome />;
+  return <OverviewScreen />;
 }

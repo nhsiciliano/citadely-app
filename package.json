@@ -7,12 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "seed:demo": "SEED_ALLOW_WRITE=true node scripts/seed-citadely-demo.mjs",
     "seed:barberia-luk": "SEED_ALLOW_WRITE=true node scripts/seed-barberia-luk.mjs",
     "test:resend": "node scripts/test-resend-booking-email.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@insforge/sdk": "^1.2.9",
+    "lucide-react": "^1.40.0",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",

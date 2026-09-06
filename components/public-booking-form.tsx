@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, type CSSProperties } from "react";
 import {
   buildBookingSlots,
   formatCurrency,
@@ -139,10 +139,10 @@ export function PublicBookingForm({
 
   if (services.length === 0) {
     return (
-      <div className="rounded-[2rem] border border-dashed border-[var(--line-strong)] bg-[var(--surface)] p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--clinical)]">Sin servicios publicados</p>
+      <div className="border border-dashed border-[var(--color-line-strong)] bg-white p-6 shadow-[var(--shadow-surface)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-violet)]">Sin servicios publicados</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">Reservas online aún no disponibles</h2>
-        <p className="mt-3 text-[var(--ink-soft)]">
+        <p className="mt-3 text-[var(--color-ink-soft)]">
           El negocio todavía está preparando su agenda pública. Volvé pronto para elegir servicio, día y horario.
         </p>
       </div>
@@ -150,25 +150,29 @@ export function PublicBookingForm({
   }
 
   return (
-    <form className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]" onSubmit={reserveAppointment}>
+    <form
+      className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_390px]"
+      onSubmit={reserveAppointment}
+      style={{ "--booking-brand": business.brand_color || "#0957d9" } as CSSProperties}
+    >
       <div className="lg:col-span-2">
         {error ? <FormMessage type="error">{error}</FormMessage> : null}
         {success ? <FormMessage type="success">{success}</FormMessage> : null}
       </div>
 
       <div className="grid gap-6">
-        <section className="rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm sm:p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">
+        <section className="border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)] sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--booking-brand)]">
             01 · Elegí el servicio
           </p>
           <div className="mt-5 grid gap-4">
             {services.map((service) => (
               <button
                 aria-pressed={service.id === selectedServiceId}
-                className={`group overflow-hidden rounded-[1.5rem] border text-left shadow-sm ${
+                className={`group overflow-hidden rounded-md border text-left ${
                   service.id === selectedServiceId
-                    ? "border-[var(--reception)] bg-white ring-2 ring-[var(--reception-soft)]"
-                    : "border-[var(--line)] bg-white/60 hover:border-[var(--line-strong)]"
+                    ? "border-[var(--booking-brand)] bg-white ring-2 ring-[color-mix(in_srgb,var(--booking-brand)_18%,transparent)]"
+                    : "border-[var(--color-line)] bg-white hover:border-[var(--color-line-strong)]"
                 }`}
                 key={service.id}
                 onClick={() => {
@@ -182,11 +186,11 @@ export function PublicBookingForm({
                   {service.image_url ? (
                     <span
                       aria-hidden="true"
-                      className="block h-44 w-full bg-cover bg-center sm:h-full"
+                      className="block h-40 w-full bg-cover bg-center sm:h-full"
                       style={{ backgroundImage: `url(${service.image_url})` }}
                     />
                   ) : (
-                    <span className="agenda-grid flex h-44 items-center justify-center bg-[var(--reception-soft)] text-5xl font-semibold text-[var(--reception)] sm:h-full">
+                    <span className="agenda-grid flex h-40 items-center justify-center bg-[var(--color-surface-subtle)] text-5xl font-semibold text-[var(--booking-brand)] sm:h-full">
                       {service.name.slice(0, 1).toUpperCase()}
                     </span>
                   )}
@@ -194,27 +198,27 @@ export function PublicBookingForm({
                     <span className="flex flex-wrap items-start justify-between gap-3">
                       <span>
                         <span className="block text-xl font-semibold tracking-[-0.04em]">{service.name}</span>
-                        <span className="mt-1 block text-sm text-[var(--ink-soft)]">
+                        <span className="mt-1 block text-sm text-[var(--color-ink-soft)]">
                           {service.duration_minutes} min · {formatCurrency(service.price_cents, business.currency)}
                         </span>
                       </span>
-                      <span className="rounded-full bg-[var(--reception-soft)] px-3 py-1 text-xs font-semibold text-[var(--reception)]">
+                      <span className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--booking-brand)]">
                         {getBookingPaymentLabel(service, business.currency)}
                       </span>
                     </span>
                     <span className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
-                      <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 font-semibold text-[var(--ink)]">
+                      <span className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-3 py-2 font-semibold text-[var(--color-ink)]">
                         {formatCurrency(service.price_cents, business.currency)}
                       </span>
-                      <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 font-semibold text-[var(--ink-soft)]">
+                      <span className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-3 py-2 font-semibold text-[var(--color-ink-soft)]">
                         {service.duration_minutes} min
                       </span>
-                      <span className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 font-semibold text-[var(--ink-soft)]">
+                      <span className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-3 py-2 font-semibold text-[var(--color-ink-soft)]">
                         {serviceSlotCount.get(service.id) ?? 0} horarios
                       </span>
                     </span>
                     {service.description ? (
-                      <span className="mt-4 block text-sm leading-6 text-[var(--ink-soft)]">
+                      <span className="mt-4 block text-sm leading-6 text-[var(--color-ink-soft)]">
                         {service.description}
                       </span>
                     ) : null}
@@ -224,8 +228,8 @@ export function PublicBookingForm({
             ))}
           </div>
           {selectedService && getBookingAmountCents(selectedService) > 0 ? (
-            <div className="mt-5 rounded-2xl border border-[var(--line)] bg-white/70 p-4 text-sm leading-6 text-[var(--ink-soft)]">
-              <p className="font-semibold text-[var(--ink)]">Datos para transferir la seña</p>
+            <div className="mt-5 rounded-md border border-[var(--color-warning)] bg-[var(--color-warning-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+              <p className="font-semibold text-[var(--color-ink)]">Datos para transferir la seña</p>
               {business.payment_alias ? <p className="mt-2">Alias: <strong>{business.payment_alias}</strong></p> : null}
               {business.payment_cbu ? <p>CBU/CVU: <strong>{business.payment_cbu}</strong></p> : null}
               {business.payment_instructions ? <p className="mt-2">{business.payment_instructions}</p> : null}
@@ -235,7 +239,7 @@ export function PublicBookingForm({
               <p className="mt-2">La pre-reserva se mantiene por 30 minutos hasta que el negocio confirme la seña.</p>
               {whatsAppUrl ? (
                 <a
-                  className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-bold text-white shadow-sm hover:-translate-y-0.5 hover:bg-[#1ebe5d]"
+                  className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-md bg-[#148b45] px-5 text-sm font-bold text-white hover:bg-[#0e7438]"
                   href={whatsAppUrl}
                   rel="noreferrer"
                   target="_blank"
@@ -248,22 +252,22 @@ export function PublicBookingForm({
           ) : null}
         </section>
 
-        <section className="rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm sm:p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--reception)]">
+        <section className="border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)] sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--booking-brand)]">
             02 · Calendario
           </p>
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             {calendarDays.length === 0 ? (
-              <p className="col-span-full rounded-2xl border border-dashed border-[var(--line-strong)] bg-white/60 p-5 text-sm leading-6 text-[var(--ink-soft)]">
+              <p className="col-span-full rounded-md border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] p-5 text-sm leading-6 text-[var(--color-ink-soft)]">
                 Este servicio no tiene horarios disponibles ahora. Probá otro servicio o volvé cuando el negocio publique nueva agenda.
               </p>
             ) : null}
             {calendarDays.map((day) => (
               <button
-                  className={`min-h-20 rounded-2xl border px-3 py-4 text-center ${
+                  className={`min-h-20 rounded-md border px-3 py-4 text-center ${
                   day.dateKey === selectedDay?.dateKey
-                    ? "border-[var(--ink)] bg-[var(--ink)] text-white"
-                    : "border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--line-strong)]"
+                    ? "border-[var(--booking-brand)] bg-[var(--booking-brand)] text-white"
+                    : "border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:border-[var(--color-line-strong)]"
                 }`}
                 key={day.dateKey}
                 onClick={() => {
@@ -281,16 +285,16 @@ export function PublicBookingForm({
 
           {selectedDay ? (
             <div className="mt-6">
-              <p className="text-sm font-semibold text-[var(--ink-soft)]">
+              <p className="text-sm font-semibold text-[var(--color-ink-soft)]">
                 Horarios para {selectedDay.weekdayLabel} {selectedDay.dateLabel}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {selectedDaySlots.map((slot) => (
                   <button
-                    className={`min-h-12 rounded-2xl border px-4 py-3 text-center text-sm font-semibold ${
+                    className={`min-h-12 rounded-md border px-4 py-3 text-center font-mono text-sm font-semibold ${
                       slot.startsAt === selectedSlot
-                        ? "border-[var(--reception)] bg-[var(--reception)] text-white"
-                        : "border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--line-strong)]"
+                        ? "border-[var(--booking-brand)] bg-[var(--booking-brand)] text-white"
+                        : "border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:border-[var(--color-line-strong)]"
                     }`}
                     key={slot.startsAt}
                     onClick={() => setSelectedSlot(slot.startsAt)}
@@ -305,25 +309,25 @@ export function PublicBookingForm({
         </section>
       </div>
 
-      <section className="h-fit rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[0_18px_60px_rgba(36,33,29,0.08)] sm:p-6 lg:sticky lg:top-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--clinical)]">
+      <section className="h-fit border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-raised)] sm:p-6 lg:sticky lg:top-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--booking-brand)]">
           03 · Confirmá
         </p>
-        <div className="mt-5 rounded-[1.5rem] border border-[var(--line)] bg-white/80 p-4">
-          <p className="text-sm font-semibold text-[var(--ink-soft)]">Tu turno</p>
+        <div className="mt-5 rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-4">
+          <p className="text-sm font-semibold text-[var(--color-ink-soft)]">Tu turno</p>
           <p className="mt-2 text-xl font-semibold tracking-[-0.04em]">
             {selectedService?.name ?? "Seleccioná un servicio"}
           </p>
-          <p className="mt-1 text-sm text-[var(--ink-soft)]">
+          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
             {selectedSlotData ? `${selectedSlotData.label} · ${selectedService?.duration_minutes ?? 0} min` : "Elegí día y horario en el calendario"}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-            <span className="rounded-2xl bg-[var(--surface)] p-3 font-semibold">
-              <span className="block text-xs uppercase tracking-[0.12em] text-[var(--ink-muted)]">Precio</span>
+            <span className="rounded-md bg-white p-3 font-semibold">
+              <span className="block text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Precio</span>
               {selectedService ? formatCurrency(selectedService.price_cents, business.currency) : "-"}
             </span>
-            <span className="rounded-2xl bg-[var(--surface)] p-3 font-semibold">
-              <span className="block text-xs uppercase tracking-[0.12em] text-[var(--ink-muted)]">Al reservar</span>
+            <span className="rounded-md bg-white p-3 font-semibold">
+              <span className="block text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Al reservar</span>
               {selectedService ? selectedAmountCents > 0 ? formatCurrency(selectedAmountCents, business.currency) : "Sin seña" : "-"}
             </span>
           </div>
@@ -334,7 +338,7 @@ export function PublicBookingForm({
           <Field autoComplete="tel" label="Teléfono" name="phone" placeholder="Tu teléfono" type="tel" />
           <Field label="Nota para el negocio" name="message" placeholder="Opcional" required={false} />
         </div>
-        <p className="mt-4 rounded-2xl border border-[var(--line)] bg-white/60 px-4 py-3 text-xs font-medium leading-5 text-[var(--ink-muted)]">
+        <p className="mt-4 rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-3 text-xs font-medium leading-5 text-[var(--color-ink-muted)]">
           Revisá que el email esté bien escrito. Ahí llega la confirmación del turno.
         </p>
         <div className="mt-6">

@@ -1,33 +1,27 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ChangeEvent, ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
 
-export function LogoMark() {
-  return (
-    <Link className="flex items-center gap-3" href="/" aria-label="Citadely">
-      <span className="relative flex h-12 w-12 items-center justify-center rounded-full border-2 border-[var(--ink)] bg-[var(--surface-raised)] text-xl font-semibold tracking-[-0.08em] text-[var(--ink)] shadow-sm">
-        C
-        <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-[var(--reception)]" />
-        <span className="absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-[var(--surface-raised)] bg-[var(--ink)]" />
-      </span>
-      <span className="leading-tight">
-        <span className="block text-xl font-semibold tracking-[-0.04em]">
-          Citadely
-        </span>
-        <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
-          agenda viva
-        </span>
-      </span>
-    </Link>
+export function LogoMark({ linked = true }: { linked?: boolean }) {
+  const content = (
+    <>
+      <span className="grid h-9 w-9 place-items-center rounded-md bg-[var(--color-primary)] text-base font-bold text-white">C</span>
+      <span className="text-xl font-semibold tracking-[-0.035em] text-[var(--color-navy)]">Citadely</span>
+    </>
   );
+
+  return linked
+    ? <Link className="flex items-center gap-3" href="/" aria-label="Citadely, ir al inicio">{content}</Link>
+    : <span className="flex items-center gap-3">{content}</span>;
 }
 
 export function PrimaryLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[var(--reception)] px-6 text-sm font-semibold text-white shadow-sm hover:-translate-y-0.5 hover:bg-[#215d4d]"
+      className="button-primary"
     >
-      {children}
+      {children}<ArrowRight aria-hidden="true" size={16} />
     </Link>
   );
 }
@@ -36,7 +30,7 @@ export function SecondaryLink({ href, children }: { href: string; children: Reac
   return (
     <Link
       href={href}
-      className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-6 text-sm font-semibold text-[var(--ink)] hover:-translate-y-0.5 hover:border-[var(--reception)]"
+      className="button-secondary"
     >
       {children}
     </Link>
@@ -66,25 +60,22 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(62,119,145,0.14),transparent_32%),var(--agenda-paper)] px-5 py-6 sm:px-8">
+    <main className="min-h-screen bg-[var(--color-canvas)] px-5 py-6 sm:px-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <LogoMark />
-        <section className="grid overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] shadow-[0_24px_80px_rgba(36,33,29,0.08)] lg:grid-cols-[1fr_0.9fr]">
+        <section className="grid overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-raised)] lg:grid-cols-[1fr_0.9fr]">
           <div className="p-6 sm:p-10 lg:p-12">
             <div className="mb-9 max-w-xl">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">
-                Acceso Citadely
-              </p>
-              <h1 className="text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)] sm:text-5xl">
+              <h1 className="font-display text-3xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">
                 {title}
               </h1>
-              <p className="mt-4 text-base leading-7 text-[var(--ink-soft)]">
+              <p className="mt-4 text-base leading-7 text-[var(--color-ink-soft)]">
                 {subtitle}
               </p>
             </div>
             {children}
           </div>
-          <aside className="agenda-grid border-t border-[var(--line)] bg-[linear-gradient(135deg,var(--agenda-paper-deep),#eef5f2)] p-6 sm:p-10 lg:border-l lg:border-t-0">
+          <aside className="border-t border-[var(--color-line)] bg-[var(--color-navy)] p-6 text-white sm:p-10 lg:border-l lg:border-t-0">
             {aside}
           </aside>
         </section>
@@ -111,10 +102,10 @@ export function Field({
   autoComplete?: string;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
+    <label className="form-label">
       {label}
       <input
-        className="min-h-12 rounded-2xl border border-[var(--line)] bg-white/70 px-4 text-base font-medium text-[var(--ink)] placeholder:text-[var(--ink-muted)] hover:border-[var(--line-strong)]"
+        className="form-control"
         name={name}
         type={type}
         placeholder={placeholder}
@@ -133,6 +124,7 @@ export function TextArea({
   required = true,
   defaultValue,
   rows = 4,
+  onChange,
 }: {
   label: string;
   name: string;
@@ -140,14 +132,16 @@ export function TextArea({
   required?: boolean;
   defaultValue?: string;
   rows?: number;
+  onChange?: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
+    <label className="form-label">
       {label}
       <textarea
-        className="min-h-28 resize-y rounded-2xl border border-[var(--line)] bg-white/70 px-4 py-3 text-base font-medium leading-7 text-[var(--ink)] placeholder:text-[var(--ink-muted)] hover:border-[var(--line-strong)]"
+        className="form-control min-h-28 resize-y"
         defaultValue={defaultValue}
         name={name}
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) => onChange?.(event.target.value)}
         placeholder={placeholder}
         required={required}
         rows={rows}
@@ -159,7 +153,7 @@ export function TextArea({
 export function SubmitButton({ children, pending, disabled = false }: { children: ReactNode; pending: boolean; disabled?: boolean }) {
   return (
     <button
-      className="flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--reception)] px-6 text-sm font-semibold text-white shadow-sm hover:bg-[#215d4d] disabled:cursor-not-allowed disabled:opacity-60"
+      className="button-primary w-full"
       disabled={pending || disabled}
       type="submit"
     >
@@ -171,10 +165,11 @@ export function SubmitButton({ children, pending, disabled = false }: { children
 export function FormMessage({ type, children }: { type: "error" | "success"; children: ReactNode }) {
   return (
     <p
-      className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
+      aria-live={type === "error" ? "assertive" : "polite"}
+      className={`border px-4 py-3 text-sm font-medium ${
         type === "error"
-          ? "border-red-200 bg-red-50 text-[var(--danger)]"
-          : "border-green-200 bg-green-50 text-[var(--reception)]"
+          ? "border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
+          : "border-[#a9dcca] bg-[var(--color-success-soft)] text-[var(--color-success)]"
       }`}
     >
       {children}

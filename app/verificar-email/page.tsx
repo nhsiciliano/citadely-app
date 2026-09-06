@@ -5,8 +5,8 @@ import { AuthShell } from "@/components/ui";
 export default function VerifyEmailPage() {
   return (
     <AuthShell
-      title="Verifica tu email"
-      subtitle="InsForge envio un codigo de 6 digitos. Ingresalo para activar tu cuenta y continuar."
+      title="Verificá tu email"
+      subtitle="Ingresá el código de 6 dígitos que recibiste para activar tu cuenta y continuar."
       aside={<VerifyAside />}
     >
       <Suspense fallback={<p className="text-sm text-[var(--ink-soft)]">Cargando verificacion...</p>}>
@@ -19,14 +19,11 @@ export default function VerifyEmailPage() {
 function VerifyAside() {
   return (
     <div className="grid gap-5">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--clinical)]">
-        Seguridad
-      </p>
-      <h2 className="text-3xl font-semibold tracking-[-0.05em]">
-        Confirmamos que el email pueda recibir avisos de turnos.
+      <h2 className="font-display text-3xl font-semibold tracking-[-0.035em]">
+        Un paso breve antes de abrir tu agenda.
       </h2>
-      <p className="leading-7 text-[var(--ink-soft)]">
-        Esta verificacion tambien prepara el canal para recordatorios automaticos por email.
+      <p className="leading-7 text-white/70">
+        La verificación protege tu cuenta y confirma que podés recibir comunicaciones importantes.
       </p>
     </div>
   );

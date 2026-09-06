@@ -4,8 +4,8 @@ import { AuthShell } from "@/components/ui";
 export default function RegisterPage() {
   return (
     <AuthShell
-      title="Crea tu cuenta"
-      subtitle="Crea una cuenta de negocio para publicar tu pagina de reservas y administrar tu agenda."
+      title="Creá tu cuenta"
+      subtitle="Prepará tu negocio para publicar reservas y administrar cada jornada con precisión."
       aside={<RegisterAside />}
     >
       <RegisterForm />
@@ -16,14 +16,11 @@ export default function RegisterPage() {
 function RegisterAside() {
   return (
     <div className="grid gap-5">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">
-        MVP negocio unico
-      </p>
-      <h2 className="text-3xl font-semibold tracking-[-0.05em]">
-        Por ahora, cada cuenta negocio administra una sola marca.
+      <h2 className="font-display text-3xl font-semibold tracking-[-0.035em]">
+        Siete días para ordenar toda tu operación.
       </h2>
-      <p className="leading-7 text-[var(--ink-soft)]">
-        Despues del registro, el onboarding te pedira nombre, rubro y URL publica del negocio.
+      <p className="leading-7 text-white/70">
+        Después del registro configurás el nombre, el rubro y la dirección pública de tu negocio.
       </p>
     </div>
   );

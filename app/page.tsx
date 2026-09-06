@@ -1,217 +1,167 @@
+import Link from "next/link";
+import {
+  ArrowRight,
+  CalendarCheck,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  Globe2,
+  MousePointerClick,
+  ShieldCheck,
+  Sparkles,
+  UsersRound,
+} from "lucide-react";
 import { LogoMark, PrimaryLink, SecondaryLink } from "@/components/ui";
 
-const metrics = [
-  ["Reservas publicas", "24/7", "sin cuenta de cliente"],
-  ["Señas", "CBU/CVU", "instrucciones por negocio"],
-  ["Agenda", "Mensual", "slots exactos por servicio"],
+const TIMELINE = [
+  { time: "09:00", service: "Consulta inicial", client: "Luciana Martínez", state: "Confirmado", tone: "success" },
+  { time: "10:30", service: "Corte + color", client: "Camila Fernández", state: "Confirmado", tone: "success" },
+  { time: "12:00", service: "Manicura semipermanente", client: "Julieta Rojas", state: "Seña pendiente", tone: "warning" },
+  { time: "14:00", service: "Reserva desde tu web", client: "Facundo Pérez", state: "Nuevo", tone: "primary" },
 ];
 
-const segments = ["Salud", "Deporte", "Servicios", "Tramites", "Bienestar"];
-
-const useCases = [
-  {
-    title: "Clinicas y consultorios medicos",
-    tag: "Salud",
-    text: "Agendamiento de citas con medicos generales, pediatras, cardiologos y otras especialidades.",
-  },
-  {
-    title: "Centros odontologicos",
-    tag: "Dental",
-    text: "Reservas para limpiezas, ortodoncia, cirugias y revisiones de rutina.",
-  },
-  {
-    title: "Estudios de tatuajes y piercings",
-    tag: "Diseño",
-    text: "Agendamiento de sesiones de diseño, perforaciones y consultas previas.",
-  },
-  {
-    title: "Alquiler de canchas",
-    tag: "Deporte",
-    text: "Turnos para futbol, tenis, padel, squash o basquetbol.",
-  },
-  {
-    title: "Estudios juridicos y contables",
-    tag: "Profesional",
-    text: "Asesorias, consultas legales y reuniones de planificacion fiscal con abogados, contadores o escribanos.",
-  },
-  {
-    title: "Oficinas gubernamentales",
-    tag: "Tramites",
-    text: "Renovacion de documento, pasaporte, licencia de conducir o gestiones impositivas.",
-  },
-  {
-    title: "Escuelas de conduccion",
-    tag: "Clases",
-    text: "Agendamiento de clases practicas de manejo y examenes simulados.",
-  },
-  {
-    title: "Gimnasios y centros de fitness",
-    tag: "Fitness",
-    text: "Reserva de cupos en clases grupales como spinning, yoga, pilates o crossfit para controlar el aforo.",
-  },
+const CAPABILITIES = [
+  { icon: CalendarDays, title: "Agenda precisa", text: "Vista diaria y semanal, filtros por servicio y estado, y cada turno en su lugar." },
+  { icon: Sparkles, title: "Servicios y disponibilidad", text: "Duración, precio, seña y horarios mensuales administrados desde un mismo flujo." },
+  { icon: UsersRound, title: "Clientes accesibles", text: "Búsqueda local y fichas claras para crear turnos sin volver a pedir los mismos datos." },
+  { icon: CreditCard, title: "Señas bajo control", text: "Estados pendientes y confirmados con alias, CBU o CVU propio de cada negocio." },
+  { icon: Globe2, title: "Reservas públicas", text: "Una página con la marca del negocio para elegir servicio, fecha, hora y confirmar." },
 ];
+
+const INDUSTRIES = ["Consultorios clínicos", "Centros odontológicos", "Oficinas gubernamentales", "Estudios contables", "Gimnasios", "Escuelas de conducción", "Alquiler de canchas", "Centros de estética"];
+
+const FAQS = [
+  ["¿Necesito instalar algo?", "No. Citadely funciona desde el navegador, tanto en escritorio como en dispositivos móviles."],
+  ["¿Cómo reciben turnos mis clientes?", "Compartís la página pública de tu negocio. El cliente elige servicio, fecha y hora, completa sus datos y confirma la reserva."],
+  ["¿Cómo funcionan las señas?", "Configurás el monto por servicio y tus datos de transferencia. Luego confirmás la recepción desde el turno."],
+  ["¿Puedo usarlo para distintos tipos de servicios?", "Sí. La agenda se organiza por días y horarios, por lo que se adapta a negocios profesionales, de salud, deporte, educación y bienestar."],
+  ["¿Qué pasa cuando termina la prueba?", "La prueba dura 7 días. Después podés activar el plan mensual de $15.000 ARS para mantener el acceso completo."],
+];
+
+function DemoTimeline() {
+  return (
+    <figure className="mx-auto w-full max-w-[610px]">
+      <div className="relative pl-11 sm:pl-16">
+        <span aria-hidden="true" className="absolute bottom-7 left-[18px] top-4 w-px bg-[var(--color-primary)] sm:left-[30px]" />
+        <span className="absolute left-0 top-0 grid h-9 min-w-9 place-items-center rounded-full bg-[var(--color-primary)] px-2 font-mono text-[10px] font-bold text-white sm:left-3">HOY</span>
+        <div className="grid gap-3">
+          {TIMELINE.map((item, index) => (
+            <div className="relative grid grid-cols-[54px_minmax(0,1fr)] items-start gap-3" key={`${item.time}-${item.service}`}>
+              <span aria-hidden="true" className={`absolute -left-[34px] top-6 h-3 w-3 rounded-full border-[3px] border-white ring-2 sm:-left-[40px] ${index === TIMELINE.length - 1 ? "bg-[var(--color-primary)] ring-[var(--color-primary)]" : "bg-white ring-[var(--color-primary)]"}`} />
+              <time className="pt-4 font-mono text-xs font-semibold text-[var(--color-ink-soft)]">{item.time}</time>
+              <div className="border border-[var(--color-line)] bg-white p-4 shadow-[var(--shadow-surface)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div><p className="text-sm font-semibold">{item.service}</p><p className="mt-1 text-xs text-[var(--color-ink-soft)]">{item.client}</p></div>
+                  <span className={`status-badge ${item.tone === "success" ? "status-confirmed" : item.tone === "warning" ? "status-pending_payment" : "bg-[var(--color-primary-soft)] text-[var(--color-primary)]"}`}>{item.state}</span>
+                </div>
+                {item.tone === "warning" ? <div className="mt-3 flex items-center justify-between border-t border-[var(--color-line)] pt-3 text-xs"><span className="text-[var(--color-warning)]">Seña $8.000</span><span className="font-semibold text-[var(--color-primary)]">Revisar reserva</span></div> : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <figcaption className="mt-5 text-right text-xs text-[var(--color-ink-muted)]">Ejemplo de jornada · datos ficticios</figcaption>
+    </figure>
+  );
+}
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-[var(--agenda-paper)]">
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-6 sm:px-8">
-        <LogoMark />
-        <nav className="hidden items-center gap-6 text-sm font-semibold text-[var(--ink-soft)] md:flex">
-          <a className="hover:text-[var(--ink)]" href="#producto">Producto</a>
-          <a className="hover:text-[var(--ink)]" href="#reservas">Reservas</a>
-          <a className="hover:text-[var(--ink)]" href="#rubros">Rubros</a>
-          <a className="hover:text-[var(--ink)]" href="#pagos">Pagos</a>
-        </nav>
-        <div className="flex items-center gap-3">
-          <SecondaryLink href="/login">Ingresar</SecondaryLink>
-          <div className="hidden sm:block">
-            <PrimaryLink href="/registro">Crear cuenta</PrimaryLink>
-          </div>
+    <main className="min-h-screen overflow-hidden bg-white">
+      <a className="skip-link" href="#contenido">Saltar al contenido</a>
+      <header className="border-b border-[var(--color-line)] bg-white">
+        <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
+          <LogoMark />
+          <nav aria-label="Navegación principal" className="hidden items-center gap-7 text-sm font-medium text-[var(--color-ink-soft)] lg:flex">
+            <a className="hover:text-[var(--color-primary)]" href="#como-funciona">Cómo funciona</a>
+            <a className="hover:text-[var(--color-primary)]" href="#funciones">Funciones</a>
+            <a className="hover:text-[var(--color-primary)]" href="#rubros">Rubros</a>
+            <a className="hover:text-[var(--color-primary)]" href="#precio">Precio</a>
+            <a className="hover:text-[var(--color-primary)]" href="#preguntas">Preguntas</a>
+          </nav>
+          <div className="flex items-center gap-2"><SecondaryLink href="/login">Ingresar</SecondaryLink><span className="hidden sm:inline-flex"><PrimaryLink href="/registro">Crear mi cuenta</PrimaryLink></span></div>
         </div>
       </header>
 
-      <section className="agenda-grid mx-auto grid max-w-7xl gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:py-20">
-        <div className="max-w-3xl">
-          <div className="mb-6 flex flex-wrap gap-2">
-            {segments.map((segment) => (
-              <span
-                className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-soft)]"
-                key={segment}
-              >
-                {segment}
-              </span>
-            ))}
-          </div>
-          <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.07em] text-[var(--ink)] sm:text-7xl lg:text-8xl">
-            Gestiona tus citas con elegancia y control.
-          </h1>
-          <p className="mt-7 max-w-2xl text-lg leading-8 text-[var(--ink-soft)]">
-            Citadely centraliza servicios, disponibilidad mensual, clientes y reservas publicas para negocios que trabajan con turnos. Una pagina para recibir reservas y un panel privado para operar cada dia.
-          </p>
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <PrimaryLink href="/registro">Comenzar gratis</PrimaryLink>
-            <SecondaryLink href="/login">Ya tengo cuenta</SecondaryLink>
-          </div>
-        </div>
-
-        <div className="rounded-[2rem] border border-[var(--line-strong)] bg-[var(--surface)] p-3 shadow-sm sm:p-5">
-          <div className="grid overflow-hidden rounded-[1.5rem] border border-[var(--line)] bg-[var(--surface-raised)] shadow-sm sm:grid-cols-[72px_1fr]">
-            <aside className="hidden bg-[var(--ink)] p-4 sm:grid sm:content-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-lg font-semibold text-white">C</div>
-              <div className="grid gap-4">
-                {["01", "02", "03"].map((item) => (
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-semibold ${item === "01" ? "bg-[var(--reception)] text-white" : "border border-white/10 text-white/45"}`} key={item}>
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </aside>
-            <div className="p-5 sm:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--terracotta)]">
-                  Agenda de hoy
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">Consultorio Norte</h2>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold">78% ocupada</p>
-                <div className="mt-2 h-1.5 w-24 rounded-full bg-[var(--agenda-paper-deep)]">
-                  <span className="block h-full w-[78%] rounded-full bg-[var(--reception)]" />
-                </div>
+      <div id="contenido">
+        <section className="relative border-b border-[var(--color-line)] bg-[var(--color-surface-subtle)]">
+          <div aria-hidden="true" className="absolute inset-y-0 left-1/2 hidden w-px bg-[var(--color-line)] lg:block" />
+          <div className="mx-auto grid min-h-[700px] max-w-[1440px] lg:grid-cols-2">
+            <div className="flex items-center px-5 py-16 sm:px-8 lg:px-12 lg:py-20">
+              <div className="max-w-[620px]">
+                <h1 className="font-display text-[clamp(3rem,5vw,3.4rem)] font-semibold leading-[0.96] tracking-[-0.04em] text-[var(--color-navy)]">Tomá el control de cada jornada.</h1>
+                <p className="mt-7 max-w-[460px] text-lg leading-8 text-[var(--color-ink-soft)]">Citadely es tu central de turnos: reúne agenda, servicios, clientes, reservas públicas y estados de seña. Menos idas y vueltas; más precisión para operar tu negocio.</p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row"><PrimaryLink href="/registro">Crear mi cuenta</PrimaryLink><a className="button-secondary" href="#como-funciona">Ver cómo funciona<ArrowRight aria-hidden="true" size={16} /></a></div>
+                <p className="mt-5 flex items-center gap-2 text-sm text-[var(--color-ink-soft)]"><ShieldCheck aria-hidden="true" className="text-[var(--color-success)]" size={17} />Probá gratis durante 7 días.</p>
               </div>
             </div>
+            <div className="flex items-center bg-white px-5 py-12 sm:px-8 lg:px-12 lg:py-16"><DemoTimeline /></div>
+          </div>
+        </section>
 
-            <div className="mt-8 grid gap-4">
-              {[
-                ["09:00", "Consulta inicial", "Mateo", "Confirmada"],
-                ["10:30", "Revision", "Lucia", "Seña paga"],
-                ["12:00", "Control", "Ana", "Recordatorio"],
-                ["15:00", "Hueco disponible", "", "Publico"],
-              ].map(([time, service, client, state]) => (
-                <div className="grid grid-cols-[58px_1fr] gap-4" key={`${time}-${service}`}>
-                  <span className="number-tabular pt-3 text-sm font-semibold text-[var(--ink-muted)]">{time}</span>
-                  <div className={`rounded-2xl border bg-white/70 p-4 ${state === "Confirmada" ? "border-[var(--reception)]" : "border-[var(--line)]"}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-[var(--ink)]">{service}</p>
-                        {client ? <p className="mt-1 text-sm text-[var(--ink-soft)]">Cliente: {client}</p> : null}
-                      </div>
-                      <span className="rounded-full bg-[var(--agenda-paper-deep)] px-3 py-1 text-xs font-semibold text-[var(--ink-soft)]">
-                        {state}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        <section className="border-b border-[var(--color-line)] bg-white" id="como-funciona">
+          <div className="mx-auto max-w-[1440px] px-5 pb-8 pt-4 sm:px-8 lg:px-12">
+            <div className="text-center">
+              <h2 className="font-display text-2xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-3xl">De la reserva al horario confirmado.</h2>
+              <p className="mx-auto mt-3 max-w-2xl leading-7 text-[var(--color-ink-soft)]">El mismo flujo conecta lo que hace el cliente con lo que necesita resolver el responsable del negocio.</p>
             </div>
+            <ol className="mt-6 grid border-l border-t border-[var(--color-line)] sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  [MousePointerClick, "Elegí servicio", "El cliente encuentra la opción correcta en la página pública."],
+                  [Clock3, "Seleccioná fecha y hora", "La disponibilidad publicada evita intercambios manuales."],
+                  [CreditCard, "Confirmá la seña", "Las instrucciones y el estado quedan asociados a la reserva."],
+                  [CalendarCheck, "Operá la jornada", "El turno aparece en agenda con toda la información necesaria."],
+                ].map(([Icon, title, text]) => {
+                  const StepIcon = Icon as typeof MousePointerClick;
+                  return <li className="border-b border-r border-[var(--color-line)] p-6" key={String(title)}><StepIcon aria-hidden="true" className="text-[var(--color-primary)]" size={24} /><h3 className="mt-6 font-semibold text-[var(--color-ink)]">{String(title)}</h3><p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">{String(text)}</p></li>;
+                })}
+              </ol>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="funciones">
+          <div className="grid gap-12 lg:grid-cols-[.72fr_1.28fr]">
+            <div><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Todo lo necesario para mantener el ritmo.</h2><p className="mt-5 max-w-md leading-7 text-[var(--color-ink-soft)]">Cada módulo responde una pregunta concreta de la operación, sin sumar complejidad innecesaria.</p></div>
+            <div className="border-t border-[var(--color-line)]">
+              {CAPABILITIES.map(({ icon: Icon, title, text }) => <article className="grid gap-4 border-b border-[var(--color-line)] py-6 sm:grid-cols-[40px_190px_1fr] sm:items-start" key={title}><span className="grid h-9 w-9 place-items-center rounded-md bg-[var(--color-primary-soft)] text-[var(--color-primary)]"><Icon aria-hidden="true" size={19} /></span><h3 className="font-semibold">{title}</h3><p className="text-sm leading-6 text-[var(--color-ink-soft)]">{text}</p></article>)}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="producto" className="mx-auto grid max-w-7xl gap-4 px-5 py-10 sm:px-8 md:grid-cols-3">
-        {metrics.map(([label, value, hint]) => (
-          <article className="rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-sm" key={label}>
-            <p className="text-sm font-semibold text-[var(--ink-soft)]">{label}</p>
-            <p className="number-tabular mt-5 text-4xl font-semibold tracking-[-0.06em]">{value}</p>
-            <p className="mt-2 text-sm text-[var(--ink-muted)]">{hint}</p>
-          </article>
-        ))}
-      </section>
-
-      <section id="reservas" className="mx-auto grid max-w-7xl gap-4 px-5 py-10 sm:px-8 lg:grid-cols-2">
-        <article className="rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-7 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--terracotta)]">Negocio</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em]">Agenda, servicios, clientes y reportes.</h2>
-          <p className="mt-4 leading-7 text-[var(--ink-soft)]">Configura servicios, duracion, precio, seña configurable, profesionales y disponibilidad. Gestiona el dia desde un dashboard operativo.</p>
-        </article>
-        <article className="rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-7 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--clinical)]">Reservas publicas</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em]">Tus clientes reservan sin crear cuenta.</h2>
-          <p className="mt-4 leading-7 text-[var(--ink-soft)]">Cada negocio publica su subdominio, por ejemplo minegocio.citadely.com.ar, para que cualquier cliente elija servicio, horario y deje sus datos de contacto.</p>
-        </article>
-      </section>
-
-      <section id="rubros" className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
-        <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--terracotta)]">Rubros que viven de la agenda</p>
-            <h2 className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">
-              Un mismo sistema para turnos, cupos y consultas.
-            </h2>
+        <section className="border-y border-[var(--color-line)] bg-[var(--color-canvas)]" id="rubros">
+          <div className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12">
+            <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-end"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Una central para distintos tipos de turnos.</h2><p className="max-w-xl leading-7 text-[var(--color-ink-soft)]">Configuralo según los servicios, precios, señas y horarios de tu negocio. La estructura operativa se mantiene clara en cualquier rubro.</p></div>
+            <div className="mt-12 grid border-l border-t border-[var(--color-line)] sm:grid-cols-2 lg:grid-cols-4">{INDUSTRIES.map((industry) => <div className="flex min-h-28 items-end border-b border-r border-[var(--color-line)] bg-white p-5" key={industry}><CheckCircle2 aria-hidden="true" className="mr-3 shrink-0 text-[var(--color-primary)]" size={18} /><span className="font-semibold">{industry}</span></div>)}</div>
           </div>
-          <p className="max-w-md text-sm leading-6 text-[var(--ink-soft)]">
-            Cada rubro configura sus servicios, precios, señas y disponibilidad mensual; los clientes solo eligen dia, horario y dejan sus datos.
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {useCases.map((item, index) => (
-            <article className="group min-h-56 rounded-[1.5rem] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm hover:-translate-y-1 hover:border-[var(--line-strong)] hover:bg-[var(--surface-raised)]" key={item.title}>
-              <div className="flex items-center justify-between gap-4">
-                <span className="rounded-full bg-[var(--reception-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--reception)]">
-                  {item.tag}
-                </span>
-                <span className="number-tabular text-sm font-semibold text-[var(--ink-muted)]">{String(index + 1).padStart(2, "0")}</span>
-              </div>
-              <h3 className="mt-6 text-xl font-semibold leading-tight tracking-[-0.04em]">{item.title}</h3>
-              <p className="mt-4 text-sm leading-6 text-[var(--ink-soft)]">{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+        </section>
 
-      <footer id="pagos" className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
-        <div className="rounded-[2rem] border border-[var(--line)] bg-[var(--ink)] p-7 text-white sm:p-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f0c676]">Plan mensual</p>
-          <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">
-            7 dias gratis y luego suscripcion automatica de $15000 ARS por mes.
-          </h2>
-          <p className="mt-5 max-w-2xl leading-7 text-white/70">
-            Mercado Pago se usa para cobrarle a cada negocio el uso de Citadely. Las señas de los clientes se gestionan por alias o CBU/CVU del negocio.
-          </p>
-        </div>
-      </footer>
+        <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
+          <div className="grid overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-raised)] lg:grid-cols-[.9fr_1.1fr]">
+            <div className="bg-[var(--color-navy)] p-7 text-white sm:p-10"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em]">Una página de reservas con la identidad de tu negocio.</h2><p className="mt-5 max-w-md leading-7 text-white/68">Logo, portada, descripción y color propio. Citadely queda en segundo plano para que tu marca lidere.</p><div className="mt-9 space-y-4">{["Servicio", "Fecha y hora", "Datos", "Confirmación"].map((step, index) => <div className="flex items-center gap-4" key={step}><span className="grid h-8 w-8 place-items-center rounded-full border border-white/25 font-mono text-xs">{index + 1}</span><span className="font-semibold">{step}</span></div>)}</div></div>
+            <div className="bg-[var(--color-surface-subtle)] p-6 sm:p-10"><div className="border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)]"><div className="flex items-center justify-between border-b border-[var(--color-line)] pb-4"><div><p className="text-lg font-semibold">Estudio Norte</p><p className="mt-1 text-xs text-[var(--color-ink-soft)]">Reservá tu próximo turno</p></div><span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--color-primary)] font-semibold text-white">E</span></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><button className="border border-[var(--color-primary)] bg-[var(--color-primary-soft)] p-4 text-left" type="button"><strong className="text-sm">Consulta inicial</strong><span className="mt-1 block text-xs text-[var(--color-ink-soft)]">45 min · $20.000</span></button><button className="border border-[var(--color-line)] p-4 text-left" type="button"><strong className="text-sm">Seguimiento</strong><span className="mt-1 block text-xs text-[var(--color-ink-soft)]">30 min · $15.000</span></button></div><div className="mt-5 grid grid-cols-4 gap-2">{["10:00", "11:30", "14:00", "16:30"].map((time) => <button className="rounded-md border border-[var(--color-line)] px-2 py-3 font-mono text-xs font-semibold hover:border-[var(--color-primary)]" key={time} type="button">{time}</button>)}</div><button className="button-primary mt-5 w-full" type="button">Continuar<ArrowRight aria-hidden="true" size={16} /></button></div></div>
+          </div>
+        </section>
+
+        <section className="border-y border-[var(--color-line)] bg-[var(--color-surface-subtle)]" id="preguntas">
+          <div className="mx-auto grid max-w-[1440px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.7fr_1.3fr] lg:px-12">
+            <div><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)]">Preguntas frecuentes</h2><p className="mt-4 leading-7 text-[var(--color-ink-soft)]">Lo esencial antes de empezar a organizar tus turnos.</p></div>
+            <div className="border-t border-[var(--color-line)]">{FAQS.map(([question, answer]) => <details className="group border-b border-[var(--color-line)]" key={question}><summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 font-semibold">{question}<span aria-hidden="true" className="text-[var(--color-primary)] group-open:rotate-45">+</span></summary><p className="max-w-2xl pb-6 text-sm leading-6 text-[var(--color-ink-soft)]">{answer}</p></details>)}</div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="precio">
+          <div className="grid border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)] lg:grid-cols-[1.1fr_.9fr]">
+            <div className="p-7 sm:p-10"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Un solo plan, sin vueltas.</h2><p className="mt-4 max-w-xl leading-7 text-[var(--color-ink-soft)]">Probá todas las funciones durante 7 días. Después, decidí si querés seguir con la suscripción mensual.</p><ul className="mt-8 grid gap-3 sm:grid-cols-2">{["Agenda y servicios", "Clientes", "Página pública", "Señas y estados", "Métricas operativas", "Configuración de marca"].map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className="text-[var(--color-success)]" size={17} />{item}</li>)}</ul></div>
+            <div className="border-t border-[var(--color-line)] bg-[var(--color-primary)] p-7 text-white sm:p-10 lg:border-l lg:border-t-0"><p className="text-sm font-semibold text-white/75">Plan mensual</p><p className="mt-4 font-mono text-5xl font-semibold tracking-[-0.05em]">$15.000</p><p className="mt-2 text-sm text-white/75">ARS por mes</p><Link className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-white px-5 text-sm font-semibold text-[var(--color-primary)] hover:bg-[#edf3ff]" href="/registro">Comenzar prueba gratis<ArrowRight aria-hidden="true" size={17} /></Link></div>
+          </div>
+        </section>
+
+        <section className="bg-[var(--color-navy)] text-white"><div className="mx-auto flex max-w-[1440px] flex-col gap-7 px-5 py-18 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12"><div><h2 className="font-display max-w-3xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Tu próxima jornada puede empezar más ordenada.</h2><p className="mt-4 text-white/65">Creá tu cuenta y probá Citadely durante 7 días.</p></div><Link className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-white px-6 text-sm font-semibold text-[var(--color-navy)]" href="/registro">Crear mi cuenta<ArrowRight aria-hidden="true" size={17} /></Link></div></section>
+      </div>
+
+      <footer className="border-t border-white/10 bg-[var(--color-navy)] text-white"><div className="mx-auto flex max-w-[1440px] flex-col gap-5 px-5 py-8 text-sm sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12"><span className="font-semibold">Citadely</span><p className="text-white/65">Central de turnos para negocios de servicios.</p><div className="flex gap-5"><Link className="text-white/70 hover:text-white" href="/login">Ingresar</Link><Link className="text-white/70 hover:text-white" href="/registro">Crear cuenta</Link></div></div></footer>
     </main>
   );
 }
