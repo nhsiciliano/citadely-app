@@ -18,6 +18,7 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
+import { LogoSymbol } from "@/components/ui";
 import { getSubscriptionState } from "@/lib/citadely-db";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { useWorkspace } from "./workspace-context";
@@ -72,7 +73,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
       <aside className={`fixed inset-y-0 left-0 z-50 flex w-[286px] flex-col bg-[var(--color-navy)] text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[84px]" : "lg:w-[256px]"}`}>
         <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
           <Link aria-label="Ir al inicio de Citadely" className="flex min-w-0 items-center gap-3" href="/negocio" onClick={() => setMobileOpen(false)}>
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-[var(--color-primary)] text-lg font-bold">C</span>
+            <LogoSymbol />
             <span className={`text-xl font-semibold tracking-[-0.03em] ${collapsed ? "lg:hidden" : ""}`}>Citadely</span>
           </Link>
           <button aria-label="Cerrar navegación" className="grid h-10 w-10 place-items-center rounded-md text-white/70 hover:bg-white/10 hover:text-white lg:hidden" onClick={() => setMobileOpen(false)} type="button">

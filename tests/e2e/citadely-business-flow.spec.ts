@@ -8,11 +8,6 @@ function readLocalCredential(name: string) {
   return line.slice(name.length + 1);
 }
 
-function localDateTime(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 async function signIn(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(readLocalCredential("CITADELY_DEMO_EMAIL"));
@@ -33,15 +28,12 @@ test.beforeAll(() => {
 
 test("landing, navegación operativa, CRUD y reserva pública", async ({ page }) => {
   const runId = Date.now().toString(36);
-  const serviceName = `Seguimiento E2E ${runId}`;
+  let serviceName = `Seguimiento E2E ${runId}`;
   const clientName = `Cliente E2E ${runId}`;
   const publicClientName = `Reserva Pública ${runId}`;
   const availabilityDate = new Date();
   availabilityDate.setDate(availabilityDate.getDate() + 7);
   availabilityDate.setHours(10, 0, 0, 0);
-  const appointmentDate = new Date();
-  appointmentDate.setDate(appointmentDate.getDate() + 3);
-  appointmentDate.setHours(11, 0, 0, 0);
   const monthValue = `${availabilityDate.getFullYear()}-${String(availabilityDate.getMonth() + 1).padStart(2, "0")}`;
 
   await page.goto("/");
@@ -80,8 +72,23 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   await serviceDialog.locator('input[type="time"]').fill("10:00");
   await serviceDialog.getByRole("button", { name: "Agregar" }).click();
   await expect(serviceDialog.getByText("10:00")).toBeVisible();
+  await serviceDialog.locator('input[type="time"]').fill("11:00");
+  await serviceDialog.getByRole("button", { name: "Agregar" }).click();
+  await expect(serviceDialog.getByText("11:00")).toBeVisible();
   await serviceDialog.getByRole("button", { name: "Guardar servicio" }).click();
   await expect(serviceDialog).toBeHidden();
+  await expect(page.getByText(serviceName)).toBeVisible();
+
+  await page.getByRole("button", { name: `Editar ${serviceName}` }).click();
+  const editServiceDialog = page.getByRole("dialog", { name: "Editar servicio" });
+  await expect(editServiceDialog.getByLabel("Nombre")).toHaveValue(serviceName);
+  await expect(editServiceDialog.getByLabel("Duración en minutos")).toHaveValue("30");
+  const editedServiceName = `Seguimiento editado E2E ${runId}`;
+  await editServiceDialog.getByLabel("Nombre").fill(editedServiceName);
+  await editServiceDialog.getByLabel("Duración en minutos").fill("45");
+  await editServiceDialog.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(editServiceDialog).toBeHidden();
+  serviceName = editedServiceName;
   await expect(page.getByText(serviceName)).toBeVisible();
 
   await page.goto("/negocio/clientes?nuevo=1");
@@ -102,8 +109,8 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   await page.getByRole("button", { name: "Nuevo turno" }).click();
   const appointmentDialog = page.getByRole("dialog", { name: "Nuevo turno" });
   await appointmentDialog.getByLabel("Cliente").selectOption({ label: clientName });
-  await appointmentDialog.getByLabel("Servicio").selectOption({ label: serviceName });
-  await appointmentDialog.getByLabel("Fecha y hora").fill(localDateTime(appointmentDate));
+  await appointmentDialog.getByRole("button", { name: new RegExp(serviceName) }).click();
+  await appointmentDialog.getByRole("button", { name: "11:00" }).click();
   await appointmentDialog.getByRole("button", { name: "Guardar turno" }).click();
   await expect(appointmentDialog).toBeHidden();
 

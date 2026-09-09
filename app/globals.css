@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-padding-top: 4.5rem;
+}
+
 @theme inline {
   --color-canvas: #f2f5fa;
   --color-surface: #ffffff;

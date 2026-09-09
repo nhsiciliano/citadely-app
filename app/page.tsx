@@ -1,17 +1,23 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Calculator,
   CalendarCheck,
   CalendarDays,
+  CarFront,
   Check,
-  CheckCircle2,
   Clock3,
   CreditCard,
+  Dumbbell,
   Globe2,
+  Landmark,
   MousePointerClick,
   ShieldCheck,
+  SmilePlus,
   Sparkles,
+  Stethoscope,
   UsersRound,
+  Volleyball,
 } from "lucide-react";
 import { LogoMark, PrimaryLink, SecondaryLink } from "@/components/ui";
 
@@ -30,7 +36,16 @@ const CAPABILITIES = [
   { icon: Globe2, title: "Reservas públicas", text: "Una página con la marca del negocio para elegir servicio, fecha, hora y confirmar." },
 ];
 
-const INDUSTRIES = ["Consultorios clínicos", "Centros odontológicos", "Oficinas gubernamentales", "Estudios contables", "Gimnasios", "Escuelas de conducción", "Alquiler de canchas", "Centros de estética"];
+const INDUSTRIES = [
+  { name: "Consultorios clínicos", icon: Stethoscope },
+  { name: "Centros odontológicos", icon: SmilePlus },
+  { name: "Oficinas gubernamentales", icon: Landmark },
+  { name: "Estudios contables", icon: Calculator },
+  { name: "Gimnasios", icon: Dumbbell },
+  { name: "Escuelas de conducción", icon: CarFront },
+  { name: "Alquiler de canchas", icon: Volleyball },
+  { name: "Centros de estética", icon: Sparkles },
+];
 
 const FAQS = [
   ["¿Necesito instalar algo?", "No. Citadely funciona desde el navegador, tanto en escritorio como en dispositivos móviles."],
@@ -69,9 +84,9 @@ function DemoTimeline() {
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-white">
+    <main className="min-h-screen overflow-x-clip bg-white">
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
-      <header className="border-b border-[var(--color-line)] bg-white">
+      <header className="sticky top-0 z-50 border-b border-[var(--color-line)] bg-white">
         <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
           <LogoMark />
           <nav aria-label="Navegación principal" className="hidden items-center gap-7 text-sm font-medium text-[var(--color-ink-soft)] lg:flex">
@@ -130,10 +145,22 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="border-y border-[var(--color-line)] bg-[var(--color-canvas)]" id="rubros">
-          <div className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12">
-            <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-end"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Una central para distintos tipos de turnos.</h2><p className="max-w-xl leading-7 text-[var(--color-ink-soft)]">Configuralo según los servicios, precios, señas y horarios de tu negocio. La estructura operativa se mantiene clara en cualquier rubro.</p></div>
-            <div className="mt-12 grid border-l border-t border-[var(--color-line)] sm:grid-cols-2 lg:grid-cols-4">{INDUSTRIES.map((industry) => <div className="flex min-h-28 items-end border-b border-r border-[var(--color-line)] bg-white p-5" key={industry}><CheckCircle2 aria-hidden="true" className="mr-3 shrink-0 text-[var(--color-primary)]" size={18} /><span className="font-semibold">{industry}</span></div>)}</div>
+        <section aria-labelledby="rubros-title" className="border-y border-[var(--color-line)] bg-[var(--color-canvas)]" id="rubros">
+          <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="font-display text-balance text-3xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl" id="rubros-title">Una central para distintos tipos de turnos.</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-pretty leading-7 text-[var(--color-ink-soft)]">Configuralo según los servicios, precios, señas y horarios de tu negocio. La estructura operativa se mantiene clara en cualquier rubro.</p>
+            </div>
+            <ul className="mx-auto mt-12 grid max-w-5xl grid-cols-2 gap-x-5 gap-y-10 sm:mt-16 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-4">
+              {INDUSTRIES.map(({ name, icon: Icon }) => (
+                <li className="flex min-w-0 flex-col items-center gap-4 text-center" key={name}>
+                  <span className="grid h-16 w-16 shrink-0 place-items-center rounded-md bg-white text-[var(--color-primary)]">
+                    <Icon aria-hidden="true" size={32} strokeWidth={1.75} />
+                  </span>
+                  <span className="min-h-12 max-w-44 text-balance text-sm font-semibold leading-6 text-[var(--color-navy)] sm:text-base">{name}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

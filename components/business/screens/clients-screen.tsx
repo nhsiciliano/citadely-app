@@ -56,10 +56,10 @@ export function ClientsScreen() {
     <>
       <PageHeader actions={<button className="button-primary" onClick={() => setCreateOpen(true)} type="button"><Plus aria-hidden="true" size={18} />Nuevo cliente</button>} description="Encontrá una ficha por nombre, email o teléfono y consultá sus datos de contacto." title="Clientes" />
       <div className="grid gap-5 px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
-        <label className="relative block max-w-xl">
+        <label className="flex min-h-12 max-w-xl items-center gap-3 rounded-md border border-[var(--color-line)] bg-white px-4 transition-[border-color,box-shadow] hover:border-[var(--color-line-strong)] focus-within:border-[var(--color-primary)] focus-within:shadow-[0_0_0_3px_rgba(9,87,217,0.1)]">
           <span className="sr-only">Buscar clientes</span>
-          <Search aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-ink-muted)]" size={18} />
-          <input className="form-control pl-11" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, email o teléfono" type="search" value={query} />
+          <Search aria-hidden="true" className="shrink-0 text-[var(--color-ink-muted)]" size={18} />
+          <input className="min-w-0 flex-1 bg-transparent font-medium text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-muted)]" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, email o teléfono" type="search" value={query} />
         </label>
 
         <section className="overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)]">

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CalendarRange, ChevronLeft, ChevronRight, Filter, List, Plus } from "lucide-react";
-import type { Appointment } from "@/lib/citadely-db";
+import type { Appointment, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { AppointmentDetailDrawer, NewAppointmentDrawer } from "../appointment-actions";
 import { useWorkspace } from "../workspace-context";
 import { EmptyState, PageHeader } from "../workspace-ui";
@@ -12,8 +12,34 @@ type AgendaFilters = { serviceId: string; status: "all" | Appointment["status"] 
 
 const DAY_HEADER = new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric" });
 const DATE_RANGE = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "long", year: "numeric" });
-const HOURS = Array.from({ length: 13 }, (_, index) => index + 8);
+const DEFAULT_START_HOUR = 10;
+const DEFAULT_END_HOUR = 18;
 const HOUR_HEIGHT = 68;
+
+function getHourRange(services: Service[], availabilitySlots: ServiceAvailabilitySlot[]) {
+  const serviceIds = new Set(services.map((service) => service.id));
+  const activeSlots = availabilitySlots.filter((slot) => slot.is_active && serviceIds.has(slot.service_id));
+
+  if (activeSlots.length === 0) {
+    return { startHour: DEFAULT_START_HOUR, endHour: DEFAULT_END_HOUR };
+  }
+
+  let earliestStart = 24 * 60;
+  let latestEnd = 0;
+
+  for (const slot of activeSlots) {
+    const start = new Date(slot.starts_at);
+    const end = new Date(slot.ends_at);
+    const startMinutes = start.getHours() * 60 + start.getMinutes();
+    const durationMinutes = Math.max(0, (end.getTime() - start.getTime()) / 60000);
+    earliestStart = Math.min(earliestStart, startMinutes);
+    latestEnd = Math.max(latestEnd, startMinutes + durationMinutes);
+  }
+
+  const startHour = Math.floor(earliestStart / 60);
+  const endHour = Math.min(24, Math.max(startHour + 1, Math.ceil(latestEnd / 60)));
+  return { startHour, endHour };
+}
 
 function startOfWeek(value: Date) {
   const date = new Date(value);
@@ -34,12 +60,21 @@ function sameDay(left: Date, right: Date) {
 }
 
 export function AgendaScreen() {
-  const { appointments, services } = useWorkspace();
+  const { appointments, availabilitySlots, services } = useWorkspace();
   const [view, setView] = useState<CalendarView>("week");
   const [anchorDate, setAnchorDate] = useState(() => new Date());
   const [filters, setFilters] = useState<AgendaFilters>({ serviceId: "all", status: "all" });
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { startHour, endHour } = useMemo(
+    () => getHourRange(services, availabilitySlots),
+    [availabilitySlots, services],
+  );
+  const hours = useMemo(
+    () => Array.from({ length: endHour - startHour + 1 }, (_, index) => startHour + index),
+    [endHour, startHour],
+  );
+  const calendarHeight = (endHour - startHour) * HOUR_HEIGHT;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
@@ -127,16 +162,16 @@ export function AgendaScreen() {
               </div>
 
               <div className="grid" style={{ gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))` }}>
-                <div className="relative border-r border-[var(--color-line)] bg-[var(--color-surface-subtle)]" style={{ height: HOURS.length * HOUR_HEIGHT }}>
-                  {HOURS.map((hour) => <span className="absolute right-3 -translate-y-1/2 font-mono text-[11px] text-[var(--color-ink-muted)]" key={hour} style={{ top: (hour - 8) * HOUR_HEIGHT }}>{String(hour).padStart(2, "0")}:00</span>)}
+                <div className="relative border-r border-[var(--color-line)] bg-[var(--color-surface-subtle)]" style={{ height: calendarHeight }}>
+                  {hours.map((hour) => <span className="absolute right-3 -translate-y-1/2 font-mono text-[11px] text-[var(--color-ink-muted)]" key={hour} style={{ top: (hour - startHour) * HOUR_HEIGHT }}>{String(hour).padStart(2, "0")}:00</span>)}
                 </div>
                 {days.map((day) => (
-                  <div className="calendar-day-column" key={day.toISOString()} style={{ height: HOURS.length * HOUR_HEIGHT }}>
-                    {HOURS.map((hour) => <span aria-hidden="true" className="absolute inset-x-0 border-t border-[var(--color-line)]" key={hour} style={{ top: (hour - 8) * HOUR_HEIGHT }} />)}
+                  <div className="calendar-day-column" key={day.toISOString()} style={{ height: calendarHeight }}>
+                    {hours.map((hour) => <span aria-hidden="true" className="absolute inset-x-0 border-t border-[var(--color-line)]" key={hour} style={{ top: (hour - startHour) * HOUR_HEIGHT }} />)}
                     {visibleAppointments.filter((appointment) => sameDay(new Date(appointment.starts_at), day)).map((appointment) => {
                       const start = new Date(appointment.starts_at);
                       const end = new Date(appointment.ends_at);
-                      const minutes = (start.getHours() - 8) * 60 + start.getMinutes();
+                      const minutes = (start.getHours() - startHour) * 60 + start.getMinutes();
                       const duration = Math.max(30, (end.getTime() - start.getTime()) / 60000);
                       return (
                         <button

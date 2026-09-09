@@ -2,10 +2,29 @@ import Link from "next/link";
 import type { ChangeEvent, ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 
+export function LogoSymbol({ className = "h-9 w-9" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      className={`${className} shrink-0 text-[var(--color-primary)]`}
+      width="36"
+      height="36"
+      viewBox="0 0 36 36"
+      fill="none"
+    >
+      <rect x="2" y="5" width="32" height="29" rx="5" fill="currentColor" />
+      <path d="M11 3v5M25 3v5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+      <path d="M10 11h16" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <path d="M23 17.5a7 7 0 1 0 0 10" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function LogoMark({ linked = true }: { linked?: boolean }) {
   const content = (
     <>
-      <span className="grid h-9 w-9 place-items-center rounded-md bg-[var(--color-primary)] text-base font-bold text-white">C</span>
+      <LogoSymbol />
       <span className="text-xl font-semibold tracking-[-0.035em] text-[var(--color-navy)]">Citadely</span>
     </>
   );
