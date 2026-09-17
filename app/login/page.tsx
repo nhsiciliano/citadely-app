@@ -1,6 +1,14 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 import { AuthShell } from "@/components/ui";
+import { NO_INDEX_ROBOTS } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Ingresar",
+  description: "Ingresá a Citadely para administrar la agenda y las reservas de tu negocio.",
+  robots: NO_INDEX_ROBOTS,
+};
 
 export default function LoginPage() {
   return (

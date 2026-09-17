@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { OnboardingForm } from "@/components/onboarding-form";
 import { AuthShell } from "@/components/ui";
+import { NO_INDEX_ROBOTS } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Configurar negocio",
+  robots: NO_INDEX_ROBOTS,
+};
 
 export default function OnboardingPage() {
   return (

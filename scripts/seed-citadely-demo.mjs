@@ -91,6 +91,7 @@ async function ensureBusiness(client, userId) {
     payment_cbu: "0000003100012345678901",
     payment_instructions: "Enviá el comprobante por WhatsApp para confirmar la seña.",
     whatsapp_phone: "5491123456789",
+    public_address: "Av. Corrientes 1234, Ciudad Autónoma de Buenos Aires",
     is_public: true,
     trial_ends_at: addDays(90, 23, 59).toISOString(),
     subscription_status: "trialing",
@@ -186,9 +187,10 @@ async function main() {
   const project = readProjectConfig();
   const credentials = ensureLocalCredentials();
   const { client, user } = await ensureUser(project.oss_host, project.api_key, credentials);
+  const admin = createClient({ baseUrl: project.oss_host, anonKey: project.api_key, isServerMode: true });
   const profileResult = await client.auth.setProfile({ name: "Equipo Citadely Demo", role: "business", onboarding_complete: true, business_name: "Consultorios Horizonte", business_category: "consultorio_clinico", business_slug: BUSINESS_SLUG });
   if (profileResult.error) throw new Error(profileResult.error.message);
-  const business = await ensureBusiness(client, user.id);
+  const business = await ensureBusiness(admin, user.id);
   await resetDemoData(client, business.id);
   const counts = await seedDemoData(client, business);
   const notification = await client.database.from("business_notification_settings").upsert([{ business_id: business.id, email: credentials.email }], { onConflict: "business_id" });

@@ -1,32 +1,27 @@
 "use client";
 
 import { FormEvent, useMemo, useState, type CSSProperties } from "react";
+import { Check } from "lucide-react";
 import {
   buildBookingSlots,
   formatCurrency,
   getBookingAmountCents,
   getBookingPaymentLabel,
   type Appointment,
-  type Business,
+  type PublicBusiness,
   type Service,
   type ServiceAvailabilitySlot,
 } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
+import { getWhatsAppUrl } from "@/lib/public-profile";
+import { WhatsAppIcon } from "@/components/public-business-info";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
-function getWhatsAppUrl(phone: string | null | undefined, message: string) {
-  const cleanPhone = String(phone ?? "").replace(/\D/g, "");
-  if (!cleanPhone) return null;
-  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+function formatCalendarDate(dateKey: string) {
+  const [, month, day] = dateKey.split("-");
+  return `${day}/${month}`;
 }
 
-function WhatsAppIcon() {
-  return (
-    <svg aria-hidden="true" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M12.04 2a9.9 9.9 0 0 0-8.46 15.04L2.5 21.5l4.58-1.05A9.96 9.96 0 1 0 12.04 2Zm0 1.8a8.16 8.16 0 0 1 6.9 12.5 8.12 8.12 0 0 1-10.95 2.62l-.32-.18-2.45.56.58-2.37-.2-.34A8.1 8.1 0 0 1 12.04 3.8Zm-3.17 3.94c-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27 0 1.34.97 2.63 1.1 2.8.14.18 1.88 3.01 4.64 4.1 2.29.9 2.76.72 3.26.68.5-.04 1.62-.66 1.85-1.3.23-.63.23-1.18.16-1.3-.07-.11-.25-.18-.52-.31-.27-.14-1.62-.8-1.87-.89-.25-.09-.43-.14-.61.14-.18.27-.7.89-.86 1.07-.16.18-.32.2-.59.07-.27-.14-1.14-.42-2.18-1.34-.8-.72-1.35-1.6-1.51-1.87-.16-.27-.02-.42.12-.56.12-.12.27-.32.41-.48.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.61-.47h-.52Z" />
-    </svg>
-  );
-}
 
 export function PublicBookingForm({
   business,
@@ -34,7 +29,7 @@ export function PublicBookingForm({
   appointments,
   availabilitySlots,
 }: {
-  business: Business;
+  business: PublicBusiness;
   services: Service[];
   appointments: Appointment[];
   availabilitySlots: ServiceAvailabilitySlot[];
@@ -59,7 +54,7 @@ export function PublicBookingForm({
     }
     return Array.from(byDay.entries()).map(([dateKey, daySlots]) => ({
       dateKey,
-      dateLabel: daySlots[0]?.dateLabel ?? "",
+      dateLabel: formatCalendarDate(dateKey),
       weekdayLabel: daySlots[0]?.weekdayLabel ?? "",
       slots: daySlots,
     }));
@@ -71,12 +66,11 @@ export function PublicBookingForm({
   const selectedAmountCents = selectedService ? getBookingAmountCents(selectedService) : 0;
   const serviceSlotCount = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const slot of availabilitySlots) {
-      if (!slot.is_active || new Date(slot.starts_at) <= new Date()) continue;
-      counts.set(slot.service_id, (counts.get(slot.service_id) ?? 0) + 1);
+    for (const service of services) {
+      counts.set(service.id, buildBookingSlots(appointments, service, availabilitySlots).filter((slot) => slot.available).length);
     }
     return counts;
-  }, [availabilitySlots]);
+  }, [appointments, availabilitySlots, services]);
   const whatsAppUrl = getWhatsAppUrl(
     business.whatsapp_phone,
     `Hola ${business.name}, quiero enviar el comprobante de seña para ${selectedService?.name ?? "mi reserva"}${selectedSlotData ? ` del ${selectedSlotData.label}` : ""}.`,
@@ -151,7 +145,7 @@ export function PublicBookingForm({
 
   return (
     <form
-      className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_390px]"
+      className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_390px]"
       onSubmit={reserveAppointment}
       style={{ "--booking-brand": business.brand_color || "#0957d9" } as CSSProperties}
     >
@@ -160,19 +154,19 @@ export function PublicBookingForm({
         {success ? <FormMessage type="success">{success}</FormMessage> : null}
       </div>
 
-      <div className="grid gap-6">
-        <section className="border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)] sm:p-6">
+      <div className="grid min-w-0 gap-8 lg:contents">
+        <section className="min-w-0 border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)] sm:p-7 lg:col-span-2">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--booking-brand)]">
             01 · Elegí el servicio
           </p>
-          <div className="mt-5 grid gap-4">
+          <div className="mt-5 grid min-w-0 max-w-full snap-x snap-mandatory grid-flow-col auto-cols-[300px] gap-4 overflow-x-auto pb-3 sm:auto-cols-[540px]">
             {services.map((service) => (
               <button
                 aria-pressed={service.id === selectedServiceId}
-                className={`group overflow-hidden rounded-md border text-left ${
+                className={`group relative grid min-h-[300px] snap-start grid-cols-[38%_1fr] overflow-hidden rounded-md border bg-[var(--color-navy)] text-left text-white transition-[border-color,box-shadow,transform] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--booking-brand)] ${
                   service.id === selectedServiceId
-                    ? "border-[var(--booking-brand)] bg-white ring-2 ring-[color-mix(in_srgb,var(--booking-brand)_18%,transparent)]"
-                    : "border-[var(--color-line)] bg-white hover:border-[var(--color-line-strong)]"
+                    ? "-translate-y-0.5 border-transparent shadow-[0_0_0_3px_var(--booking-brand),0_14px_30px_rgba(9,19,38,0.22)]"
+                    : "border-[var(--color-navy-raised)] opacity-80 hover:border-[var(--booking-brand)] hover:opacity-100"
                 }`}
                 key={service.id}
                 onClick={() => {
@@ -182,46 +176,39 @@ export function PublicBookingForm({
                 }}
                 type="button"
               >
-                <span className="grid gap-0 sm:grid-cols-[170px_1fr]">
+                {service.id === selectedServiceId ? (
+                  <span className="absolute right-3 top-3 z-10 inline-flex min-h-9 items-center gap-2 rounded-full bg-white px-3 text-xs font-bold text-[var(--color-navy)] shadow-md">
+                    <Check aria-hidden="true" className="size-4 text-[var(--booking-brand)]" strokeWidth={3} />
+                    Seleccionado
+                  </span>
+                ) : null}
+                <span className="contents">
                   {service.image_url ? (
                     <span
                       aria-hidden="true"
-                      className="block h-40 w-full bg-cover bg-center sm:h-full"
+                      className="block h-full min-h-[300px] w-full bg-cover bg-center"
                       style={{ backgroundImage: `url(${service.image_url})` }}
                     />
                   ) : (
-                    <span className="agenda-grid flex h-40 items-center justify-center bg-[var(--color-surface-subtle)] text-5xl font-semibold text-[var(--booking-brand)] sm:h-full">
+                    <span className="agenda-grid flex h-full min-h-[300px] items-center justify-center bg-[var(--color-navy-raised)] text-6xl font-semibold text-white/70">
                       {service.name.slice(0, 1).toUpperCase()}
                     </span>
                   )}
-                  <span className="block p-5">
-                    <span className="flex flex-wrap items-start justify-between gap-3">
-                      <span>
-                        <span className="block text-xl font-semibold tracking-[-0.04em]">{service.name}</span>
-                        <span className="mt-1 block text-sm text-[var(--color-ink-soft)]">
-                          {service.duration_minutes} min · {formatCurrency(service.price_cents, business.currency)}
-                        </span>
-                      </span>
-                      <span className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--booking-brand)]">
-                        {getBookingPaymentLabel(service, business.currency)}
-                      </span>
+                  <span className="flex min-w-0 flex-col p-5 sm:p-6">
+                    <span className="block text-xl font-semibold tracking-[-0.03em] sm:text-2xl">{service.name}</span>
+                    <span className="mt-3 inline-flex w-fit rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+                      {getBookingPaymentLabel(service, business.currency)}
                     </span>
-                    <span className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
-                      <span className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-3 py-2 font-semibold text-[var(--color-ink)]">
+                    {service.description ? <span className="mt-4 block text-sm leading-6 text-white/70">{service.description}</span> : null}
+                    <span className="mt-auto grid grid-cols-2 gap-2 border-t border-white/15 pt-4 text-sm">
+                      <span className="rounded-md border border-white/15 px-3 py-2 font-semibold text-white">
                         {formatCurrency(service.price_cents, business.currency)}
                       </span>
-                      <span className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-3 py-2 font-semibold text-[var(--color-ink-soft)]">
+                      <span className="rounded-md border border-white/15 px-3 py-2 font-semibold text-white/75">
                         {service.duration_minutes} min
                       </span>
-                      <span className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-3 py-2 font-semibold text-[var(--color-ink-soft)]">
-                        {serviceSlotCount.get(service.id) ?? 0} horarios
-                      </span>
                     </span>
-                    {service.description ? (
-                      <span className="mt-4 block text-sm leading-6 text-[var(--color-ink-soft)]">
-                        {service.description}
-                      </span>
-                    ) : null}
+                    <span className="mt-3 block text-sm font-semibold text-white/65">{serviceSlotCount.get(service.id) ?? 0} horarios disponibles</span>
                   </span>
                 </span>
               </button>
@@ -252,7 +239,7 @@ export function PublicBookingForm({
           ) : null}
         </section>
 
-        <section className="border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)] sm:p-6">
+        <section className="border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)] sm:p-7">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--booking-brand)]">
             02 · Calendario
           </p>

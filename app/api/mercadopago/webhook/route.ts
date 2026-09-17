@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const dataId = body.data?.id ?? queryDataId;
 
     const isValidSignature = verifyMercadoPagoSignature({
-      dataId: queryDataId,
+      dataId,
       requestId: request.headers.get("x-request-id"),
       signature: request.headers.get("x-signature"),
     });

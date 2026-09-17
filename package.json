@@ -9,6 +9,8 @@
     "lint": "eslint",
     "seed:demo": "SEED_ALLOW_WRITE=true node scripts/seed-citadely-demo.mjs",
     "seed:barberia-luk": "SEED_ALLOW_WRITE=true node scripts/seed-barberia-luk.mjs",
+    "seed:clinica-colon": "SEED_ALLOW_WRITE=true node scripts/seed-clinica-colon.mjs",
+    "migrate:subscriptions:pro": "node scripts/migrate-subscriptions-to-pro.mjs",
     "test:resend": "node scripts/test-resend-booking-email.mjs",
     "test:e2e": "playwright test"
   },

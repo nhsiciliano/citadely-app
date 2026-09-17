@@ -1,43 +1,63 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { BadgeDollarSign, Building2, CreditCard, LogOut, MessageCircle } from "lucide-react";
-import { Field, FormMessage, SubmitButton } from "@/components/ui";
+import { BadgeDollarSign, Building2, Check, Clock3, CreditCard, Globe2, LogOut, MessageCircle } from "lucide-react";
+import { Field, FormMessage, LoadingSpinner, SubmitButton } from "@/components/ui";
 import { getErrorMessage } from "@/lib/auth";
 import { getSubscriptionState } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
+import { normalizeWhatsAppPhone } from "@/lib/public-profile";
+import { SUBSCRIPTION_PLANS, type SubscriptionPlanId } from "@/lib/subscription-plans";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "../workspace-ui";
-
-function normalizePhone(value: FormDataEntryValue | null) {
-  return String(value ?? "").replace(/\D/g, "");
-}
 
 export function SettingsScreen() {
   const { business, refresh, signOut, userEmail } = useWorkspace();
   const subscription = getSubscriptionState(business);
   const [paymentPending, setPaymentPending] = useState(false);
   const [subscriptionPending, setSubscriptionPending] = useState(false);
+  const [requestedPlan, setRequestedPlan] = useState<SubscriptionPlanId | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<"success" | "error">("success");
 
-  async function startSubscription() {
+  async function selectPlan(plan: SubscriptionPlanId) {
     setSubscriptionPending(true);
+    setRequestedPlan(plan);
     setMessage(null);
-    const response = await fetch("/api/mercadopago/subscription", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: business.id, payerEmail: userEmail }) });
-    const data = (await response.json()) as { externalId?: string; checkoutUrl?: string; error?: string };
-    if (!response.ok || !data.externalId || !data.checkoutUrl) {
+    setMessageType("success");
+    const { data: session, error: sessionError } = await insforge.auth.refreshSession();
+    if (sessionError || !session?.accessToken) {
       setSubscriptionPending(false);
-      setMessage(data.error ?? "No se pudo iniciar la suscripción mensual.");
+      setRequestedPlan(null);
+      setMessageType("error");
+      setMessage("Tu sesión venció. Volvé a iniciar sesión para cambiar el plan.");
       return;
     }
-    const { error } = await insforge.database.rpc("set_business_subscription_checkout", { p_business_id: business.id, p_external_id: data.externalId, p_checkout_url: data.checkoutUrl });
-    if (error) {
+
+    const response = await fetch("/api/mercadopago/subscription", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ businessId: business.id, plan }),
+    });
+    const data = (await response.json()) as { checkoutUrl?: string; changeScheduled?: boolean; unchanged?: boolean; cancelledPending?: boolean; error?: string };
+
+    if (!response.ok) {
       setSubscriptionPending(false);
-      setMessage(getErrorMessage(error));
+      setRequestedPlan(null);
+      setMessageType("error");
+      setMessage(data.error ?? "No se pudo actualizar el plan.");
       return;
     }
+
+    if (data.checkoutUrl) {
+      window.location.assign(data.checkoutUrl);
+      return;
+    }
+
     await refresh();
-    window.location.href = data.checkoutUrl;
+    setSubscriptionPending(false);
+    setRequestedPlan(null);
+    setMessage(data.unchanged ? "Ya estás usando este plan." : data.cancelledPending ? "Cambio pendiente cancelado." : "Cambio programado para el próximo cobro aprobado.");
   }
 
   async function savePayment(event: FormEvent<HTMLFormElement>) {
@@ -50,11 +70,15 @@ export function SettingsScreen() {
       payment_alias: String(form.get("payment_alias") ?? ""),
       payment_cbu: String(form.get("payment_cbu") ?? ""),
       payment_instructions: String(form.get("payment_instructions") ?? ""),
-      whatsapp_phone: normalizePhone(form.get("whatsapp_phone")),
+      whatsapp_phone: normalizeWhatsAppPhone(String(form.get("whatsapp_phone") ?? "")),
     }).eq("id", business.id);
     setPaymentPending(false);
-    if (error) setMessage(getErrorMessage(error));
+    if (error) {
+      setMessageType("error");
+      setMessage(getErrorMessage(error));
+    }
     else {
+      setMessageType("success");
       setMessage("Configuración guardada.");
       await refresh();
     }
@@ -65,14 +89,29 @@ export function SettingsScreen() {
       <PageHeader description="Administrá el plan, los datos para recibir señas, WhatsApp y el acceso a tu cuenta." title="Configuración" />
       <div className="grid gap-6 px-5 py-6 sm:px-8 lg:px-10 lg:py-8 xl:grid-cols-2">
         <section className="surface-section xl:col-span-2">
-          <div className="section-heading-row"><div><h2>Plan y suscripción</h2><p>Estado de acceso y próximo paso de facturación.</p></div><BadgeDollarSign aria-hidden="true" className="text-[var(--color-primary)]" size={22} /></div>
-          <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div>
-              <span className={`status-badge ${business.subscription_status === "active" ? "status-confirmed" : subscription.isTrialing ? "status-pending_payment" : "status-cancelled"}`}>{business.subscription_status === "active" ? "Plan activo" : subscription.isTrialing ? "Prueba activa" : "Pago requerido"}</span>
-              <h3 className="mt-4 text-xl font-semibold">{subscription.isTrialing ? `${subscription.trialDaysLeft} días de prueba disponibles` : business.subscription_status === "active" ? "Suscripción mensual activa" : "Tu prueba gratuita finalizó"}</h3>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">{subscription.isTrialing ? "Usá todas las funciones sin restricciones. Luego el plan cuesta $15.000 ARS por mes." : business.subscription_status === "active" ? "El plan cuesta $15.000 ARS por mes y mantiene activa tu página de reservas." : "Activá la suscripción mensual de $15.000 ARS para volver a crear servicios y recibir reservas."}</p>
-            </div>
-            {business.subscription_status !== "active" ? <button className="button-primary" disabled={subscriptionPending} onClick={startSubscription} type="button"><CreditCard aria-hidden="true" size={18} />{subscriptionPending ? "Abriendo Mercado Pago…" : "Activar plan mensual"}</button> : null}
+          <div className="section-heading-row"><div><h2>Plan y suscripción</h2><p>Elegí el acceso que necesita tu negocio.</p></div><BadgeDollarSign aria-hidden="true" className="text-[var(--color-primary)]" size={22} /></div>
+          <div className="mb-6 flex flex-wrap items-center gap-3 border-y border-[var(--color-line)] py-4">
+            <span className={`status-badge ${business.subscription_status === "active" ? "status-confirmed" : subscription.isTrialing ? "status-pending_payment" : "status-cancelled"}`}>{business.subscription_status === "active" ? `Plan ${SUBSCRIPTION_PLANS[subscription.currentPlan].name}` : subscription.isTrialing ? "Prueba Pro activa" : "Pago requerido"}</span>
+            <p className="text-sm text-[var(--color-ink-soft)]">{subscription.isTrialing ? `${subscription.trialDaysLeft} días restantes con todas las funciones Pro.` : business.subscription_status === "active" ? "Dashboard habilitado." : "Elegí un plan para recuperar el acceso."}</p>
+            {subscription.pendingPlan ? <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]"><Clock3 aria-hidden="true" size={16} />Cambio a {SUBSCRIPTION_PLANS[subscription.pendingPlan].name}{business.subscription_current_period_end ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.subscription_current_period_end))}` : " en el próximo cobro"}</span> : null}
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {(Object.values(SUBSCRIPTION_PLANS) as (typeof SUBSCRIPTION_PLANS)[SubscriptionPlanId][]).map((plan) => {
+              const isCurrent = business.subscription_status === "active" && subscription.currentPlan === plan.id && !subscription.pendingPlan;
+              const isPending = subscription.pendingPlan === plan.id;
+              const isLoading = subscriptionPending && requestedPlan === plan.id;
+              return (
+                <article className={`border p-5 ${isCurrent || isPending ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]" : "border-[var(--color-line)] bg-white"}`} key={plan.id}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div><h3 className="text-xl font-semibold">{plan.name}</h3><p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">{plan.description}</p></div>
+                    {plan.publicPage ? <Globe2 aria-hidden="true" className="shrink-0 text-[var(--color-primary)]" size={22} /> : <Building2 aria-hidden="true" className="shrink-0 text-[var(--color-primary)]" size={22} />}
+                  </div>
+                  <p className="mt-5 text-3xl font-semibold tracking-[-0.03em]">${(plan.priceCents / 100).toLocaleString("es-AR")} <span className="text-sm font-medium text-[var(--color-ink-muted)]">ARS/mes</span></p>
+                  <ul className="mt-5 grid gap-2 text-sm">{plan.features.map((feature) => <li className="flex gap-2" key={feature}><Check aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-primary)]" size={16} />{feature}</li>)}</ul>
+                  <button aria-busy={isLoading} className={plan.id === "pro" ? "button-primary mt-6 w-full" : "button-secondary mt-6 w-full"} disabled={subscriptionPending || isCurrent || isPending} onClick={() => void selectPlan(plan.id)} type="button">{isLoading ? <LoadingSpinner label={`Procesando cambio al plan ${plan.name}`} /> : <><CreditCard aria-hidden="true" size={17} />{isCurrent ? "Plan actual" : isPending ? "Cambio programado" : business.subscription_status === "active" ? `Cambiar a ${plan.name}` : `Elegir ${plan.name}`}</>}</button>
+                </article>
+              );
+            })}
           </div>
         </section>
 
@@ -99,7 +138,7 @@ export function SettingsScreen() {
           </dl>
           <button className="button-secondary mt-6" onClick={signOut} type="button"><LogOut aria-hidden="true" size={17} />Cerrar sesión</button>
         </section>
-        {message ? <div className="xl:col-span-2"><FormMessage type={message.includes("guardada") ? "success" : "error"}>{message}</FormMessage></div> : null}
+        {message ? <div className="xl:col-span-2"><FormMessage type={messageType}>{message}</FormMessage></div> : null}
       </div>
     </>
   );

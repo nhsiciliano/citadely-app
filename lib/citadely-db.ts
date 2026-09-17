@@ -1,3 +1,6 @@
+import type { SubscriptionPlanId } from "@/lib/subscription-plans";
+import type { ServiceMode, VirtualPlatform } from "@/lib/virtual-service";
+
 export type Business = {
   id: string;
   owner_id: string;
@@ -9,6 +12,9 @@ export type Business = {
   payment_cbu: string | null;
   payment_instructions: string | null;
   whatsapp_phone: string | null;
+  public_address: string | null;
+  service_mode: ServiceMode;
+  virtual_platforms: VirtualPlatform[];
   logo_url: string | null;
   logo_key: string | null;
   cover_image_url: string | null;
@@ -20,10 +26,55 @@ export type Business = {
   subscription_external_id: string | null;
   subscription_checkout_url: string | null;
   subscription_current_period_end: string | null;
+  subscription_plan: SubscriptionPlanId;
+  pending_subscription_plan: SubscriptionPlanId | null;
   currency: string;
   timezone: string;
   is_public?: boolean;
 };
+
+export const PUBLIC_BUSINESS_COLUMNS = [
+  "id",
+  "name",
+  "slug",
+  "category",
+  "description",
+  "payment_alias",
+  "payment_cbu",
+  "payment_instructions",
+  "whatsapp_phone",
+  "public_address",
+  "service_mode",
+  "virtual_platforms",
+  "logo_url",
+  "cover_image_url",
+  "brand_color",
+  "currency",
+  "timezone",
+  "is_public",
+].join(",");
+
+export type PublicBusiness = Pick<
+  Business,
+  | "id"
+  | "name"
+  | "slug"
+  | "category"
+  | "description"
+  | "payment_alias"
+  | "payment_cbu"
+  | "payment_instructions"
+  | "whatsapp_phone"
+  | "public_address"
+  | "service_mode"
+  | "virtual_platforms"
+  | "logo_url"
+  | "cover_image_url"
+  | "brand_color"
+  | "currency"
+  | "timezone"
+  | "is_public"
+>;
 
 export type Service = {
   id: string;
@@ -98,6 +149,22 @@ export type ServiceAvailabilitySlot = {
   is_active: boolean;
 };
 
+export type BusinessGalleryImage = {
+  id: string;
+  business_id: string;
+  image_url: string;
+  image_key: string;
+  sort_order: number;
+};
+
+export type BusinessFaq = {
+  id: string;
+  business_id: string;
+  question: string;
+  answer: string;
+  sort_order: number;
+};
+
 export type BusinessStats = {
   todayAppointments: number;
   upcomingAppointments: number;
@@ -147,12 +214,19 @@ export function getSubscriptionState(business: Business) {
   const trialEndsAt = new Date(business.trial_ends_at);
   const now = new Date();
   const trialDaysLeft = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / 86400000));
-  const hasAccess = business.subscription_status === "active" || trialEndsAt > now;
+  const isTrialing = business.subscription_status === "trialing" && trialEndsAt > now;
+  const hasDashboardAccess = business.subscription_status === "active" || isTrialing;
+  const currentPlan = business.subscription_plan ?? "pro";
+  const hasPublicPageAccess = isTrialing || (business.subscription_status === "active" && currentPlan === "pro");
 
   return {
-    hasAccess,
+    hasAccess: hasDashboardAccess,
+    hasDashboardAccess,
+    hasPublicPageAccess,
+    currentPlan,
+    pendingPlan: business.pending_subscription_plan ?? null,
     trialDaysLeft,
-    isTrialing: business.subscription_status === "trialing" && trialEndsAt > now,
+    isTrialing,
     needsPayment: business.subscription_status !== "active" && trialEndsAt <= now,
   };
 }

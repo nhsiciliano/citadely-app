@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getCitadelyProfile, getErrorMessage, getPostAuthPath, slugifyBusinessName } from "@/lib/auth";
-import type { Appointment, Business, Client, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Client, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
 import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
 import { AlertCircle, LoaderCircle } from "lucide-react";
@@ -14,6 +14,8 @@ export type WorkspaceContextValue = {
   clients: Client[];
   appointments: Appointment[];
   availabilitySlots: ServiceAvailabilitySlot[];
+  galleryImages: BusinessGalleryImage[];
+  faqs: BusinessFaq[];
   userEmail: string;
   error: string | null;
   refresh: () => Promise<void>;
@@ -38,9 +40,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [availabilitySlots, setAvailabilitySlots] = useState<ServiceAvailabilitySlot[]>([]);
+  const [galleryImages, setGalleryImages] = useState<BusinessGalleryImage[]>([]);
+  const [faqs, setFaqs] = useState<BusinessFaq[]>([]);
 
   async function loadBusinessData(businessId: string) {
-    const [servicesResult, clientsResult, appointmentsResult, availabilityResult] = await Promise.all([
+    const [servicesResult, clientsResult, appointmentsResult, availabilityResult, galleryResult, faqResult] = await Promise.all([
       insforge.database.from("services").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
       insforge.database.from("clients").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
       insforge.database
@@ -53,15 +57,29 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         .select("*")
         .eq("business_id", businessId)
         .order("starts_at", { ascending: true }),
+      insforge.database
+        .from("business_gallery_images")
+        .select("id,business_id,image_url,image_key,sort_order")
+        .eq("business_id", businessId)
+        .order("sort_order", { ascending: true })
+        .limit(10),
+      insforge.database
+        .from("business_faqs")
+        .select("id,business_id,question,answer,sort_order")
+        .eq("business_id", businessId)
+        .order("sort_order", { ascending: true })
+        .limit(10),
     ]);
 
-    const workspaceError = servicesResult.error ?? clientsResult.error ?? appointmentsResult.error ?? availabilityResult.error;
+    const workspaceError = servicesResult.error ?? clientsResult.error ?? appointmentsResult.error ?? availabilityResult.error ?? galleryResult.error ?? faqResult.error;
     if (workspaceError) throw new Error(getErrorMessage(workspaceError));
 
     setServices((servicesResult.data ?? []) as Service[]);
     setClients((clientsResult.data ?? []) as Client[]);
     setAppointments((appointmentsResult.data ?? []) as Appointment[]);
     setAvailabilitySlots((availabilityResult.data ?? []) as ServiceAvailabilitySlot[]);
+    setGalleryImages((galleryResult.data ?? []) as BusinessGalleryImage[]);
+    setFaqs((faqResult.data ?? []) as BusinessFaq[]);
   }
 
   async function loadWorkspace() {
@@ -150,6 +168,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     clients,
     appointments,
     availabilitySlots,
+    galleryImages,
+    faqs,
     userEmail,
     error,
     refresh,

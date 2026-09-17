@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ChangeEvent, ReactNode } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LoaderCircle } from "lucide-react";
 
 export function LogoSymbol({ className = "h-9 w-9" }: { className?: string }) {
   return (
@@ -172,12 +172,22 @@ export function TextArea({
 export function SubmitButton({ children, pending, disabled = false }: { children: ReactNode; pending: boolean; disabled?: boolean }) {
   return (
     <button
+      aria-busy={pending}
       className="button-primary w-full"
       disabled={pending || disabled}
       type="submit"
     >
-      {pending ? "Procesando..." : children}
+      {pending ? <LoadingSpinner /> : children}
     </button>
+  );
+}
+
+export function LoadingSpinner({ label = "Procesando" }: { label?: string }) {
+  return (
+    <>
+      <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin motion-reduce:animate-none" />
+      <span className="sr-only">{label}</span>
+    </>
   );
 }
 

@@ -124,6 +124,28 @@ export async function getMercadoPagoPreapproval(preapprovalId: string) {
   return data;
 }
 
+export async function updateMercadoPagoPreapproval(preapprovalId: string, body: Record<string, unknown>) {
+  const response = await fetch(`${MERCADOPAGO_API}/preapproval/${preapprovalId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = (await response.json()) as MercadoPagoPreapprovalResponse & {
+    message?: string;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(data.message ?? data.error ?? "Mercado Pago rechazo el cambio de suscripcion.");
+  }
+
+  return data;
+}
+
 export async function getMercadoPagoAuthorizedPayment(authorizedPaymentId: string) {
   const response = await fetch(`${MERCADOPAGO_API}/authorized_payments/${authorizedPaymentId}`, {
     headers: {
@@ -153,7 +175,7 @@ export function verifyMercadoPagoSignature({
   signature: string | null;
 }) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
-  if (!secret) return true;
+  if (!secret) return false;
   if (!signature) return false;
 
   const parts = Object.fromEntries(

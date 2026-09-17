@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { RegisterForm } from "@/components/auth/register-form";
 import { AuthShell } from "@/components/ui";
+import { NO_INDEX_ROBOTS } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Crear cuenta",
+  description: "Creá tu cuenta de Citadely y probá la gestión de turnos durante 7 días.",
+  robots: NO_INDEX_ROBOTS,
+};
 
 export default function RegisterPage() {
   return (

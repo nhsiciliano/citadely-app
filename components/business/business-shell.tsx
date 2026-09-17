@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Globe2,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
   Menu,
   Settings,
@@ -90,6 +91,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
         <nav aria-label="Navegación del negocio" className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
             const active = href === "/negocio" ? pathname === href : pathname.startsWith(href);
+            const locked = href === "/negocio/pagina-publica" && !subscription.hasPublicPageAccess;
             return (
               <Link
                 aria-current={active ? "page" : undefined}
@@ -97,21 +99,22 @@ export function BusinessShell({ children }: { children: ReactNode }) {
                 href={href}
                 key={href}
                 onClick={() => setMobileOpen(false)}
-                title={collapsed ? label : undefined}
+                title={collapsed ? (locked ? `${label} · Plan Pro` : label) : undefined}
               >
                 <Icon aria-hidden="true" size={19} strokeWidth={1.8} />
                 <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
+                {locked ? <LockKeyhole aria-label="Disponible con Pro" className={`ml-auto text-white/55 ${collapsed ? "lg:hidden" : ""}`} size={15} /> : null}
               </Link>
             );
           })}
         </nav>
 
         <div className="border-t border-white/10 p-3">
-          <Link className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-white/68 hover:bg-white/8 hover:text-white ${collapsed ? "lg:justify-center lg:px-0" : ""}`} href={publicUrl} target="_blank">
+          {subscription.hasPublicPageAccess ? <Link className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-3 text-sm font-medium text-white/68 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${collapsed ? "lg:justify-center lg:px-0" : ""}`} href={publicUrl} target="_blank">
             <ExternalLink aria-hidden="true" size={18} />
             <span className={collapsed ? "lg:hidden" : ""}>Abrir página pública</span>
-          </Link>
-          <button className={`mt-1 flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-medium text-white/68 hover:bg-white/8 hover:text-white ${collapsed ? "lg:justify-center lg:px-0" : ""}`} onClick={signOut} type="button">
+          </Link> : null}
+          <button className={`mt-1 flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-md px-3 text-left text-sm font-medium text-white/68 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${collapsed ? "lg:justify-center lg:px-0" : ""}`} onClick={signOut} type="button">
             <LogOut aria-hidden="true" size={18} />
             <span className={collapsed ? "lg:hidden" : ""}>Cerrar sesión</span>
           </button>
@@ -119,7 +122,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
             <CircleUserRound aria-hidden="true" className="shrink-0 text-white/70" size={25} />
             <div className={`min-w-0 ${collapsed ? "lg:hidden" : ""}`}>
               <p className="truncate text-xs font-semibold">{business.name}</p>
-              <p className="mt-0.5 truncate text-[11px] text-white/65">{userEmail}</p>
+              <p className="mt-0.5 truncate text-xs text-white/65">{userEmail}</p>
             </div>
           </div>
         </div>

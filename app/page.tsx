@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -20,6 +21,27 @@ import {
   Volleyball,
 } from "lucide-react";
 import { LogoMark, PrimaryLink, SecondaryLink } from "@/components/ui";
+import { HOME_DESCRIPTION, HOME_TITLE, INDEX_ROBOTS, SITE_NAME, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
+import { SUBSCRIPTION_PLANS } from "@/lib/subscription-plans";
+
+export const metadata: Metadata = {
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  robots: INDEX_ROBOTS,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    url: "/",
+    images: [{ url: "/opengraph-image", alt: "Citadely — Agenda y turnos online para negocios" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    images: [{ url: "/opengraph-image", alt: "Citadely — Agenda y turnos online para negocios" }],
+  },
+};
 
 const TIMELINE = [
   { time: "09:00", service: "Consulta inicial", client: "Luciana Martínez", state: "Confirmado", tone: "success" },
@@ -52,7 +74,7 @@ const FAQS = [
   ["¿Cómo reciben turnos mis clientes?", "Compartís la página pública de tu negocio. El cliente elige servicio, fecha y hora, completa sus datos y confirma la reserva."],
   ["¿Cómo funcionan las señas?", "Configurás el monto por servicio y tus datos de transferencia. Luego confirmás la recepción desde el turno."],
   ["¿Puedo usarlo para distintos tipos de servicios?", "Sí. La agenda se organiza por días y horarios, por lo que se adapta a negocios profesionales, de salud, deporte, educación y bienestar."],
-  ["¿Qué pasa cuando termina la prueba?", "La prueba dura 7 días. Después podés activar el plan mensual de $15.000 ARS para mantener el acceso completo."],
+  ["¿Qué pasa cuando termina la prueba?", "La prueba dura 7 días e incluye todas las funciones Pro. Después elegís Esencial por $14.000 ARS o Pro por $18.000 ARS al mes."],
 ];
 
 function DemoTimeline() {
@@ -83,8 +105,57 @@ function DemoTimeline() {
 }
 
 export default function Home() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_ORIGIN}/#organization`,
+        name: SITE_NAME,
+        url: SITE_ORIGIN,
+        logo: `${SITE_ORIGIN}/icon.svg`,
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_ORIGIN}/#website`,
+        name: SITE_NAME,
+        url: SITE_ORIGIN,
+        inLanguage: "es-AR",
+        publisher: { "@id": `${SITE_ORIGIN}/#organization` },
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: SITE_NAME,
+        url: SITE_ORIGIN,
+        description: HOME_DESCRIPTION,
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        inLanguage: "es-AR",
+        offers: Object.values(SUBSCRIPTION_PLANS).map((plan) => ({
+          "@type": "Offer",
+          name: `Plan ${plan.name}`,
+          price: String(plan.priceCents / 100),
+          priceCurrency: "ARS",
+          url: `${SITE_ORIGIN}/#precio`,
+        })),
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: FAQS.map(([question, answer]) => ({
+          "@type": "Question",
+          name: question,
+          acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen overflow-x-clip bg-white">
+      <script
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
+        type="application/ld+json"
+      />
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
       <header className="sticky top-0 z-50 border-b border-[var(--color-line)] bg-white">
         <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
@@ -179,9 +250,9 @@ export default function Home() {
         </section>
 
         <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="precio">
-          <div className="grid border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)] lg:grid-cols-[1.1fr_.9fr]">
-            <div className="p-7 sm:p-10"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Un solo plan, sin vueltas.</h2><p className="mt-4 max-w-xl leading-7 text-[var(--color-ink-soft)]">Probá todas las funciones durante 7 días. Después, decidí si querés seguir con la suscripción mensual.</p><ul className="mt-8 grid gap-3 sm:grid-cols-2">{["Agenda y servicios", "Clientes", "Página pública", "Señas y estados", "Métricas operativas", "Configuración de marca"].map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className="text-[var(--color-success)]" size={17} />{item}</li>)}</ul></div>
-            <div className="border-t border-[var(--color-line)] bg-[var(--color-primary)] p-7 text-white sm:p-10 lg:border-l lg:border-t-0"><p className="text-sm font-semibold text-white/75">Plan mensual</p><p className="mt-4 font-mono text-5xl font-semibold tracking-[-0.05em]">$15.000</p><p className="mt-2 text-sm text-white/75">ARS por mes</p><Link className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-white px-5 text-sm font-semibold text-[var(--color-primary)] hover:bg-[#edf3ff]" href="/registro">Comenzar prueba gratis<ArrowRight aria-hidden="true" size={17} /></Link></div>
+          <div className="mb-10 max-w-3xl"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Dos planes para administrar y crecer.</h2><p className="mt-4 max-w-2xl leading-7 text-[var(--color-ink-soft)]">Empezá con 7 días de Pro. Después elegí si necesitás el dashboard o también una página pública que reciba reservas.</p></div>
+          <div className="grid border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)] lg:grid-cols-2">
+            {Object.values(SUBSCRIPTION_PLANS).map((plan) => <article className={`p-7 sm:p-10 ${plan.id === "pro" ? "border-t border-[var(--color-line)] bg-[var(--color-navy)] text-white lg:border-l lg:border-t-0" : ""}`} key={plan.id}><div className="flex items-center justify-between gap-4"><h3 className="font-display text-3xl font-semibold">{plan.name}</h3>{plan.id === "pro" ? <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">Reservas online</span> : null}</div><p className={`mt-3 min-h-12 text-sm leading-6 ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-soft)]"}`}>{plan.description}</p><p className="mt-7 font-mono text-4xl font-semibold tracking-[-0.04em]">${(plan.priceCents / 100).toLocaleString("es-AR")}</p><p className={`mt-1 text-sm ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-muted)]"}`}>ARS por mes</p><ul className="mt-7 grid gap-3">{plan.features.map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className={plan.id === "pro" ? "text-white" : "text-[var(--color-success)]"} size={17} />{item}</li>)}</ul><Link className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold ${plan.id === "pro" ? "bg-white text-[var(--color-navy)] hover:bg-[var(--color-surface-subtle)]" : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"}`} href="/registro">Probar Pro durante 7 días<ArrowRight aria-hidden="true" size={17} /></Link></article>)}
           </div>
         </section>
 

@@ -13,6 +13,7 @@ export default defineConfig({
   webServer: {
     command: "pnpm exec next dev --hostname 127.0.0.1 --port 3002",
     env: {
+      MERCADOPAGO_WEBHOOK_SECRET: "e2e-webhook-secret",
       RESEND_SKIP_DELIVERY: "true",
     },
     url: "http://127.0.0.1:3002",

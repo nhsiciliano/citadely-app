@@ -5,17 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { getErrorMessage, getPostAuthPath } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
-import { Field, FormMessage, GoogleIcon, SubmitButton } from "@/components/ui";
+import { Field, FormMessage, GoogleIcon, LoadingSpinner, SubmitButton } from "@/components/ui";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"password" | "google" | null>(null);
 
   async function handlePasswordLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
+    setPendingAction("password");
     setError(null);
 
     const form = new FormData(event.currentTarget);
@@ -27,7 +27,7 @@ export function LoginForm() {
       password,
     });
 
-    setPending(false);
+    setPendingAction(null);
 
     if (signInError) {
       setError(getErrorMessage(signInError));
@@ -38,7 +38,7 @@ export function LoginForm() {
   }
 
   async function handleGoogleLogin() {
-    setPending(true);
+    setPendingAction("google");
     setError(null);
 
     const redirectTo = `${window.location.origin}/onboarding`;
@@ -47,7 +47,7 @@ export function LoginForm() {
       redirectTo,
     });
 
-    setPending(false);
+    setPendingAction(null);
     if (oauthError) setError(getErrorMessage(oauthError));
   }
 
@@ -62,7 +62,7 @@ export function LoginForm() {
       <form className="grid gap-4" onSubmit={handlePasswordLogin}>
         <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
         <Field autoComplete="current-password" label="Contraseña" name="password" placeholder="Tu contraseña" type="password" />
-        <SubmitButton pending={pending}>Ingresar</SubmitButton>
+        <SubmitButton disabled={pendingAction !== null} pending={pendingAction === "password"}>Ingresar</SubmitButton>
       </form>
       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
         <span className="h-px flex-1 bg-[var(--line)]" />
@@ -71,12 +71,12 @@ export function LoginForm() {
       </div>
       <button
         className="button-secondary"
-        disabled={pending}
+        aria-busy={pendingAction === "google"}
+        disabled={pendingAction !== null}
         onClick={handleGoogleLogin}
         type="button"
       >
-        <GoogleIcon />
-        Continuar con Google
+        {pendingAction === "google" ? <LoadingSpinner label="Conectando con Google" /> : <><GoogleIcon />Continuar con Google</>}
       </button>
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--ink-soft)]">
         <Link className="font-semibold text-[var(--reception)]" href="/recuperar-password">

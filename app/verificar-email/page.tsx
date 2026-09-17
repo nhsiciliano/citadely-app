@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { VerifyEmailForm } from "@/components/auth/verify-email-form";
 import { AuthShell } from "@/components/ui";
+import { NO_INDEX_ROBOTS } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Verificar email",
+  robots: NO_INDEX_ROBOTS,
+};
 
 export default function VerifyEmailPage() {
   return (

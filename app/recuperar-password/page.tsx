@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { AuthShell } from "@/components/ui";
+import { NO_INDEX_ROBOTS } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Recuperar acceso",
+  robots: NO_INDEX_ROBOTS,
+};
 
 export default function ResetPasswordPage() {
   return (
