@@ -207,7 +207,9 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
             Estado del turno
             <select className="form-control" disabled={pending} onChange={(event) => updateStatus(event.target.value as Appointment["status"])} value={appointment.status}>
               <option value="pending_payment">Seña pendiente</option>
-              <option value="confirmed">Confirmado</option>
+              {appointment.status === "pending_payment" && appointment.deposit_amount_cents > 0 ? null : (
+                <option value="confirmed">Confirmado</option>
+              )}
               <option value="cancelled">Cancelado</option>
               <option value="completed">Completado</option>
               <option value="no_show">No asistió</option>

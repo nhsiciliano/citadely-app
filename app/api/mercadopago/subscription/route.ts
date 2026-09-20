@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Sesion requerida." }, { status: 401 });
     }
 
-    const userClient = createClient({ baseUrl, ...(anonKey ? { anonKey } : {}), accessToken, isServerMode: true });
+    const userClient = createClient({ baseUrl, ...(anonKey ? { anonKey } : {}), isServerMode: true });
+    userClient.setAccessToken(accessToken);
     const { data: authData, error: authError } = await userClient.auth.getCurrentUser();
     const user = authData?.user;
 

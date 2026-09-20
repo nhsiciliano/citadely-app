@@ -120,11 +120,19 @@ export function PublicBookingForm({
     }
 
     const amountCents = bookingData?.amount_cents ?? getBookingAmountCents(selectedService);
+    const depositDeadline = bookingData?.deposit_expires_at
+      ? new Date(bookingData.deposit_expires_at).toLocaleString("es-AR", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
 
     setPending(false);
     setSuccess(
       amountCents > 0
-        ? `Pre-reserva creada. Transferí ${formatCurrency(amountCents, business.currency)} en los próximos 30 minutos y el negocio confirmará tu turno cuando reciba la seña.${bookingData?.deposit_expires_at ? ` Vence ${new Date(bookingData.deposit_expires_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}.` : ""}`
+        ? `Pre-reserva creada. Transferí ${formatCurrency(amountCents, business.currency)} antes del vencimiento y el negocio confirmará tu turno cuando reciba la seña.${depositDeadline ? ` Vence el ${depositDeadline}.` : " El plazo máximo es de 2 horas."}`
         : "Reserva confirmada. Te enviamos los datos del turno por email y el negocio ya puede verla en su agenda.",
     );
     formElement.reset();

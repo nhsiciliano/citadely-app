@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  buildClientBookingEmail,
-  buildOwnerBookingEmail,
-  sendResendEmail,
-  type PublicBookingEmailContext,
-} from "@/lib/booking-email";
 import { type Business, type Service } from "@/lib/citadely-db";
-import { insforgeAdmin, hasInsforgeAdminKey } from "@/lib/insforge-admin";
+import { insforgeAdmin } from "@/lib/insforge-admin";
 
 export const runtime = "nodejs";
 
@@ -35,23 +29,6 @@ function readString(value: unknown) {
 
 function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 });
-}
-
-async function getOwnerEmail(businessId: string) {
-  if (!hasInsforgeAdminKey || !insforgeAdmin) return null;
-
-  const { data, error } = await insforgeAdmin.database
-    .from("business_notification_settings")
-    .select("email")
-    .eq("business_id", businessId)
-    .maybeSingle();
-
-  if (error) {
-    console.error("public booking owner email lookup failed", { businessId, message: error.message });
-    return null;
-  }
-
-  return typeof data?.email === "string" ? data.email : null;
 }
 
 export async function POST(request: Request) {
@@ -124,44 +101,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No se pudo crear la reserva." }, { status: 500 });
   }
 
-  const endsAt = new Date(startsAtDate);
-  endsAt.setMinutes(endsAt.getMinutes() + service.duration_minutes);
-
-  const context: PublicBookingEmailContext = {
-    appointmentId: booking.appointment_id,
-    business,
-    service,
-    startsAt: startsAtDate.toISOString(),
-    endsAt: endsAt.toISOString(),
-    status: booking.status ?? "confirmed",
-    amountCents: booking.amount_cents ?? 0,
-    depositExpiresAt: booking.deposit_expires_at ?? null,
-    clientName,
-    clientEmail,
-    clientPhone,
-    clientMessage,
-  };
-
-  const ownerEmail = await getOwnerEmail(business.id);
-  const clientEmailPayload = buildClientBookingEmail(context);
-  const ownerEmailPayload = ownerEmail ? buildOwnerBookingEmail(context) : null;
-  const emailResults = await Promise.allSettled([
-    sendResendEmail({ to: clientEmail, ...clientEmailPayload }),
-    ...(ownerEmailPayload && ownerEmail ? [sendResendEmail({ to: ownerEmail, ...ownerEmailPayload })] : []),
-  ]);
-  const failedEmails = emailResults.filter((result) => result.status === "rejected");
-
-  if (!ownerEmail) {
-    console.error("public booking owner email missing", { businessId: business.id, appointmentId: booking.appointment_id });
-  }
-
-  if (failedEmails.length > 0) {
-    console.error("public booking email delivery failed", {
-      appointmentId: booking.appointment_id,
-      failedCount: failedEmails.length,
-    });
-  }
-
   return NextResponse.json({
     appointment_id: booking.appointment_id,
     client_id: booking.client_id,
@@ -169,6 +108,6 @@ export async function POST(request: Request) {
     status: booking.status,
     amount_cents: booking.amount_cents,
     deposit_expires_at: booking.deposit_expires_at,
-    email_warning: failedEmails.length > 0 || !ownerEmail,
+    email_queued: true,
   });
 }

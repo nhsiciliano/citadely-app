@@ -11,15 +11,21 @@
     "seed:barberia-luk": "SEED_ALLOW_WRITE=true node scripts/seed-barberia-luk.mjs",
     "seed:clinica-colon": "SEED_ALLOW_WRITE=true node scripts/seed-clinica-colon.mjs",
     "migrate:subscriptions:pro": "node scripts/migrate-subscriptions-to-pro.mjs",
+    "email:dev": "email dev --dir emails --port 3001",
+    "email:export": "email export --dir emails --outDir .react-email/dist",
+    "resend:login": "resend login",
     "test:resend": "node scripts/test-resend-booking-email.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@insforge/sdk": "^1.2.9",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
     "lucide-react": "^1.40.0",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "resend": "^6.28.1",
     "vercel": "^54.20.1"
   },
   "devDependencies": {
@@ -31,6 +37,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "react-email": "^6.9.5",
+    "resend-cli": "^2.21.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

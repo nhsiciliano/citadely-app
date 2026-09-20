@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const authorization = request.headers.get("authorization");
 
-  if (secret && authorization !== `Bearer ${secret}`) {
+  if (!secret || authorization !== `Bearer ${secret}`) {
     return Response.json({ error: "No autorizado." }, { status: 401 });
   }
 
