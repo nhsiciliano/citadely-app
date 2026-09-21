@@ -10,6 +10,10 @@ export type MercadoPagoPaymentResponse = {
   id: number;
   status: string;
   external_reference?: string;
+  preapproval_id?: string;
+  transaction_amount?: number;
+  currency_id?: string;
+  date_approved?: string;
 };
 
 export type MercadoPagoAuthorizedPaymentResponse = {
@@ -23,6 +27,9 @@ export type MercadoPagoAuthorizedPaymentResponse = {
   external_reference?: string;
   preapproval_id?: string;
   transaction_amount?: number;
+  currency_id?: string;
+  date_created?: string;
+  date_approved?: string;
 };
 
 export type MercadoPagoPreapprovalResponse = {
@@ -32,9 +39,22 @@ export type MercadoPagoPreapprovalResponse = {
   reason?: string;
   external_reference?: string;
   next_payment_date?: string;
+  payer_email?: string;
+  auto_recurring?: {
+    frequency?: number;
+    frequency_type?: string;
+    start_date?: string;
+    transaction_amount?: number;
+    currency_id?: string;
+  };
 };
 
-const MERCADOPAGO_API = "https://api.mercadopago.com";
+const MERCADOPAGO_API = process.env.MERCADOPAGO_API_BASE_URL ?? "https://api.mercadopago.com";
+
+type MercadoPagoError = {
+  message?: string;
+  error?: string;
+};
 
 export function getMercadoPagoAccessToken() {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -42,127 +62,58 @@ export function getMercadoPagoAccessToken() {
   return token;
 }
 
-export async function createMercadoPagoPreference(body: Record<string, unknown>) {
-  const response = await fetch(`${MERCADOPAGO_API}/checkout/preferences`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
+async function mercadoPagoRequest<T>(path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${getMercadoPagoAccessToken()}`);
+  if (init.body) headers.set("Content-Type", "application/json");
+
+  const response = await fetch(`${MERCADOPAGO_API}${path}`, {
+    ...init,
+    headers,
+    cache: "no-store",
+    signal: AbortSignal.timeout(12_000),
   });
 
-  const data = (await response.json()) as MercadoPagoPreferenceResponse & {
-    message?: string;
-    error?: string;
-  };
-
+  const data = (await response.json().catch(() => ({}))) as T & MercadoPagoError;
   if (!response.ok) {
-    throw new Error(data.message ?? data.error ?? "Mercado Pago rechazo la preferencia.");
+    const providerMessage = data.message ?? data.error;
+    throw new Error(providerMessage ? `Mercado Pago: ${providerMessage}` : `Mercado Pago respondio ${response.status}.`);
   }
 
   return data;
+}
+
+export async function createMercadoPagoPreference(body: Record<string, unknown>) {
+  return mercadoPagoRequest<MercadoPagoPreferenceResponse>("/checkout/preferences", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export async function getMercadoPagoPayment(paymentId: string) {
-  const response = await fetch(`${MERCADOPAGO_API}/v1/payments/${paymentId}`, {
-    headers: {
-      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
-    },
-  });
-
-  const data = (await response.json()) as MercadoPagoPaymentResponse & {
-    message?: string;
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(data.message ?? data.error ?? "No se pudo leer el pago de Mercado Pago.");
-  }
-
-  return data;
+  return mercadoPagoRequest<MercadoPagoPaymentResponse>(`/v1/payments/${encodeURIComponent(paymentId)}`);
 }
 
 export async function createMercadoPagoPreapproval(body: Record<string, unknown>) {
-  const response = await fetch(`${MERCADOPAGO_API}/preapproval`, {
+  return mercadoPagoRequest<MercadoPagoPreapprovalResponse>("/preapproval", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(body),
   });
-
-  const data = (await response.json()) as MercadoPagoPreapprovalResponse & {
-    message?: string;
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(data.message ?? data.error ?? "Mercado Pago rechazo la suscripcion.");
-  }
-
-  return data;
 }
 
 export async function getMercadoPagoPreapproval(preapprovalId: string) {
-  const response = await fetch(`${MERCADOPAGO_API}/preapproval/${preapprovalId}`, {
-    headers: {
-      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
-    },
-  });
-
-  const data = (await response.json()) as MercadoPagoPreapprovalResponse & {
-    message?: string;
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(data.message ?? data.error ?? "No se pudo leer la suscripcion de Mercado Pago.");
-  }
-
-  return data;
+  return mercadoPagoRequest<MercadoPagoPreapprovalResponse>(`/preapproval/${encodeURIComponent(preapprovalId)}`);
 }
 
 export async function updateMercadoPagoPreapproval(preapprovalId: string, body: Record<string, unknown>) {
-  const response = await fetch(`${MERCADOPAGO_API}/preapproval/${preapprovalId}`, {
+  return mercadoPagoRequest<MercadoPagoPreapprovalResponse>(`/preapproval/${encodeURIComponent(preapprovalId)}`, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(body),
   });
-
-  const data = (await response.json()) as MercadoPagoPreapprovalResponse & {
-    message?: string;
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(data.message ?? data.error ?? "Mercado Pago rechazo el cambio de suscripcion.");
-  }
-
-  return data;
 }
 
 export async function getMercadoPagoAuthorizedPayment(authorizedPaymentId: string) {
-  const response = await fetch(`${MERCADOPAGO_API}/authorized_payments/${authorizedPaymentId}`, {
-    headers: {
-      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
-    },
-  });
-
-  const data = (await response.json()) as MercadoPagoAuthorizedPaymentResponse & {
-    message?: string;
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(data.message ?? data.error ?? "No se pudo leer el pago autorizado de Mercado Pago.");
-  }
-
-  return data;
+  return mercadoPagoRequest<MercadoPagoAuthorizedPaymentResponse>(`/authorized_payments/${encodeURIComponent(authorizedPaymentId)}`);
 }
 
 export function verifyMercadoPagoSignature({
@@ -187,7 +138,7 @@ export function verifyMercadoPagoSignature({
 
   const timestamp = parts.ts;
   const hash = parts.v1;
-  if (!timestamp || !hash) return false;
+  if (!timestamp || !hash || !/^[a-f0-9]{64}$/i.test(hash)) return false;
 
   const manifestParts = [];
   if (dataId) manifestParts.push(`id:${dataId.toLowerCase()}`);
@@ -200,4 +151,23 @@ export function verifyMercadoPagoSignature({
   if (expected.length !== hash.length) return false;
 
   return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(hash));
+}
+
+export function buildMercadoPagoEventKey({
+  notificationId,
+  type,
+  action,
+  dataId,
+  requestId,
+}: {
+  notificationId?: string;
+  type?: string;
+  action?: string;
+  dataId: string;
+  requestId?: string | null;
+}) {
+  return crypto
+    .createHash("sha256")
+    .update([notificationId, type, action, dataId.toLowerCase(), requestId].map((value) => value ?? "").join("|"))
+    .digest("hex");
 }

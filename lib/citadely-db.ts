@@ -28,6 +28,10 @@ export type Business = {
   subscription_current_period_end: string | null;
   subscription_plan: SubscriptionPlanId;
   pending_subscription_plan: SubscriptionPlanId | null;
+  subscription_cancel_at_period_end: boolean;
+  subscription_last_payment_id: string | null;
+  subscription_last_payment_status: string | null;
+  subscription_last_payment_at: string | null;
   currency: string;
   timezone: string;
   is_public?: boolean;
@@ -215,9 +219,13 @@ export function getSubscriptionState(business: Business) {
   const now = new Date();
   const trialDaysLeft = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / 86400000));
   const isTrialing = business.subscription_status === "trialing" && trialEndsAt > now;
-  const hasDashboardAccess = business.subscription_status === "active" || isTrialing;
+  const periodEndsAt = business.subscription_current_period_end ? new Date(business.subscription_current_period_end) : null;
+  const hasPaidPeriod = business.subscription_provider === "mercadopago"
+    ? Boolean(periodEndsAt && periodEndsAt > now && ["active", "past_due", "cancelled"].includes(business.subscription_status))
+    : business.subscription_status === "active";
+  const hasDashboardAccess = hasPaidPeriod || isTrialing;
   const currentPlan = business.subscription_plan ?? "pro";
-  const hasPublicPageAccess = isTrialing || (business.subscription_status === "active" && currentPlan === "pro");
+  const hasPublicPageAccess = (isTrialing || hasPaidPeriod) && currentPlan === "pro";
 
   return {
     hasAccess: hasDashboardAccess,
@@ -227,7 +235,16 @@ export function getSubscriptionState(business: Business) {
     pendingPlan: business.pending_subscription_plan ?? null,
     trialDaysLeft,
     isTrialing,
-    needsPayment: business.subscription_status !== "active" && trialEndsAt <= now,
+    hasPaidPeriod,
+    periodEndsAt,
+    cancelAtPeriodEnd: Boolean(business.subscription_cancel_at_period_end),
+    isPastDue: business.subscription_status === "past_due",
+    awaitingFirstPayment: Boolean(
+      business.subscription_external_id
+      && business.pending_subscription_plan
+      && !hasPaidPeriod,
+    ),
+    needsPayment: !hasDashboardAccess,
   };
 }
 

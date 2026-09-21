@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { BadgeDollarSign, Building2, Check, Clock3, CreditCard, Globe2, LogOut, MessageCircle } from "lucide-react";
+import { BadgeDollarSign, Building2, CalendarClock, Check, Clock3, CreditCard, Globe2, LogOut, MessageCircle, ShieldCheck, XCircle } from "lucide-react";
 import { Field, FormMessage, LoadingSpinner, SubmitButton } from "@/components/ui";
 import { getErrorMessage } from "@/lib/auth";
 import { getSubscriptionState } from "@/lib/citadely-db";
@@ -16,6 +16,7 @@ export function SettingsScreen() {
   const subscription = getSubscriptionState(business);
   const [paymentPending, setPaymentPending] = useState(false);
   const [subscriptionPending, setSubscriptionPending] = useState(false);
+  const [cancellationPending, setCancellationPending] = useState(false);
   const [requestedPlan, setRequestedPlan] = useState<SubscriptionPlanId | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<"success" | "error">("success");
@@ -37,9 +38,9 @@ export function SettingsScreen() {
     const response = await fetch("/api/mercadopago/subscription", {
       method: "POST",
       headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ businessId: business.id, plan }),
+      body: JSON.stringify({ businessId: business.id, plan, requestId: crypto.randomUUID() }),
     });
-    const data = (await response.json()) as { checkoutUrl?: string; changeScheduled?: boolean; unchanged?: boolean; cancelledPending?: boolean; error?: string };
+    const data = (await response.json()) as { checkoutUrl?: string; changeScheduled?: boolean; unchanged?: boolean; awaitingFirstPayment?: boolean; effectiveAt?: string; error?: string };
 
     if (!response.ok) {
       setSubscriptionPending(false);
@@ -57,7 +58,50 @@ export function SettingsScreen() {
     await refresh();
     setSubscriptionPending(false);
     setRequestedPlan(null);
-    setMessage(data.unchanged ? "Ya estás usando este plan." : data.cancelledPending ? "Cambio pendiente cancelado." : "Cambio programado para el próximo cobro aprobado.");
+    setMessage(data.unchanged ? "Ya estás usando este plan." : data.awaitingFirstPayment ? "Plan elegido. Se activará cuando Mercado Pago confirme el primer cobro." : "Cambio programado para el próximo cobro aprobado.");
+  }
+
+  async function cancelSubscription() {
+    const accessUntil = subscription.periodEndsAt
+      ? new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(subscription.periodEndsAt)
+      : null;
+    const confirmation = window.confirm(
+      accessUntil
+        ? `¿Cancelar la renovación? Vas a conservar el acceso hasta el ${accessUntil}.`
+        : "¿Cancelar la suscripción pendiente? No se realizará ningún cobro.",
+    );
+    if (!confirmation) return;
+
+    setCancellationPending(true);
+    setMessage(null);
+    const { data: session, error: sessionError } = await insforge.auth.refreshSession();
+    if (sessionError || !session?.accessToken) {
+      setCancellationPending(false);
+      setMessageType("error");
+      setMessage("Tu sesión venció. Volvé a iniciar sesión para cancelar la suscripción.");
+      return;
+    }
+
+    const response = await fetch("/api/mercadopago/subscription", {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ businessId: business.id, requestId: crypto.randomUUID() }),
+    });
+    const data = (await response.json()) as { cancelled?: boolean; unchanged?: boolean; cancelAt?: string | null; error?: string };
+
+    if (!response.ok) {
+      setCancellationPending(false);
+      setMessageType("error");
+      setMessage(data.error ?? "No se pudo cancelar la suscripción.");
+      return;
+    }
+
+    await refresh();
+    setCancellationPending(false);
+    setMessageType("success");
+    setMessage(data.cancelAt
+      ? `Renovación cancelada. Conservás el acceso hasta el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(data.cancelAt))}.`
+      : "Suscripción pendiente cancelada. No se realizará ningún cobro.");
   }
 
   async function savePayment(event: FormEvent<HTMLFormElement>) {
@@ -90,10 +134,50 @@ export function SettingsScreen() {
       <div className="grid gap-6 px-5 py-6 sm:px-8 lg:px-10 lg:py-8 xl:grid-cols-2">
         <section className="surface-section xl:col-span-2">
           <div className="section-heading-row"><div><h2>Plan y suscripción</h2><p>Elegí el acceso que necesita tu negocio.</p></div><BadgeDollarSign aria-hidden="true" className="text-[var(--color-primary)]" size={22} /></div>
-          <div className="mb-6 flex flex-wrap items-center gap-3 border-y border-[var(--color-line)] py-4">
-            <span className={`status-badge ${business.subscription_status === "active" ? "status-confirmed" : subscription.isTrialing ? "status-pending_payment" : "status-cancelled"}`}>{business.subscription_status === "active" ? `Plan ${SUBSCRIPTION_PLANS[subscription.currentPlan].name}` : subscription.isTrialing ? "Prueba Pro activa" : "Pago requerido"}</span>
-            <p className="text-sm text-[var(--color-ink-soft)]">{subscription.isTrialing ? `${subscription.trialDaysLeft} días restantes con todas las funciones Pro.` : business.subscription_status === "active" ? "Dashboard habilitado." : "Elegí un plan para recuperar el acceso."}</p>
-            {subscription.pendingPlan ? <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]"><Clock3 aria-hidden="true" size={16} />Cambio a {SUBSCRIPTION_PLANS[subscription.pendingPlan].name}{business.subscription_current_period_end ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.subscription_current_period_end))}` : " en el próximo cobro"}</span> : null}
+          <div className="mb-6 grid border-y border-[var(--color-line)] md:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)]">
+            <div className="min-w-0 py-5 md:pe-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`status-badge ${subscription.hasPaidPeriod ? "status-confirmed" : subscription.isTrialing || subscription.awaitingFirstPayment ? "status-pending_payment" : "status-cancelled"}`}>
+                  {subscription.cancelAtPeriodEnd
+                    ? "Renovación cancelada"
+                    : subscription.isPastDue
+                      ? "Pago pendiente"
+                      : subscription.hasPaidPeriod
+                        ? `Plan ${SUBSCRIPTION_PLANS[subscription.currentPlan].name}`
+                        : subscription.isTrialing
+                          ? "Prueba Pro activa"
+                          : "Pago requerido"}
+                </span>
+                {subscription.cancelAtPeriodEnd && subscription.periodEndsAt ? (
+                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-danger)]"><XCircle aria-hidden="true" size={16} />Acceso hasta el {new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(subscription.periodEndsAt)}</span>
+                ) : null}
+              </div>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">
+                {subscription.isTrialing
+                  ? `${subscription.trialDaysLeft} días restantes con todas las funciones Pro. Si elegís un plan ahora, el primer cobro se hará al terminar la prueba.`
+                  : subscription.isPastDue && subscription.hasPaidPeriod
+                    ? "Mercado Pago no pudo completar la renovación. Conservás el acceso durante el período ya abonado."
+                    : subscription.hasPaidPeriod
+                      ? "Tu dashboard está habilitado y la renovación es mensual."
+                      : "Elegí un plan y completá la autorización en Mercado Pago para recuperar el acceso."}
+              </p>
+              {subscription.pendingPlan ? (
+                <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]">
+                  <Clock3 aria-hidden="true" size={16} />
+                  {subscription.awaitingFirstPayment ? "Primer cobro" : `Cambio a ${SUBSCRIPTION_PLANS[subscription.pendingPlan].name}`}
+                  {subscription.isTrialing
+                    ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.trial_ends_at))}`
+                    : business.subscription_current_period_end
+                      ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.subscription_current_period_end))}`
+                      : " cuando se apruebe el pago"}
+                </span>
+              ) : null}
+            </div>
+            <dl className="grid content-center gap-3 border-t border-[var(--color-line)] py-5 text-sm md:border-s md:border-t-0 md:ps-6">
+              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Importe actual</dt><dd className="font-mono font-semibold tabular-nums">${(SUBSCRIPTION_PLANS[subscription.currentPlan].priceCents / 100).toLocaleString("es-AR")} ARS</dd></div>
+              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Frecuencia</dt><dd className="font-semibold">Mensual</dd></div>
+              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Próxima fecha</dt><dd className="text-end font-semibold">{subscription.periodEndsAt ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(subscription.periodEndsAt) : subscription.isTrialing ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(business.trial_ends_at)) : "Al aprobarse"}</dd></div>
+            </dl>
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
             {(Object.values(SUBSCRIPTION_PLANS) as (typeof SUBSCRIPTION_PLANS)[SubscriptionPlanId][]).map((plan) => {
@@ -108,11 +192,23 @@ export function SettingsScreen() {
                   </div>
                   <p className="mt-5 text-3xl font-semibold tracking-[-0.03em]">${(plan.priceCents / 100).toLocaleString("es-AR")} <span className="text-sm font-medium text-[var(--color-ink-muted)]">ARS/mes</span></p>
                   <ul className="mt-5 grid gap-2 text-sm">{plan.features.map((feature) => <li className="flex gap-2" key={feature}><Check aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-primary)]" size={16} />{feature}</li>)}</ul>
-                  <button aria-busy={isLoading} className={plan.id === "pro" ? "button-primary mt-6 w-full" : "button-secondary mt-6 w-full"} disabled={subscriptionPending || isCurrent || isPending} onClick={() => void selectPlan(plan.id)} type="button">{isLoading ? <LoadingSpinner label={`Procesando cambio al plan ${plan.name}`} /> : <><CreditCard aria-hidden="true" size={17} />{isCurrent ? "Plan actual" : isPending ? "Cambio programado" : business.subscription_status === "active" ? `Cambiar a ${plan.name}` : `Elegir ${plan.name}`}</>}</button>
+                  <button aria-busy={isLoading} className={plan.id === "pro" ? "button-primary mt-6 w-full" : "button-secondary mt-6 w-full"} disabled={subscriptionPending || cancellationPending || (isCurrent && !subscription.cancelAtPeriodEnd) || isPending} onClick={() => void selectPlan(plan.id)} type="button">{isLoading ? <LoadingSpinner label={`Procesando cambio al plan ${plan.name}`} /> : <><CreditCard aria-hidden="true" size={17} />{subscription.cancelAtPeriodEnd && subscription.currentPlan === plan.id ? "Reactivar renovación" : isCurrent ? "Plan actual" : isPending ? "Cambio programado" : subscription.hasPaidPeriod ? `Cambiar a ${plan.name}` : `Elegir ${plan.name}`}</>}</button>
                 </article>
               );
             })}
           </div>
+          {business.subscription_checkout_url && subscription.awaitingFirstPayment ? (
+            <div className="mt-5 flex flex-col gap-3 border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 gap-3"><CalendarClock aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-primary)]" size={19} /><div><p className="font-semibold">Autorización pendiente</p><p className="mt-1 text-sm text-[var(--color-ink-soft)]">Terminá el proceso en Mercado Pago. El acceso pago se habilita únicamente cuando recibamos la confirmación.</p></div></div>
+              <a className="button-secondary shrink-0" href={business.subscription_checkout_url}>Continuar en Mercado Pago</a>
+            </div>
+          ) : null}
+          {business.subscription_external_id && !subscription.cancelAtPeriodEnd ? (
+            <div className="mt-5 flex flex-col gap-3 border-t border-[var(--color-line)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-success)]" size={19} /><div><p className="font-semibold">Cobro protegido por Mercado Pago</p><p className="mt-1 text-sm text-[var(--color-ink-soft)]">Podés cancelar la renovación sin perder el período que ya pagaste.</p></div></div>
+              <button aria-busy={cancellationPending} className="button-secondary shrink-0 text-[var(--color-danger)]" disabled={subscriptionPending || cancellationPending} onClick={() => void cancelSubscription()} type="button">{cancellationPending ? <LoadingSpinner label="Cancelando renovación" /> : <><XCircle aria-hidden="true" size={17} />Cancelar renovación</>}</button>
+            </div>
+          ) : null}
         </section>
 
         <section className="surface-section">
@@ -138,7 +234,7 @@ export function SettingsScreen() {
           </dl>
           <button className="button-secondary mt-6" onClick={signOut} type="button"><LogOut aria-hidden="true" size={17} />Cerrar sesión</button>
         </section>
-        {message ? <div className="xl:col-span-2"><FormMessage type={messageType}>{message}</FormMessage></div> : null}
+        {message ? <div aria-live="polite" className="xl:col-span-2"><FormMessage type={messageType}>{message}</FormMessage></div> : null}
       </div>
     </>
   );
