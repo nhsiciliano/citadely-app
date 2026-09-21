@@ -203,6 +203,12 @@ export function SettingsScreen() {
               <a className="button-secondary shrink-0" href={business.subscription_checkout_url}>Continuar en Mercado Pago</a>
             </div>
           ) : null}
+          {!business.subscription_checkout_url && business.subscription_external_id && subscription.awaitingFirstPayment ? (
+            <div className="mt-5 flex gap-3 border border-[var(--color-success)] bg-[var(--color-success-soft)] p-4">
+              <ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-success)]" size={19} />
+              <div><p className="font-semibold">Medio de pago autorizado</p><p className="mt-1 text-sm text-[var(--color-ink-soft)]">Mercado Pago confirmó la autorización. El plan pago se activará únicamente cuando recibamos el primer cobro aprobado.</p></div>
+            </div>
+          ) : null}
           {business.subscription_external_id && !subscription.cancelAtPeriodEnd ? (
             <div className="mt-5 flex flex-col gap-3 border-t border-[var(--color-line)] pt-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-success)]" size={19} /><div><p className="font-semibold">Cobro protegido por Mercado Pago</p><p className="mt-1 text-sm text-[var(--color-ink-soft)]">Podés cancelar la renovación sin perder el período que ya pagaste.</p></div></div>

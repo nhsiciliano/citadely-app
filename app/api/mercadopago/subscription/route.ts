@@ -39,6 +39,13 @@ function getAppBaseUrl(request: NextRequest) {
   return forwardedHost ? `${forwardedProto}://${forwardedHost}` : request.nextUrl.origin;
 }
 
+function getWebhookUrl(origin: string) {
+  const webhookUrl = new URL("/api/mercadopago/webhook", origin);
+  const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (protectionBypass) webhookUrl.searchParams.set("x-vercel-protection-bypass", protectionBypass);
+  return webhookUrl.toString();
+}
+
 async function getOwnedBusiness(request: NextRequest, businessId: string) {
   const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
@@ -165,7 +172,7 @@ export async function POST(request: NextRequest) {
       external_reference: business.id,
       payer_email: payerEmail,
       back_url: `${origin}/negocio/configuracion?suscripcion=pendiente`,
-      notification_url: `${origin}/api/mercadopago/webhook`,
+      notification_url: getWebhookUrl(origin),
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",

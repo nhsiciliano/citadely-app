@@ -413,6 +413,27 @@ test("suscripción Mercado Pago: prueba, aprobación, duplicados, mora y reembol
     expect(pendingRows[0]).toMatchObject({ pending_subscription_plan: "essential", subscription_status: "trialing" });
     expect(String(pendingRows[0]?.subscription_external_id)).toMatch(/^mock-preapproval-/);
 
+    const providerPreapprovalResponse = await request.get(`http://127.0.0.1:3010/preapproval/${pendingRows[0]?.subscription_external_id}`);
+    const providerPreapproval = await providerPreapprovalResponse.json() as { notification_url: string; status: string };
+    expect(providerPreapproval.status).toBe("authorized");
+    expect(new URL(providerPreapproval.notification_url).searchParams.get("x-vercel-protection-bypass")).toBe("e2e-vercel-bypass");
+
+    const preapprovalRequestId = "e2e-preapproval-request";
+    const preapprovalTimestamp = String(Math.floor(Date.now() / 1000));
+    const preapprovalDataId = String(pendingRows[0]?.subscription_external_id);
+    const preapprovalSignature = createHmac("sha256", "e2e-webhook-secret")
+      .update(`id:${preapprovalDataId};request-id:${preapprovalRequestId};ts:${preapprovalTimestamp};`)
+      .digest("hex");
+    const preapprovalWebhook = await request.post(`/api/mercadopago/webhook?data.id=${preapprovalDataId}`, {
+      data: { id: "e2e-preapproval-notification", type: "preapproval", action: "updated", data: { id: preapprovalDataId } },
+      headers: { "x-request-id": preapprovalRequestId, "x-signature": `ts=${preapprovalTimestamp},v1=${preapprovalSignature}` },
+    });
+    expect(preapprovalWebhook.status()).toBe(200);
+    const authorizedRows = await (await adminRequest(`records/businesses?id=eq.${original.id}&select=subscription_status,pending_subscription_plan,subscription_checkout_url&limit=1`)).json() as Record<string, unknown>[];
+    expect(authorizedRows[0]).toMatchObject({ subscription_status: "trialing", pending_subscription_plan: "essential", subscription_checkout_url: null });
+    await page.goto("/negocio/configuracion");
+    await expect(page.getByText("Medio de pago autorizado", { exact: true })).toBeVisible();
+
     const webhookBody = {
       id: "e2e-authorized-notification",
       type: "subscription_authorized_payment",
@@ -492,6 +513,7 @@ test("suscripción Mercado Pago: prueba, aprobación, duplicados, mora y reembol
     expect(stillRevoked).toBe(false);
   } finally {
     await adminRequest(`records/subscription_webhook_events?resource_id=eq.${authorizedPaymentId}`, { method: "DELETE" });
+    await adminRequest("records/subscription_webhook_events?resource_id=like.mock-preapproval-*", { method: "DELETE" });
     await adminRequest(`records/subscription_operations?business_id=eq.${original.id}`, { method: "DELETE" });
     await adminRequest(`records/subscription_payments?business_id=eq.${original.id}`, { method: "DELETE" });
     await updateBusiness(String(original.id), {

@@ -63,6 +63,9 @@ const server = http.createServer(async (request, response) => {
   }
 
   if (request.method === "GET" && url.pathname.startsWith("/checkout/")) {
+    const id = decodeURIComponent(url.pathname.slice("/checkout/".length));
+    const preapproval = preapprovals.get(id);
+    if (preapproval) preapprovals.set(id, { ...preapproval, status: "authorized" });
     response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     return response.end("<!doctype html><title>Mercado Pago mock</title><h1>Autorización simulada</h1>");
   }
