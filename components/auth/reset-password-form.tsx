@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { getErrorMessage } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
+import { getPasswordValidationError } from "@/lib/password";
+import { PasswordField } from "@/components/auth/password-field";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
 export function ResetPasswordForm() {
@@ -65,12 +67,19 @@ export function ResetPasswordForm() {
 
   async function resetPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
     setError(null);
     setSuccess(null);
 
     const form = new FormData(event.currentTarget);
     const newPassword = String(form.get("password") ?? "");
+    const passwordError = getPasswordValidationError(newPassword);
+
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    setPending(true);
     const { error: resetError } = await insforge.auth.resetPassword({
       newPassword,
       otp: token,
@@ -97,7 +106,12 @@ export function ResetPasswordForm() {
         </form>
       ) : token ? (
         <form className="grid gap-4" onSubmit={resetPassword}>
-          <Field label="Nueva contrasena" name="password" type="password" />
+          <PasswordField
+            autoComplete="new-password"
+            label="Nueva contraseña"
+            placeholder="Creá una contraseña segura"
+            requireStrongPassword
+          />
           <SubmitButton pending={pending}>Actualizar contrasena</SubmitButton>
         </form>
       ) : (

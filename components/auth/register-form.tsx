@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { getErrorMessage } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
+import { getPasswordValidationError } from "@/lib/password";
+import { PasswordField } from "@/components/auth/password-field";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
 export function RegisterForm() {
@@ -14,13 +16,20 @@ export function RegisterForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
     setError(null);
 
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") ?? "");
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
+    const passwordError = getPasswordValidationError(password);
+
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    setPending(true);
 
     const { data, error: signUpError } = await insforge.auth.signUp({
       email,
@@ -63,7 +72,11 @@ export function RegisterForm() {
       <form className="grid gap-4" onSubmit={handleSubmit}>
         <Field autoComplete="name" label="Nombre" name="name" placeholder="Tu nombre" />
         <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
-        <Field autoComplete="new-password" label="Contraseña" name="password" placeholder="Mínimo 6 caracteres" type="password" />
+        <PasswordField
+          autoComplete="new-password"
+          placeholder="Creá una contraseña segura"
+          requireStrongPassword
+        />
         <SubmitButton pending={pending}>Crear cuenta</SubmitButton>
       </form>
       <p className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-3 text-xs font-medium leading-5 text-[var(--color-ink-muted)]">

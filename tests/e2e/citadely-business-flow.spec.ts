@@ -14,7 +14,7 @@ function readLocalCredential(name: string) {
 async function signIn(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(readLocalCredential("CITADELY_DEMO_EMAIL"));
-  await page.getByLabel("Contraseña").fill(readLocalCredential("CITADELY_DEMO_PASSWORD"));
+  await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(readLocalCredential("CITADELY_DEMO_PASSWORD"));
   await page.getByRole("button", { name: "Ingresar" }).click();
   await expect(page).toHaveURL(/\/negocio/);
   await expect(page.getByText("Consultorios Horizonte").first()).toBeVisible();

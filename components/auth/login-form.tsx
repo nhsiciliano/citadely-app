@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react";
 import { getErrorMessage, getPostAuthPath } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
 import { Field, FormMessage, GoogleIcon, LoadingSpinner, SubmitButton } from "@/components/ui";
+import { PasswordField } from "@/components/auth/password-field";
 
 export function LoginForm() {
   const router = useRouter();
@@ -61,7 +62,7 @@ export function LoginForm() {
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
       <form className="grid gap-4" onSubmit={handlePasswordLogin}>
         <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
-        <Field autoComplete="current-password" label="Contraseña" name="password" placeholder="Tu contraseña" type="password" />
+        <PasswordField autoComplete="current-password" placeholder="Tu contraseña" />
         <SubmitButton disabled={pendingAction !== null} pending={pendingAction === "password"}>Ingresar</SubmitButton>
       </form>
       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
