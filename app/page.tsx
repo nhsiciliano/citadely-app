@@ -20,7 +20,8 @@ import {
   UsersRound,
   Volleyball,
 } from "lucide-react";
-import { LogoMark, PrimaryLink, SecondaryLink } from "@/components/ui";
+import { PrimaryLink } from "@/components/ui";
+import { MarketingFooter, MarketingHeader } from "@/components/marketing-shell";
 import { HOME_DESCRIPTION, HOME_TITLE, INDEX_ROBOTS, SITE_NAME, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
 import { SUBSCRIPTION_PLANS } from "@/lib/subscription-plans";
 
@@ -157,19 +158,7 @@ export default function Home() {
         type="application/ld+json"
       />
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
-      <header className="sticky top-0 z-50 border-b border-[var(--color-line)] bg-white">
-        <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
-          <LogoMark />
-          <nav aria-label="Navegación principal" className="hidden items-center gap-7 text-sm font-medium text-[var(--color-ink-soft)] lg:flex">
-            <a className="hover:text-[var(--color-primary)]" href="#como-funciona">Cómo funciona</a>
-            <a className="hover:text-[var(--color-primary)]" href="#funciones">Funciones</a>
-            <a className="hover:text-[var(--color-primary)]" href="#rubros">Rubros</a>
-            <a className="hover:text-[var(--color-primary)]" href="#precio">Precio</a>
-            <a className="hover:text-[var(--color-primary)]" href="#preguntas">Preguntas</a>
-          </nav>
-          <div className="flex items-center gap-2"><SecondaryLink href="/login">Ingresar</SecondaryLink><span className="hidden sm:inline-flex"><PrimaryLink href="/registro">Crear mi cuenta</PrimaryLink></span></div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       <div id="contenido">
         <section className="relative border-b border-[var(--color-line)] bg-[var(--color-surface-subtle)]">
@@ -259,26 +248,7 @@ export default function Home() {
         <section className="bg-[var(--color-navy)] text-white"><div className="mx-auto flex max-w-[1440px] flex-col gap-7 px-5 py-18 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12"><div><h2 className="font-display max-w-3xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Tu próxima jornada puede empezar más ordenada.</h2><p className="mt-4 text-white/65">Creá tu cuenta y probá Citadely durante 7 días.</p></div><Link className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-white px-6 text-sm font-semibold text-[var(--color-navy)]" href="/registro">Crear mi cuenta<ArrowRight aria-hidden="true" size={17} /></Link></div></section>
       </div>
 
-      <footer className="border-t border-white/10 bg-[var(--color-navy)] text-white">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-5 px-5 py-8 text-sm sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12">
-          <span className="font-semibold">Citadely</span>
-          <p className="text-white/65">Central de turnos para negocios de servicios.</p>
-          <nav aria-label="Enlaces del footer" className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <a className="text-white/70 hover:text-white" href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>
-            <Link className="text-white/70 hover:text-white" href="/login">Ingresar</Link>
-            <Link className="text-white/70 hover:text-white" href="/registro">Crear cuenta</Link>
-            <Link className="text-white/70 hover:text-white" href="/politica-de-privacidad">Política de privacidad</Link>
-            <Link className="text-white/70 hover:text-white" href="/condiciones-del-servicio">Condiciones del servicio</Link>
-            <a aria-label="Citadely en Instagram (@citadely.ar)" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-white/70 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" href="https://www.instagram.com/citadely.ar/" rel="noopener noreferrer" target="_blank">
-              <svg aria-hidden="true" className="h-[21px] w-[21px]" fill="none" viewBox="0 0 24 24">
-                <rect height="18" rx="5" stroke="currentColor" strokeWidth="1.8" width="18" x="3" y="3" />
-                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
-                <circle cx="17.5" cy="6.5" fill="currentColor" r="1.1" />
-              </svg>
-            </a>
-          </nav>
-        </div>
-      </footer>
+      <MarketingFooter />
     </main>
   );
 }
