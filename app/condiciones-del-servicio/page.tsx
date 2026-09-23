@@ -37,7 +37,7 @@ export default function TermsOfServicePage() {
 
       <LegalSection title="Cancelación de la suscripción">
         <p>El negocio puede cancelar la renovación desde su configuración. La cancelación evita nuevos cobros periódicos y mantiene el acceso correspondiente al período ya abonado. El estado de la suscripción y la fecha de finalización se muestran en el dashboard.</p>
-        <p>Los pagos, reembolsos y contracargos se procesan según el estado que comunique Mercado Pago y la normativa aplicable. Las condiciones finales de facturación y el canal de atención deben revisarse antes de publicar este borrador.</p>
+        <p>Los pagos, reembolsos y contracargos se procesan según el estado que comunique Mercado Pago y la normativa aplicable. Para consultas, escribí a <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>. Las condiciones finales de facturación deben revisarse antes de publicar este borrador.</p>
       </LegalSection>
 
       <LegalSection title="Contenido y disponibilidad">
@@ -47,7 +47,7 @@ export default function TermsOfServicePage() {
 
       <LegalSection title="Privacidad y cambios">
         <p>El tratamiento de datos personales se describe en la Política de privacidad, cuyo borrador debe revisarse junto con estas condiciones antes de publicar ambas páginas.</p>
-        <p>Los cambios en las condiciones se reflejarán con una nueva fecha de revisión. La identificación legal y el canal de contacto de quien opera Citadely deben incorporarse antes de su publicación.</p>
+        <p>Los cambios en las condiciones se reflejarán con una nueva fecha de revisión. La identificación legal y el domicilio de quien opera Citadely deben incorporarse antes de su publicación.</p>
       </LegalSection>
     </LegalPageLayout>
   );

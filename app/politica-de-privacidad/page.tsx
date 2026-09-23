@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
       description="Cómo se utilizan los datos necesarios para administrar negocios, organizar turnos y recibir reservas mediante Citadely."
     >
       <LegalSection title="Quién trata los datos">
-        <p>Citadely es el nombre público de la plataforma de agenda y reservas. La identificación legal, el domicilio y el canal de contacto del responsable deben incorporarse antes de publicar esta política.</p>
+        <p>Citadely es el nombre público de la plataforma de agenda y reservas. La identificación legal y el domicilio del responsable deben incorporarse antes de publicar esta política. El canal de contacto es <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</p>
         <p>Los negocios que usan Citadely cargan y administran datos de sus clientes. Cada negocio también decide qué información y servicios muestra en su página pública.</p>
       </LegalSection>
 
@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
       </LegalSection>
 
       <LegalSection title="Derechos sobre los datos">
-        <p>Las personas pueden solicitar acceso, actualización, rectificación o supresión de sus datos conforme a la normativa aplicable. El canal para recibir estas solicitudes debe completarse antes de publicar esta política. Si los datos fueron proporcionados al hacer una reserva, el negocio correspondiente también puede atender consultas sobre esa reserva.</p>
+        <p>Las personas pueden solicitar acceso, actualización, rectificación o supresión de sus datos conforme a la normativa aplicable escribiendo a <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>. Si los datos fueron proporcionados al hacer una reserva, el negocio correspondiente también puede atender consultas sobre esa reserva.</p>
         <p>La <a href="https://www.argentina.gob.ar/aaip/datospersonales" rel="noreferrer" target="_blank">Agencia de Acceso a la Información Pública</a> informa sobre la protección de datos personales en Argentina.</p>
       </LegalSection>
 
