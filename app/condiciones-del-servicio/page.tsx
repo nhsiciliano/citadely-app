@@ -20,6 +20,15 @@ export default function TermsOfServicePage() {
         <p>Citadely proporciona herramientas de gestión. El servicio reservado, su prestación, precio, modalidad y condiciones particulares corresponden al negocio que lo ofrece.</p>
       </LegalSection>
 
+      <LegalSection title="Titular y contacto">
+        <p>Citadely es el nombre público de la plataforma. La identificación legal del titular debe completarse antes de publicar estas condiciones.</p>
+        <ul>
+          <li><strong>Domicilio legal:</strong> Av. Diaz Velez 4762, CABA, Buenos Aires, Argentina.</li>
+          <li><strong>CUIT:</strong> 20-33740915-7.</li>
+          <li><strong>Canal de contacto:</strong> <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</li>
+        </ul>
+      </LegalSection>
+
       <LegalSection title="Cuentas y uso de la plataforma">
         <p>Para usar el dashboard, el negocio debe crear una cuenta y mantener actualizados sus datos de acceso. La persona titular de la cuenta es responsable de las acciones realizadas desde ella y de configurar la información pública de su negocio.</p>
         <p>No se debe usar la plataforma para suplantar identidades, publicar información falsa, afectar a otras personas o interferir con el funcionamiento del servicio.</p>
@@ -47,7 +56,7 @@ export default function TermsOfServicePage() {
 
       <LegalSection title="Privacidad y cambios">
         <p>El tratamiento de datos personales se describe en la Política de privacidad, cuyo borrador debe revisarse junto con estas condiciones antes de publicar ambas páginas.</p>
-        <p>Los cambios en las condiciones se reflejarán con una nueva fecha de revisión. La identificación legal y el domicilio de quien opera Citadely deben incorporarse antes de su publicación.</p>
+        <p>Los cambios en las condiciones se reflejarán con una nueva fecha de revisión.</p>
       </LegalSection>
     </LegalPageLayout>
   );

@@ -32,7 +32,7 @@ export function LegalPageLayout({
           <p className="mt-5 text-sm text-[var(--color-ink-muted)]">Última actualización del borrador: 22 de septiembre de 2026</p>
 
           <div className="mt-8 border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)] px-5 py-4 text-sm leading-6 text-[var(--color-navy)]" role="note">
-            <strong>Borrador para revisión legal.</strong> Antes de publicarlo deben completarse los datos legales de quien opera Citadely y aprobarse su contenido.
+            <strong>Borrador para revisión legal.</strong> Antes de publicarlo debe completarse la identificación legal del titular y aprobarse su contenido.
           </div>
 
           <article className="mt-10 border border-[var(--color-line)] bg-white px-5 py-3 shadow-[var(--shadow-surface)] sm:px-9 sm:py-5">

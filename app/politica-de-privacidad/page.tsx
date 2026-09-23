@@ -16,7 +16,12 @@ export default function PrivacyPolicyPage() {
       description="Cómo se utilizan los datos necesarios para administrar negocios, organizar turnos y recibir reservas mediante Citadely."
     >
       <LegalSection title="Quién trata los datos">
-        <p>Citadely es el nombre público de la plataforma de agenda y reservas. La identificación legal y el domicilio del responsable deben incorporarse antes de publicar esta política. El canal de contacto es <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</p>
+        <p>Citadely es el nombre público de la plataforma de agenda y reservas. La identificación legal del titular debe completarse antes de publicar esta política.</p>
+        <ul>
+          <li><strong>Domicilio legal:</strong> Av. Diaz Velez 4762, CABA, Buenos Aires, Argentina.</li>
+          <li><strong>CUIT:</strong> 20-33740915-7.</li>
+          <li><strong>Canal de contacto:</strong> <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</li>
+        </ul>
         <p>Los negocios que usan Citadely cargan y administran datos de sus clientes. Cada negocio también decide qué información y servicios muestra en su página pública.</p>
       </LegalSection>
 
