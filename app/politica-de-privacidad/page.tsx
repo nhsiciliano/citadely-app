@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { LegalPageLayout, LegalSection } from "@/components/legal-page-layout";
-import { NO_INDEX_ROBOTS } from "@/lib/seo";
+import { INDEX_ROBOTS } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Política de privacidad",
-  description: "Borrador de la política de privacidad de Citadely: datos utilizados para cuentas, agendas y reservas.",
-  robots: NO_INDEX_ROBOTS,
+  description: "Política de privacidad de Citadely: datos utilizados para cuentas, agendas y reservas.",
+  robots: INDEX_ROBOTS,
   alternates: { canonical: "/politica-de-privacidad" },
 };
 
@@ -16,8 +16,9 @@ export default function PrivacyPolicyPage() {
       description="Cómo se utilizan los datos necesarios para administrar negocios, organizar turnos y recibir reservas mediante Citadely."
     >
       <LegalSection title="Quién trata los datos">
-        <p>Citadely es el nombre público de la plataforma de agenda y reservas. La identificación legal del titular debe completarse antes de publicar esta política.</p>
+        <p>Citadely es el nombre público de la plataforma de agenda y reservas.</p>
         <ul>
+          <li><strong>Identificación del titular:</strong> Desarrollado por OnionDEV.</li>
           <li><strong>Domicilio legal:</strong> Av. Diaz Velez 4762, CABA, Buenos Aires, Argentina.</li>
           <li><strong>CUIT:</strong> 20-33740915-7.</li>
           <li><strong>Canal de contacto:</strong> <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</li>
@@ -45,7 +46,7 @@ export default function PrivacyPolicyPage() {
       </LegalSection>
 
       <LegalSection title="Conservación y seguridad">
-        <p>Los datos se conservan mientras sean necesarios para la cuenta, las reservas y las obligaciones aplicables. Antes de publicar esta política deben precisarse los plazos o criterios concretos de conservación y eliminación.</p>
+        <p>Los datos se conservan mientras sean necesarios para la cuenta, las reservas y las obligaciones aplicables.</p>
         <p>La plataforma limita el acceso a la información según el tipo de usuario y utiliza medidas técnicas para proteger cuentas, datos y operaciones. Ningún sistema puede garantizar seguridad absoluta.</p>
       </LegalSection>
 

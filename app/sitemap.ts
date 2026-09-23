@@ -18,6 +18,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 1,
     },
+    {
+      url: `${SITE_ORIGIN}/politica-de-privacidad`,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${SITE_ORIGIN}/condiciones-del-servicio`,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
     ...((data ?? []) as Array<{ slug: string }>).map(({ slug }) => ({
       url: `${SITE_ORIGIN}/b/${encodeURIComponent(slug)}`,
       changeFrequency: "weekly" as const,

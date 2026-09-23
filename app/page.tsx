@@ -269,6 +269,13 @@ export default function Home() {
             <Link className="text-white/70 hover:text-white" href="/registro">Crear cuenta</Link>
             <Link className="text-white/70 hover:text-white" href="/politica-de-privacidad">Política de privacidad</Link>
             <Link className="text-white/70 hover:text-white" href="/condiciones-del-servicio">Condiciones del servicio</Link>
+            <a aria-label="Citadely en Instagram (@citadely.ar)" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-white/70 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" href="https://www.instagram.com/citadely.ar/" rel="noopener noreferrer" target="_blank">
+              <svg aria-hidden="true" className="h-[21px] w-[21px]" fill="none" viewBox="0 0 24 24">
+                <rect height="18" rx="5" stroke="currentColor" strokeWidth="1.8" width="18" x="3" y="3" />
+                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="17.5" cy="6.5" fill="currentColor" r="1.1" />
+              </svg>
+            </a>
           </nav>
         </div>
       </footer>

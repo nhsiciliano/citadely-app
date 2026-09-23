@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { LegalPageLayout, LegalSection } from "@/components/legal-page-layout";
-import { NO_INDEX_ROBOTS } from "@/lib/seo";
+import Link from "next/link";
+import { INDEX_ROBOTS } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Condiciones del servicio",
-  description: "Borrador de las condiciones de uso de Citadely para negocios y personas que reservan turnos.",
-  robots: NO_INDEX_ROBOTS,
+  description: "Condiciones de uso de Citadely para negocios y personas que reservan turnos.",
+  robots: INDEX_ROBOTS,
   alternates: { canonical: "/condiciones-del-servicio" },
 };
 
@@ -20,9 +21,10 @@ export default function TermsOfServicePage() {
         <p>Citadely proporciona herramientas de gestión. El servicio reservado, su prestación, precio, modalidad y condiciones particulares corresponden al negocio que lo ofrece.</p>
       </LegalSection>
 
-      <LegalSection title="Titular y contacto">
-        <p>Citadely es el nombre público de la plataforma. La identificación legal del titular debe completarse antes de publicar estas condiciones.</p>
+      <LegalSection title="Identificación del titular y contacto">
+        <p>Citadely es el nombre público de la plataforma.</p>
         <ul>
+          <li><strong>Identificación del titular:</strong> Desarrollado por OnionDEV.</li>
           <li><strong>Domicilio legal:</strong> Av. Diaz Velez 4762, CABA, Buenos Aires, Argentina.</li>
           <li><strong>CUIT:</strong> 20-33740915-7.</li>
           <li><strong>Canal de contacto:</strong> <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</li>
@@ -46,7 +48,7 @@ export default function TermsOfServicePage() {
 
       <LegalSection title="Cancelación de la suscripción">
         <p>El negocio puede cancelar la renovación desde su configuración. La cancelación evita nuevos cobros periódicos y mantiene el acceso correspondiente al período ya abonado. El estado de la suscripción y la fecha de finalización se muestran en el dashboard.</p>
-        <p>Los pagos, reembolsos y contracargos se procesan según el estado que comunique Mercado Pago y la normativa aplicable. Para consultas, escribí a <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>. Las condiciones finales de facturación deben revisarse antes de publicar este borrador.</p>
+        <p>Los pagos, reembolsos y contracargos se procesan según el estado que comunique Mercado Pago y la normativa aplicable. Para consultas, escribí a <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</p>
       </LegalSection>
 
       <LegalSection title="Contenido y disponibilidad">
@@ -55,7 +57,7 @@ export default function TermsOfServicePage() {
       </LegalSection>
 
       <LegalSection title="Privacidad y cambios">
-        <p>El tratamiento de datos personales se describe en la Política de privacidad, cuyo borrador debe revisarse junto con estas condiciones antes de publicar ambas páginas.</p>
+        <p>El tratamiento de datos personales se describe en la <Link href="/politica-de-privacidad">Política de privacidad</Link>.</p>
         <p>Los cambios en las condiciones se reflejarán con una nueva fecha de revisión.</p>
       </LegalSection>
     </LegalPageLayout>
