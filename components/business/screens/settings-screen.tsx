@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { BadgeDollarSign, Building2, CalendarClock, Check, Clock3, CreditCard, Globe2, LogOut, MessageCircle, ShieldCheck, XCircle } from "lucide-react";
+import { BadgeDollarSign, Building2, CalendarClock, Check, Clock3, CreditCard, Globe2, LogOut, MessageCircle, ShieldCheck, TicketPercent, XCircle } from "lucide-react";
 import { Field, FormMessage, LoadingSpinner, SubmitButton } from "@/components/ui";
 import { getErrorMessage } from "@/lib/auth";
 import { getSubscriptionState } from "@/lib/citadely-db";
@@ -17,9 +17,43 @@ export function SettingsScreen() {
   const [paymentPending, setPaymentPending] = useState(false);
   const [subscriptionPending, setSubscriptionPending] = useState(false);
   const [cancellationPending, setCancellationPending] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
   const [requestedPlan, setRequestedPlan] = useState<SubscriptionPlanId | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<"success" | "error">("success");
+
+  async function redeemCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setRedeeming(true);
+    setMessage(null);
+    const { data: session, error: sessionError } = await insforge.auth.refreshSession();
+    if (sessionError || !session?.accessToken) {
+      setRedeeming(false);
+      setMessageType("error");
+      setMessage("Tu sesión venció. Volvé a iniciar sesión para canjear el código.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/promo-codes/redeem", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ businessId: business.id, code: promoCode }),
+      });
+      const data = await response.json() as { startsAt?: string; endsAt?: string; error?: string };
+      if (!response.ok) throw new Error(data.error ?? "No se pudo canjear el código.");
+      setPromoCode("");
+      await refresh();
+      setMessageType("success");
+      setMessage(`Código canjeado. Acceso Pro hasta el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(data.endsAt ?? ""))}.`);
+    } catch (reason) {
+      setMessageType("error");
+      setMessage(reason instanceof Error ? reason.message : "No se pudo canjear el código.");
+    } finally {
+      setRedeeming(false);
+    }
+  }
 
   async function selectPlan(plan: SubscriptionPlanId) {
     setSubscriptionPending(true);
@@ -138,7 +172,9 @@ export function SettingsScreen() {
             <div className="min-w-0 py-5 md:pe-6">
               <div className="flex flex-wrap items-center gap-3">
                 <span className={`status-badge ${subscription.hasPaidPeriod ? "status-confirmed" : subscription.isTrialing || subscription.awaitingFirstPayment ? "status-pending_payment" : "status-cancelled"}`}>
-                  {subscription.cancelAtPeriodEnd
+                  {subscription.hasPromotion
+                    ? "Acceso Pro promocional"
+                    : subscription.cancelAtPeriodEnd
                     ? "Renovación cancelada"
                     : subscription.isPastDue
                       ? "Pago pendiente"
@@ -153,8 +189,10 @@ export function SettingsScreen() {
                 ) : null}
               </div>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">
-                {subscription.isTrialing
-                  ? `${subscription.trialDaysLeft} días restantes con todas las funciones Pro. Si elegís un plan ahora, el primer cobro se hará al terminar la prueba.`
+                {subscription.hasPromotion && subscription.promotionEndsAt
+                  ? `Todas las funciones Pro sin cargo hasta el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(subscription.promotionEndsAt)}. Si elegís un plan, el primer cobro será después de esa fecha.`
+                  : subscription.isTrialing
+                  ? `${subscription.trialDaysLeft} días restantes con todas las funciones Pro.${subscription.promotionPending && subscription.promotionEndsAt ? ` Después tendrás acceso promocional hasta el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(subscription.promotionEndsAt)}.` : " Si elegís un plan ahora, el primer cobro se hará al terminar la prueba."}`
                   : subscription.isPastDue && subscription.hasPaidPeriod
                     ? "Mercado Pago no pudo completar la renovación. Conservás el acceso durante el período ya abonado."
                     : subscription.hasPaidPeriod
@@ -165,7 +203,9 @@ export function SettingsScreen() {
                 <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]">
                   <Clock3 aria-hidden="true" size={16} />
                   {subscription.awaitingFirstPayment ? "Primer cobro" : `Cambio a ${SUBSCRIPTION_PLANS[subscription.pendingPlan].name}`}
-                  {subscription.isTrialing
+                  {subscription.promotionEndsAt && subscription.promotionEndsAt > new Date()
+                    ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(subscription.promotionEndsAt)}`
+                    : subscription.isTrialing
                     ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.trial_ends_at))}`
                     : business.subscription_current_period_end
                       ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.subscription_current_period_end))}`
@@ -174,10 +214,15 @@ export function SettingsScreen() {
               ) : null}
             </div>
             <dl className="grid content-center gap-3 border-t border-[var(--color-line)] py-5 text-sm md:border-s md:border-t-0 md:ps-6">
-              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Importe actual</dt><dd className="font-mono font-semibold tabular-nums">${(SUBSCRIPTION_PLANS[subscription.currentPlan].priceCents / 100).toLocaleString("es-AR")} ARS</dd></div>
+              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Importe actual</dt><dd className="font-mono font-semibold tabular-nums">{subscription.hasPromotion || subscription.promotionPending ? "Sin cargo" : `$${(SUBSCRIPTION_PLANS[subscription.currentPlan].priceCents / 100).toLocaleString("es-AR")} ARS`}</dd></div>
               <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Frecuencia</dt><dd className="font-semibold">Mensual</dd></div>
-              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Próxima fecha</dt><dd className="text-end font-semibold">{subscription.periodEndsAt ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(subscription.periodEndsAt) : subscription.isTrialing ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(business.trial_ends_at)) : "Al aprobarse"}</dd></div>
+              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Próxima fecha</dt><dd className="text-end font-semibold">{subscription.promotionEndsAt && subscription.promotionEndsAt > new Date() ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(subscription.promotionEndsAt) : subscription.periodEndsAt ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(subscription.periodEndsAt) : subscription.isTrialing ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(business.trial_ends_at)) : "Al aprobarse"}</dd></div>
             </dl>
+          </div>
+          <div className="mb-6 border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-5">
+            <div className="flex items-start gap-3"><TicketPercent aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-primary)]" size={20} /><div><h3 className="font-semibold">Código de acceso Pro</h3><p className="mt-1 text-sm text-[var(--color-ink-soft)]">Cada email puede usar un código una sola vez. Incluye página pública y reservas.</p></div></div>
+            {business.promotion_ends_at ? <p className="mt-4 text-sm font-semibold">Código utilizado. Acceso otorgado hasta el {new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.promotion_ends_at))}.</p> : <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={(event) => void redeemCode(event)}><label className="form-label min-w-0 flex-1">Ingresá tu código<input autoComplete="off" className="form-control font-mono" maxLength={80} onChange={(event) => setPromoCode(event.target.value)} placeholder="CTD-XXXX-XXXX-..." required type="text" value={promoCode} /></label><button className="button-secondary shrink-0" disabled={redeeming || !promoCode.trim() || subscription.hasPaidPeriod || Boolean(business.subscription_external_id && !business.subscription_cancel_at_period_end)} type="submit">{redeeming ? "Validando…" : "Canjear código"}</button></form>}
+            {!business.promotion_ends_at && (subscription.hasPaidPeriod || (business.subscription_external_id && !business.subscription_cancel_at_period_end)) ? <p className="mt-3 text-xs text-[var(--color-ink-muted)]">Para canjearlo, cancelá la suscripción y esperá a que termine el período pagado.</p> : null}
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
             {(Object.values(SUBSCRIPTION_PLANS) as (typeof SUBSCRIPTION_PLANS)[SubscriptionPlanId][]).map((plan) => {

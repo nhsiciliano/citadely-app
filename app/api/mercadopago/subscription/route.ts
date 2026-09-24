@@ -7,11 +7,13 @@ import {
   updateMercadoPagoPreapproval,
 } from "@/lib/mercadopago";
 import { getSubscriptionPlan, isSubscriptionPlanId, type SubscriptionPlanId } from "@/lib/subscription-plans";
+import { getBillingStartAt } from "@/lib/subscription-billing";
 
 type SubscriptionBusiness = {
   id: string;
   owner_id: string;
   trial_ends_at: string;
+  promotion_ends_at: string | null;
   subscription_status: string;
   subscription_provider: string | null;
   subscription_plan: SubscriptionPlanId;
@@ -65,7 +67,7 @@ async function getOwnedBusiness(request: NextRequest, businessId: string) {
   // with the user's token first, then perform the ownership lookup server-side.
   const { data: rows, error } = await insforgeAdmin.database
     .from("businesses")
-    .select("id,owner_id,trial_ends_at,subscription_status,subscription_provider,subscription_plan,pending_subscription_plan,subscription_external_id,subscription_checkout_url,subscription_current_period_end,subscription_cancel_at_period_end")
+    .select("id,owner_id,trial_ends_at,promotion_ends_at,subscription_status,subscription_provider,subscription_plan,pending_subscription_plan,subscription_external_id,subscription_checkout_url,subscription_current_period_end,subscription_cancel_at_period_end")
     .eq("id", businessId)
     .eq("owner_id", user.id)
     .limit(1);
@@ -117,18 +119,6 @@ function operationResponse(claim: OperationClaim | null) {
   return null;
 }
 
-function getBillingStartAt(business: SubscriptionBusiness) {
-  const now = Date.now();
-  const trialEnd = new Date(business.trial_ends_at).getTime();
-  const periodEnd = business.subscription_current_period_end
-    ? new Date(business.subscription_current_period_end).getTime()
-    : 0;
-
-  if (business.subscription_status === "trialing" && trialEnd > now) return new Date(trialEnd).toISOString();
-  if (business.subscription_cancel_at_period_end && periodEnd > now) return new Date(periodEnd).toISOString();
-  return null;
-}
-
 export async function POST(request: NextRequest) {
   let operationId: string | null = null;
   try {
@@ -139,7 +129,8 @@ export async function POST(request: NextRequest) {
 
     const owned = await getOwnedBusiness(request, body.businessId);
     if (!owned.ok) return Response.json({ error: owned.error }, { status: owned.status });
-    const { business, user } = owned;
+    let { business } = owned;
+    const { user } = owned;
     if (!isSubscriptionPlanId(body.plan) || !body.requestId || !UUID_PATTERN.test(body.requestId)) {
       return Response.json({ error: "Plan o identificador de solicitud invalido." }, { status: 400 });
     }
@@ -149,6 +140,11 @@ export async function POST(request: NextRequest) {
     if (earlyResponse) return earlyResponse;
     operationId = claim?.operation_id ?? null;
     if (!operationId) throw new Error("No se pudo reservar la operacion de suscripcion.");
+
+    // Un canje que terminó justo antes del reclamo debe aplazar el primer cobro.
+    const refreshed = await getOwnedBusiness(request, business.id);
+    if (!refreshed.ok) throw new Error("No se pudo actualizar el estado del negocio.");
+    business = refreshed.business;
 
     if (
       business.subscription_status === "active"

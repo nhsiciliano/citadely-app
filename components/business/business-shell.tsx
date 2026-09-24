@@ -84,7 +84,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
 
         <div className={`border-b border-white/10 px-5 py-4 ${collapsed ? "lg:px-3 lg:text-center" : ""}`}>
           <p className={`truncate text-sm font-semibold ${collapsed ? "lg:hidden" : ""}`}>{business.name}</p>
-          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : subscription.isTrialing ? `${subscription.trialDaysLeft} días de prueba` : business.subscription_status === "active" ? "Plan activo" : "Acceso limitado"}</p>
+          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : subscription.hasPromotion ? "Acceso Pro promocional" : subscription.isTrialing ? `${subscription.trialDaysLeft} días de prueba` : business.subscription_status === "active" ? "Plan activo" : "Acceso limitado"}</p>
           {collapsed ? <span className="hidden text-sm font-bold lg:inline">{business.name.slice(0, 1).toUpperCase()}</span> : null}
         </div>
 

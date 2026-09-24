@@ -21,6 +21,8 @@ export type Business = {
   cover_image_key: string | null;
   brand_color: string | null;
   trial_ends_at: string;
+  promotion_starts_at: string | null;
+  promotion_ends_at: string | null;
   subscription_status: "trialing" | "active" | "past_due" | "cancelled" | "expired";
   subscription_provider: string | null;
   subscription_external_id: string | null;
@@ -217,15 +219,19 @@ export function getBookingPaymentLabel(service: Service, currency = "ARS") {
 export function getSubscriptionState(business: Business) {
   const trialEndsAt = new Date(business.trial_ends_at);
   const now = new Date();
+  const promotionStartsAt = business.promotion_starts_at ? new Date(business.promotion_starts_at) : null;
+  const promotionEndsAt = business.promotion_ends_at ? new Date(business.promotion_ends_at) : null;
+  const hasPromotion = Boolean(promotionStartsAt && promotionEndsAt && promotionStartsAt <= now && promotionEndsAt > now);
+  const promotionPending = Boolean(promotionStartsAt && promotionEndsAt && promotionStartsAt > now && promotionEndsAt > now);
   const trialDaysLeft = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / 86400000));
   const isTrialing = business.subscription_status === "trialing" && trialEndsAt > now;
   const periodEndsAt = business.subscription_current_period_end ? new Date(business.subscription_current_period_end) : null;
   const hasPaidPeriod = business.subscription_provider === "mercadopago"
     ? Boolean(periodEndsAt && periodEndsAt > now && ["active", "past_due", "cancelled"].includes(business.subscription_status))
     : business.subscription_status === "active";
-  const hasDashboardAccess = hasPaidPeriod || isTrialing;
+  const hasDashboardAccess = hasPaidPeriod || isTrialing || hasPromotion;
   const currentPlan = business.subscription_plan ?? "pro";
-  const hasPublicPageAccess = (isTrialing || hasPaidPeriod) && currentPlan === "pro";
+  const hasPublicPageAccess = hasPromotion || ((isTrialing || hasPaidPeriod) && currentPlan === "pro");
 
   return {
     hasAccess: hasDashboardAccess,
@@ -235,6 +241,10 @@ export function getSubscriptionState(business: Business) {
     pendingPlan: business.pending_subscription_plan ?? null,
     trialDaysLeft,
     isTrialing,
+    hasPromotion,
+    promotionPending,
+    promotionStartsAt,
+    promotionEndsAt,
     hasPaidPeriod,
     periodEndsAt,
     cancelAtPeriodEnd: Boolean(business.subscription_cancel_at_period_end),

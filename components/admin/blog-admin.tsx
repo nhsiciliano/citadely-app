@@ -19,11 +19,11 @@ async function parseResponse(response: Response, fallback = "No se pudo completa
   return body;
 }
 
-function AdminHeader({ onLogout }: { onLogout: () => void }) {
-  return <header className="border-b border-[var(--color-line)] bg-[var(--color-navy)] text-white"><div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8"><Link className="font-display text-xl font-semibold" href="/admin-panel">Citadely <span className="text-white/50">/ Blog</span></Link><button className="rounded-md px-3 py-2 text-sm font-semibold text-white/75 hover:bg-white/10 hover:text-white" onClick={onLogout} type="button">Cerrar sesión</button></div></header>;
+export function AdminHeader({ onLogout }: { onLogout: () => void }) {
+  return <header className="border-b border-[var(--color-line)] bg-[var(--color-navy)] text-white"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-4 sm:px-8"><Link className="order-1 mr-auto font-display text-xl font-semibold" href="/admin-panel">Citadely <span className="text-white/50">/ Admin</span></Link><nav aria-label="Secciones del panel" className="order-3 flex w-full items-center gap-2 text-sm font-semibold sm:order-2 sm:w-auto"><Link className="rounded-md px-3 py-2 text-white/80 hover:bg-white/10 hover:text-white" href="/admin-panel">Blog</Link><Link className="rounded-md px-3 py-2 text-white/80 hover:bg-white/10 hover:text-white" href="/admin-panel/codigos">Códigos</Link></nav><button className="order-2 rounded-md px-2 py-2 text-sm font-semibold text-white/75 hover:bg-white/10 hover:text-white sm:order-3" onClick={onLogout} type="button">Cerrar sesión</button></div></header>;
 }
 
-function useLogout() {
+export function useLogout() {
   const router = useRouter();
   return async () => {
     await fetch(`${API}/session`, { method: "DELETE" });
@@ -54,7 +54,7 @@ export function AdminLogin() {
     }
   }
 
-  return <main className="grid min-h-screen place-items-center px-5 py-10"><div className="w-full max-w-md border border-[var(--color-line)] bg-white p-7 shadow-[var(--shadow-surface)] sm:p-10"><Link className="font-display text-2xl font-semibold text-[var(--color-navy)]" href="/">Citadely</Link><h1 className="font-display mt-10 text-3xl font-semibold text-[var(--color-navy)]">Panel editorial</h1><p className="mt-2 text-sm text-[var(--color-ink-soft)]">Ingresá para administrar las publicaciones del Blog.</p><form className="mt-8 grid gap-5" onSubmit={submit}><label className="form-label">Usuario<input autoComplete="username" className="form-control" maxLength={80} name="username" required type="text" /></label><label className="form-label">Contraseña<input autoComplete="current-password" className="form-control" name="password" required type="password" /></label>{error ? <p role="alert" className="text-sm font-semibold text-[var(--color-danger)]">{error}</p> : null}<button className="button-primary w-full" disabled={loading} type="submit">{loading ? "Ingresando…" : "Ingresar"}</button></form></div></main>;
+  return <main className="grid min-h-screen place-items-center px-5 py-10"><div className="w-full max-w-md border border-[var(--color-line)] bg-white p-7 shadow-[var(--shadow-surface)] sm:p-10"><Link className="font-display text-2xl font-semibold text-[var(--color-navy)]" href="/">Citadely</Link><h1 className="font-display mt-10 text-3xl font-semibold text-[var(--color-navy)]">Panel administrativo</h1><p className="mt-2 text-sm text-[var(--color-ink-soft)]">Ingresá para administrar Blog y códigos de acceso.</p><form className="mt-8 grid gap-5" onSubmit={submit}><label className="form-label">Usuario<input autoComplete="username" className="form-control" maxLength={80} name="username" required type="text" /></label><label className="form-label">Contraseña<input autoComplete="current-password" className="form-control" name="password" required type="password" /></label>{error ? <p role="alert" className="text-sm font-semibold text-[var(--color-danger)]">{error}</p> : null}<button className="button-primary w-full" disabled={loading} type="submit">{loading ? "Ingresando…" : "Ingresar"}</button></form></div></main>;
 }
 
 export function AdminDashboard({ initialPosts }: { initialPosts: BlogPost[] }) {

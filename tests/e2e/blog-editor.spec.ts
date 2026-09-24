@@ -10,7 +10,7 @@ test("Blog y panel editorial: borrador, portada, publicación, edición, retirad
   expect(publicRead.status()).toBe(401);
 
   await page.goto("/admin-panel");
-  await expect(page.getByRole("heading", { name: "Panel editorial" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Panel administrativo" })).toBeVisible();
   await page.getByLabel("Usuario").fill("admin");
   await page.getByLabel("Contraseña").fill("incorrecta");
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
@@ -109,7 +109,7 @@ test("Blog y panel editorial: borrador, portada, publicación, edición, retirad
   await page.getByRole("button", { name: `Eliminar ${editedTitle}` }).click();
   await expect(page.getByRole("heading", { name: editedTitle })).toHaveCount(0);
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
-  await expect(page.getByRole("heading", { name: "Panel editorial" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Panel administrativo" })).toBeVisible();
 });
 
 test("sesiones manipuladas o vencidas no acceden al panel", async ({ request }) => {
