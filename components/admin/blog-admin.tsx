@@ -15,7 +15,7 @@ const KIND_LABELS: Record<BlogBlockKind, string> = {
 
 async function parseResponse(response: Response, fallback = "No se pudo completar la acción.") {
   const body = await response.json().catch(() => ({})) as { error?: string };
-  if (!response.ok) throw new Error(body.error ?? (response.status === 413 ? "La imagen supera el tamaño permitido de 4 MB." : fallback));
+  if (!response.ok) throw new Error(body.error ?? fallback);
   return body;
 }
 
@@ -129,8 +129,10 @@ export function AdminEditor({ initialPost, initialBlocks }: { initialPost: BlogP
     try {
       const form = new FormData();
       form.append("postId", post.id); form.append("image", file);
+      const response = await fetch(`${API}/blog-images`, { method: "POST", body: form });
+      if (response.status === 413) throw new Error("La imagen supera el tamaño permitido de 4 MB.");
       const body = await parseResponse(
-        await fetch(`${API}/blog-images`, { method: "POST", body: form }),
+        response,
         "No se pudo subir la portada por un problema del servidor. Volvé a intentarlo.",
       ) as { url: string; key: string };
       setPost((current) => ({ ...current, cover_url: body.url, cover_key: body.key }));
