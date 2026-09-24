@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Eye, Plus, Trash2 } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Eye, ImagePlus, Plus, Trash2 } from "lucide-react";
 import type { BlogBlock, BlogBlockKind, BlogPost } from "@/lib/blog";
 
 const API = "/admin-panel/api";
@@ -13,9 +13,9 @@ const KIND_LABELS: Record<BlogBlockKind, string> = {
   ordered_list: "Lista numerada", unordered_list: "Lista con viñetas", quote: "Cita",
 };
 
-async function parseResponse(response: Response) {
+async function parseResponse(response: Response, fallback = "No se pudo completar la acción.") {
   const body = await response.json().catch(() => ({})) as { error?: string };
-  if (!response.ok) throw new Error(body.error ?? "No se pudo completar la acción.");
+  if (!response.ok) throw new Error(body.error ?? (response.status === 413 ? "La imagen supera el tamaño permitido de 4 MB." : fallback));
   return body;
 }
 
@@ -98,11 +98,13 @@ export function AdminDashboard({ initialPosts }: { initialPosts: BlogPost[] }) {
 export function AdminEditor({ initialPost, initialBlocks }: { initialPost: BlogPost; initialBlocks: BlogBlock[] }) {
   const router = useRouter();
   const logout = useLogout();
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [post, setPost] = useState(initialPost);
   const [title, setTitle] = useState(initialPost.title);
   const [coverAlt, setCoverAlt] = useState(initialPost.cover_alt);
   const [blocks, setBlocks] = useState<BlogBlock[]>(initialBlocks);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -117,16 +119,25 @@ export function AdminEditor({ initialPost, initialBlocks }: { initialPost: BlogP
 
   async function upload(file: File | undefined) {
     if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size < 1 || file.size > 4 * 1024 * 1024) {
+      setError("Seleccioná un JPG, PNG o WebP de hasta 4 MB.");
+      setMessage("");
+      return;
+    }
     setBusy(true); setError(""); setMessage("");
+    setUploading(true);
     try {
       const form = new FormData();
       form.append("postId", post.id); form.append("image", file);
-      const body = await parseResponse(await fetch(`${API}/blog-images`, { method: "POST", body: form })) as { url: string; key: string };
+      const body = await parseResponse(
+        await fetch(`${API}/blog-images`, { method: "POST", body: form }),
+        "No se pudo subir la portada por un problema del servidor. Volvé a intentarlo.",
+      ) as { url: string; key: string };
       setPost((current) => ({ ...current, cover_url: body.url, cover_key: body.key }));
       setMessage("Portada cargada. Guardá la publicación para conservar el texto alternativo.");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "No se pudo subir la portada.");
-    } finally { setBusy(false); }
+      setError(reason instanceof Error ? reason.message : "No se pudo subir la portada. Volvé a intentarlo.");
+    } finally { setBusy(false); setUploading(false); }
   }
 
   async function save(publish: boolean) {
@@ -146,7 +157,27 @@ export function AdminEditor({ initialPost, initialBlocks }: { initialPost: BlogP
 
   return <><AdminHeader onLogout={logout} /><main className="mx-auto max-w-4xl px-5 py-10 sm:px-8"><Link className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]" href="/admin-panel"><ArrowLeft aria-hidden="true" size={16} />Publicaciones</Link><div className="mt-6 flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-line)] pb-7"><div><span className={`text-xs font-bold uppercase tracking-[0.1em] ${post.status === "published" ? "text-[var(--color-success)]" : "text-[var(--color-warning)]"}`}>{post.status === "published" ? "Publicado" : "Borrador"}</span><h1 className="font-display mt-2 text-3xl font-semibold text-[var(--color-navy)]">Editar publicación</h1><p className="mt-2 text-xs text-[var(--color-ink-muted)]">URL permanente: /blog/{post.slug}</p></div><Link className="button-secondary" href={`/admin-panel/posts/${post.id}/preview`} target="_blank"><Eye aria-hidden="true" size={17} />Vista previa guardada</Link></div>
     {error ? <p role="alert" className="mt-5 text-sm font-semibold text-[var(--color-danger)]">{error}</p> : null}{message ? <p role="status" className="mt-5 text-sm font-semibold text-[var(--color-success)]">{message}</p> : null}
-    <div className="mt-8 grid gap-8"><section className="border border-[var(--color-line)] bg-white p-5 sm:p-7"><h2 className="font-display text-xl font-semibold text-[var(--color-navy)]">Identidad de la publicación</h2><div className="mt-6 grid gap-5"><label className="form-label">Título<input className="form-control" maxLength={180} onChange={(event) => setTitle(event.target.value)} placeholder="Nueva mejora para tu agenda" type="text" value={title} /></label><label className="form-label">Portada<input accept="image/jpeg,image/png,image/webp" className="mt-2 block w-full text-sm" disabled={busy} onChange={(event) => upload(event.target.files?.[0])} type="file" /><span className="text-xs font-normal text-[var(--color-ink-muted)]">JPG, PNG o WebP · hasta 4 MB · máximo 1600 × 900 px</span></label>{post.cover_url ? <div className="relative aspect-[16/9] overflow-hidden bg-[var(--color-primary-soft)]"><Image alt={coverAlt || "Vista previa de portada"} className="object-cover" fill sizes="(max-width: 896px) 100vw, 800px" src={post.cover_url} unoptimized /></div> : null}<label className="form-label">Descripción de la imagen<input className="form-control" maxLength={240} onChange={(event) => setCoverAlt(event.target.value)} placeholder="Describí la portada para lectores y buscadores" type="text" value={coverAlt} /></label></div></section>
+    <div className="mt-8 grid gap-8">
+      <section className="border border-[var(--color-line)] bg-white p-5 sm:p-7">
+        <h2 className="font-display text-xl font-semibold text-[var(--color-navy)]">Identidad de la publicación</h2>
+        <div className="mt-6 grid gap-5">
+          <label className="form-label">Título<input className="form-control" maxLength={180} onChange={(event) => setTitle(event.target.value)} placeholder="Nueva mejora para tu agenda" type="text" value={title} /></label>
+          <div className="grid gap-2">
+            <p className="form-label">Portada</p>
+            <div className="flex flex-col items-start gap-3 border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] p-4 sm:flex-row sm:items-center sm:gap-4">
+              <ImagePlus aria-hidden="true" className="text-[var(--color-primary)]" size={26} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[var(--color-ink)]">{uploading ? "Subiendo imagen…" : post.cover_url ? "Imagen de portada cargada" : "Agregá una imagen de portada"}</p>
+                <p className="mt-1 text-xs text-[var(--color-ink-muted)]" id="blog-cover-help">JPG, PNG o WebP · hasta 4 MB · se ajusta a 1600 × 900 px</p>
+              </div>
+              <input accept="image/jpeg,image/png,image/webp" aria-describedby="blog-cover-help" aria-label="Portada" className="sr-only" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void upload(file); }} ref={coverInputRef} tabIndex={-1} type="file" />
+              <button aria-busy={uploading} className="button-secondary w-full justify-center sm:w-auto" disabled={busy} onClick={() => coverInputRef.current?.click()} type="button">{post.cover_url ? "Cambiar imagen" : "Seleccionar imagen"}</button>
+            </div>
+          </div>
+          {post.cover_url ? <div className="relative aspect-[16/9] overflow-hidden bg-[var(--color-primary-soft)]"><Image alt={coverAlt || "Vista previa de portada"} className="object-cover" fill sizes="(max-width: 896px) 100vw, 800px" src={post.cover_url} unoptimized /></div> : null}
+          <label className="form-label">Descripción de la imagen<input className="form-control" maxLength={240} onChange={(event) => setCoverAlt(event.target.value)} placeholder="Describí la portada para lectores y buscadores" type="text" value={coverAlt} /></label>
+        </div>
+      </section>
     <section className="border border-[var(--color-line)] bg-white p-5 sm:p-7"><div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="font-display text-xl font-semibold text-[var(--color-navy)]">Contenido</h2><p className="mt-1 text-sm text-[var(--color-ink-soft)]">Ordená los bloques para construir el artículo.</p></div><button className="button-secondary" onClick={() => setBlocks((current) => [...current, { position: current.length, kind: "paragraph", content: "" }])} type="button"><Plus aria-hidden="true" size={16} />Agregar bloque</button></div><div className="mt-6 grid gap-4">{blocks.length === 0 ? <p className="border border-dashed border-[var(--color-line)] p-8 text-center text-sm text-[var(--color-ink-muted)]">Agregá un bloque para empezar.</p> : blocks.map((block, index) => <fieldset className="border border-[var(--color-line)] p-4" key={block.id ?? index}><legend className="px-1 text-xs font-semibold text-[var(--color-ink-muted)]">Bloque {index + 1}</legend><div className="flex flex-wrap items-center gap-2"><select aria-label={`Tipo de bloque ${index + 1}`} className="form-input min-w-44 flex-1" onChange={(event) => changeBlock(index, { kind: event.target.value as BlogBlockKind })} value={block.kind}>{Object.entries(KIND_LABELS).map(([kind, label]) => <option key={kind} value={kind}>{label}</option>)}</select><button aria-label={`Subir bloque ${index + 1}`} className="icon-button" disabled={index === 0} onClick={() => moveBlock(index, -1)} type="button"><ArrowUp aria-hidden="true" size={16} /></button><button aria-label={`Bajar bloque ${index + 1}`} className="icon-button" disabled={index === blocks.length - 1} onClick={() => moveBlock(index, 1)} type="button"><ArrowDown aria-hidden="true" size={16} /></button><button aria-label={`Eliminar bloque ${index + 1}`} className="icon-button text-[var(--color-danger)]" onClick={() => setBlocks((current) => current.filter((_, target) => target !== index))} type="button"><Trash2 aria-hidden="true" size={16} /></button></div><label className="mt-4 block text-sm font-semibold">Texto<textarea className="form-input mt-2 min-h-32 w-full py-3" maxLength={10000} onChange={(event) => changeBlock(index, { content: event.target.value })} placeholder={block.kind.includes("list") ? "Un elemento por línea" : "Escribí el contenido del bloque"} value={block.content} /></label></fieldset>)}</div></section></div>
     <div className="sticky bottom-0 mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-[var(--color-line)] bg-[var(--color-canvas)] py-4"><button className="button-secondary" disabled={busy} onClick={() => save(post.status === "published")} type="button">{busy ? "Guardando…" : "Guardar cambios"}</button>{post.status === "published" ? <button className="button-secondary" disabled={busy} onClick={() => save(false)} type="button">Retirar publicación</button> : <button className="button-primary" disabled={busy} onClick={() => save(true)} type="button">Publicar<ArrowRight aria-hidden="true" size={16} /></button>}</div>
   </main></>;

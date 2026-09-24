@@ -38,17 +38,28 @@ test("Blog y panel editorial: borrador, portada, publicación, edición, retirad
   await page.getByRole("button", { name: "Publicar", exact: true }).click();
   await expect(page.locator("p[role=alert]")).toContainText("completá título, portada");
   await page.getByLabel("Descripción de la imagen").fill("Gráfico de ejemplo sobre una nueva función de Citadely");
-  await page.getByLabel("Portada").setInputFiles({
+  await expect(page.getByRole("button", { name: "Seleccionar imagen" })).toBeVisible();
+  await page.getByLabel("Portada").setInputFiles({ name: "documento.txt", mimeType: "text/plain", buffer: Buffer.from("No es una imagen") });
+  await expect(page.locator("p[role=alert]")).toContainText("JPG, PNG o WebP de hasta 4 MB");
+  const fileChooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "Seleccionar imagen" }).click();
+  await (await fileChooser).setFiles({
     name: "portada.png", mimeType: "image/png",
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
   });
   await expect(page.getByText("Portada cargada.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cambiar imagen" })).toBeVisible();
   await page.getByRole("button", { name: "Agregar bloque" }).click();
   await page.getByLabel("Tipo de bloque 1").selectOption("paragraph");
   await page.getByLabel("Texto").fill("Una mejora creada para simplificar la jornada.");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByRole("status")).toContainText("Borrador guardado");
   await page.screenshot({ path: testInfo.outputPath("editor-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("button", { name: "Cambiar imagen" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  await page.screenshot({ path: testInfo.outputPath("editor-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 720 });
 
   const preview = await page.context().newPage();
   await preview.goto(`${page.url()}/preview`);
