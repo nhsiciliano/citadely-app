@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -241,11 +242,24 @@ export default function Home() {
         <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="precio">
           <div className="mb-10 max-w-3xl"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Dos planes para administrar y crecer.</h2><p className="mt-4 max-w-2xl leading-7 text-[var(--color-ink-soft)]">Empezá con 7 días de Pro. Después elegí si necesitás el dashboard o también una página pública que reciba reservas.</p></div>
           <div className="grid border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)] lg:grid-cols-2">
-            {Object.values(SUBSCRIPTION_PLANS).map((plan) => <article className={`p-7 sm:p-10 ${plan.id === "pro" ? "border-t border-[var(--color-line)] bg-[var(--color-navy)] text-white lg:border-l lg:border-t-0" : ""}`} key={plan.id}><div className="flex items-center justify-between gap-4"><h3 className="font-display text-3xl font-semibold">{plan.name}</h3>{plan.id === "pro" ? <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">Reservas online</span> : null}</div><p className={`mt-3 min-h-12 text-sm leading-6 ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-soft)]"}`}>{plan.description}</p><p className="mt-7 font-mono text-4xl font-semibold tracking-[-0.04em]">${(plan.priceCents / 100).toLocaleString("es-AR")}</p><p className={`mt-1 text-sm ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-muted)]"}`}>ARS por mes</p><ul className="mt-7 grid gap-3">{plan.features.map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className={plan.id === "pro" ? "text-white" : "text-[var(--color-success)]"} size={17} />{item}</li>)}</ul><Link className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold ${plan.id === "pro" ? "bg-white text-[var(--color-navy)] hover:bg-[var(--color-surface-subtle)]" : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"}`} href="/registro">Probar Pro durante 7 días<ArrowRight aria-hidden="true" size={17} /></Link></article>)}
+            {Object.values(SUBSCRIPTION_PLANS).map((plan) => <article className={`p-7 sm:p-10 ${plan.id === "pro" ? "border-t border-[var(--color-line)] bg-[var(--color-navy)] text-white lg:border-l lg:border-t-0" : ""}`} key={plan.id}><div className="flex items-center justify-between gap-4"><h3 className="font-display text-3xl font-semibold">{plan.name}</h3>{plan.id === "pro" ? <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">Reservas online</span> : null}</div><p className={`mt-3 min-h-12 text-sm leading-6 ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-soft)]"}`}>{plan.description}</p><p className="mt-7 font-mono text-4xl font-semibold tracking-[-0.04em]">${(plan.priceCents / 100).toLocaleString("es-AR")}</p><p className={`mt-1 text-sm ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-muted)]"}`}>ARS por mes</p><ul className="mt-7 grid gap-3">{plan.features.map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className={plan.id === "pro" ? "text-white" : "text-[var(--color-success)]"} size={17} />{item}</li>)}</ul><Link className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold ${plan.id === "pro" ? "bg-white text-[var(--color-navy)] hover:bg-[var(--color-surface-subtle)]" : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-strong)]"}`} href="/registro">Probar Pro durante 7 días<ArrowRight aria-hidden="true" size={17} /></Link></article>)}
           </div>
         </section>
 
-        <section className="bg-[var(--color-navy)] text-white"><div className="mx-auto flex max-w-[1440px] flex-col gap-7 px-5 py-18 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12"><div><h2 className="font-display max-w-3xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Tu próxima jornada puede empezar más ordenada.</h2><p className="mt-4 text-white/65">Creá tu cuenta y probá Citadely durante 7 días.</p></div><Link className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-white px-6 text-sm font-semibold text-[var(--color-navy)]" href="/registro">Crear mi cuenta<ArrowRight aria-hidden="true" size={17} /></Link></div></section>
+        <section className="bg-[var(--color-navy)] text-white">
+          <div className="mx-auto flex max-w-[1440px] flex-col gap-7 px-5 py-18 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12">
+            <div>
+              <h2 className="font-display max-w-3xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Tu próxima jornada puede empezar más ordenada.</h2>
+              <p className="mt-4 text-white/65">Creá tu cuenta y probá Citadely durante 7 días.</p>
+            </div>
+            <figure className="w-44 shrink-0">
+              <figcaption className="mb-3 text-sm font-semibold leading-5">Escanea y seguinos en Instagram.</figcaption>
+              <a aria-label="Abrir Instagram de Citadely (@citadely.ar)" className="inline-block rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" href="https://www.instagram.com/citadely.ar/" rel="noopener noreferrer" target="_blank">
+                <Image alt="Código QR de Instagram de Citadely" className="h-auto w-full rounded-md" height={2700} src="/citadely-instagram-qr.webp" width={2350} />
+              </a>
+            </figure>
+          </div>
+        </section>
       </div>
 
       <MarketingFooter />
