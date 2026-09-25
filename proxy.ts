@@ -1,10 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getBusinessSubdomain } from "@/lib/urls";
+import { getBusinessPublicUrl, getBusinessSubdomain, isMainAppHost } from "@/lib/urls";
 
 export function proxy(request: NextRequest) {
-  const subdomain = getBusinessSubdomain(request.headers.get("host") ?? "");
+  const host = request.headers.get("host") ?? "";
+  const pathname = request.nextUrl.pathname;
+  const legacyBusiness = /^\/b\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/.exec(pathname);
+  const subdomain = getBusinessSubdomain(host);
 
-  if (!subdomain || request.nextUrl.pathname.startsWith("/b/")) {
+  if (legacyBusiness && (isMainAppHost(host) || subdomain)) {
+    const destination = new URL(getBusinessPublicUrl(legacyBusiness[1]));
+    destination.search = request.nextUrl.search;
+    return NextResponse.redirect(destination, 308);
+  }
+
+  if (!subdomain || pathname.startsWith("/b/")) {
     return NextResponse.next();
   }
 

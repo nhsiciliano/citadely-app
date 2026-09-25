@@ -76,7 +76,7 @@ test("SEO público, indexación y errores reales", async ({ page, request }) => 
 
   await page.goto("/b/citadely-demo-ux");
   await expect(page).toHaveTitle("Consultorios Horizonte | Turnos online | Citadely");
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://citadely.com.ar/b/citadely-demo-ux");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://citadely-demo-ux.citadely.com.ar/");
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(2);
 
   const missingResponse = await page.goto("/b/seo-url-inexistente");
@@ -91,7 +91,7 @@ test("SEO público, indexación y errores reales", async ({ page, request }) => 
   const sitemap = await request.get("/sitemap.xml");
   const sitemapBody = await sitemap.text();
   expect(sitemapBody).toContain("https://citadely.com.ar");
-  expect(sitemapBody).toContain("https://citadely.com.ar/b/citadely-demo-ux");
+  expect(sitemapBody).toContain("https://citadely-demo-ux.citadely.com.ar/");
 });
 
 test("landing, navegación operativa, CRUD y reserva pública", async ({ page }) => {

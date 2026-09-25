@@ -18,7 +18,8 @@ import {
 } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
 import { formatWhatsAppPhone, getPublicAvailabilitySummary, getWhatsAppUrl } from "@/lib/public-profile";
-import { INDEX_ROBOTS, absoluteUrl, serializeJsonLd } from "@/lib/seo";
+import { INDEX_ROBOTS, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
+import { getBusinessPublicUrl } from "@/lib/urls";
 
 type PublicPageProps = {
   params: Promise<{ slug: string }>;
@@ -54,7 +55,7 @@ export async function generateMetadata({ params }: PublicPageProps): Promise<Met
 
   const title = `${business.name} | Turnos online`;
   const description = getBusinessDescription(business);
-  const canonicalPath = `/b/${encodeURIComponent(business.slug)}`;
+  const canonicalUrl = getBusinessPublicUrl(business.slug);
   const images = business.cover_image_url
     ? [{ url: business.cover_image_url, alt: `Portada de ${business.name}` }]
     : business.logo_url
@@ -65,13 +66,13 @@ export async function generateMetadata({ params }: PublicPageProps): Promise<Met
     title,
     description,
     robots: INDEX_ROBOTS,
-    alternates: { canonical: canonicalPath },
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       type: "website",
       locale: "es_AR",
       title,
       description,
-      url: canonicalPath,
+      url: canonicalUrl,
       images,
     },
     twitter: {
@@ -127,7 +128,7 @@ export default async function PublicBookingPage({ params, searchParams }: Public
   const brandColor = business.brand_color || "#0957d9";
   const availability = getPublicAvailabilitySummary(availabilitySlots, appointments);
   const whatsappUrl = getWhatsAppUrl(business.whatsapp_phone, `Hola ${business.name}, quisiera hacer una consulta.`);
-  const canonicalUrl = absoluteUrl(`/b/${encodeURIComponent(business.slug)}`);
+  const canonicalUrl = getBusinessPublicUrl(business.slug);
   const businessStructuredData = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -250,7 +251,7 @@ export default async function PublicBookingPage({ params, searchParams }: Public
 
         <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] py-6 text-sm text-[var(--color-ink-soft)]">
           <p>{business.name}</p>
-          <Link className="origin-right scale-90 font-semibold hover:text-[var(--color-primary)]" href="/" aria-label="Gestionado con Citadely"><LogoMark linked={false} /></Link>
+          <Link className="origin-right scale-90 font-semibold hover:text-[var(--color-primary)]" href={SITE_ORIGIN} aria-label="Gestionado con Citadely"><LogoMark linked={false} /></Link>
         </footer>
       </div>
     </main>

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { insforge } from "@/lib/insforge";
 import { SITE_ORIGIN } from "@/lib/seo";
+import { getBusinessPublicUrl } from "@/lib/urls";
 
 export const revalidate = 3600;
 
@@ -42,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     })),
     ...((data ?? []) as Array<{ slug: string }>).map(({ slug }) => ({
-      url: `${SITE_ORIGIN}/b/${encodeURIComponent(slug)}`,
+      url: getBusinessPublicUrl(slug),
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),

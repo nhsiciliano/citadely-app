@@ -14,6 +14,7 @@ import {
   type ServiceAvailabilitySlot,
 } from "@/lib/citadely-db";
 import { getPublicAvailabilitySummary, normalizeWhatsAppPhone } from "@/lib/public-profile";
+import { getBusinessPublicUrl } from "@/lib/urls";
 import type { ServiceMode, VirtualPlatform } from "@/lib/virtual-service";
 
 type PreviewFaq = {
@@ -65,7 +66,7 @@ export function PublicPagePreview({
     <section aria-label="Vista previa de la página pública" className="overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-raised)]">
       <div className="flex items-center justify-between gap-4 border-b border-[var(--color-line)] px-4 py-3">
         <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-muted)]">Vista previa</span>
-        <span className="truncate text-xs text-[var(--color-ink-muted)]">citadely.com.ar/b/{business.slug}</span>
+        <span className="truncate text-xs text-[var(--color-ink-muted)]">{getBusinessPublicUrl(business.slug).replace(/^https?:\/\//, "")}</span>
       </div>
 
       <div
