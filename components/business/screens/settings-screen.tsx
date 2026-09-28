@@ -207,8 +207,8 @@ export function SettingsScreen() {
                     ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(subscription.promotionEndsAt)}`
                     : subscription.isTrialing
                     ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.trial_ends_at))}`
-                    : business.subscription_current_period_end
-                      ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(business.subscription_current_period_end))}`
+                    : subscription.periodEndsAt && subscription.periodEndsAt > new Date()
+                      ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(subscription.periodEndsAt)}`
                       : " cuando se apruebe el pago"}
                 </span>
               ) : null}
@@ -226,7 +226,7 @@ export function SettingsScreen() {
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
             {(Object.values(SUBSCRIPTION_PLANS) as (typeof SUBSCRIPTION_PLANS)[SubscriptionPlanId][]).map((plan) => {
-              const isCurrent = business.subscription_status === "active" && subscription.currentPlan === plan.id && !subscription.pendingPlan;
+              const isCurrent = subscription.hasPaidPeriod && subscription.currentPlan === plan.id && !subscription.pendingPlan;
               const isPending = subscription.pendingPlan === plan.id;
               const isLoading = subscriptionPending && requestedPlan === plan.id;
               return (

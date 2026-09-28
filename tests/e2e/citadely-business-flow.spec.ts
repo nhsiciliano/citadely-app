@@ -349,8 +349,17 @@ test("permisos de prueba, Esencial, Pro y cambio pendiente", async ({ page, requ
     expect(unsignedWebhook.status()).toBe(401);
 
     const simulatedBody = { id: "123456", type: "payment", date: "2021-11-01T02:02:02Z", data: { id: "123456" } };
-    const requestId = "e2e-signature-check";
     const timestamp = String(Math.floor(Date.now() / 1000));
+    const incompleteSignature = createHmac("sha256", "e2e-webhook-secret")
+      .update(`id:123456;ts:${timestamp};`)
+      .digest("hex");
+    const incompleteWebhook = await request.post("/api/mercadopago/webhook?data.id=123456", {
+      data: simulatedBody,
+      headers: { "x-signature": `ts=${timestamp},v1=${incompleteSignature}` },
+    });
+    expect(incompleteWebhook.status()).toBe(401);
+
+    const requestId = "e2e-signature-check";
     const signature = createHmac("sha256", "e2e-webhook-secret")
       .update(`id:123456;request-id:${requestId};ts:${timestamp};`)
       .digest("hex");

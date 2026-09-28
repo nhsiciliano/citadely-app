@@ -34,7 +34,11 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 
 function getAppBaseUrl(request: NextRequest) {
   const configuredUrl = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
-  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+  if (configuredUrl) {
+    const url = new URL(configuredUrl);
+    if (url.hostname === "citadely.com.ar") url.hostname = "www.citadely.com.ar";
+    return url.origin;
+  }
 
   const forwardedHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
   const forwardedProto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
@@ -145,9 +149,14 @@ export async function POST(request: NextRequest) {
     const refreshed = await getOwnedBusiness(request, business.id);
     if (!refreshed.ok) throw new Error("No se pudo actualizar el estado del negocio.");
     business = refreshed.business;
+    const currentPeriodEnd = business.subscription_current_period_end
+      ? new Date(business.subscription_current_period_end)
+      : null;
+    const hasCurrentPaidPeriod = Boolean(currentPeriodEnd && currentPeriodEnd.getTime() > Date.now());
 
     if (
       business.subscription_status === "active"
+      && hasCurrentPaidPeriod
       && business.subscription_plan === body.plan
       && !business.pending_subscription_plan
       && !business.subscription_cancel_at_period_end
@@ -217,8 +226,8 @@ export async function POST(request: NextRequest) {
       ? { externalId: preapproval.id, checkoutUrl, firstChargeAt: billingStartAt }
       : {
           changeScheduled: true,
-          awaitingFirstPayment: business.subscription_status !== "active",
-          effectiveAt: billingStartAt ?? business.subscription_current_period_end,
+          awaitingFirstPayment: !hasCurrentPaidPeriod,
+          effectiveAt: preapproval.next_payment_date ?? billingStartAt ?? (hasCurrentPaidPeriod ? business.subscription_current_period_end : null),
         };
     await finishOperation(operationId, "completed", result);
     return Response.json(result);

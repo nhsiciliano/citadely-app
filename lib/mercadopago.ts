@@ -50,6 +50,7 @@ export type MercadoPagoPreapprovalResponse = {
 };
 
 const MERCADOPAGO_API = process.env.MERCADOPAGO_API_BASE_URL ?? "https://api.mercadopago.com";
+const MERCADOPAGO_REQUEST_TIMEOUT_MS = 8_000;
 
 type MercadoPagoError = {
   message?: string;
@@ -71,7 +72,7 @@ async function mercadoPagoRequest<T>(path: string, init: RequestInit = {}) {
     ...init,
     headers,
     cache: "no-store",
-    signal: AbortSignal.timeout(12_000),
+    signal: AbortSignal.timeout(MERCADOPAGO_REQUEST_TIMEOUT_MS),
   });
 
   const data = (await response.json().catch(() => ({}))) as T & MercadoPagoError;
@@ -127,7 +128,7 @@ export function verifyMercadoPagoSignature({
 }) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
   if (!secret) return false;
-  if (!signature) return false;
+  if (!dataId || !requestId || !signature) return false;
 
   const parts = Object.fromEntries(
     signature.split(",").map((part) => {
