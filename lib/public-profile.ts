@@ -50,7 +50,7 @@ export function getPublicAvailabilitySummary(slots: ServiceAvailabilitySlot[], a
     const date = new Date(slot.starts_at);
     dates.add(slot.starts_at.slice(0, 10));
     weekdays.add(date.getDay());
-    times.push(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }).format(date));
+    times.push(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date));
   }
 
   const weekdayLabel = Array.from(weekdays).sort((a, b) => a - b).map((day) => WEEKDAYS[day]).join(", ");

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarRange, ChevronLeft, ChevronRight, Clock3, Filter, List, Plus } from "lucide-react";
 import type { Appointment, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
-import { AppointmentDetailDrawer, NewAppointmentDrawer } from "../appointment-actions";
+import { AppointmentDetailDrawer, NewAppointmentDrawer, type SelectedAgendaSlot } from "../appointment-actions";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
 
@@ -184,6 +184,7 @@ function AgendaDayColumn({
   hours,
   onOpenAppointment,
   onOpenAvailableHour,
+  onOpenAvailableSlot,
   onOpenHour,
   startHour,
 }: {
@@ -192,6 +193,7 @@ function AgendaDayColumn({
   hours: number[];
   onOpenAppointment: (id: string) => void;
   onOpenAvailableHour: (key: string) => void;
+  onOpenAvailableSlot: (slot: AvailableSlot) => void;
   onOpenHour: (key: string) => void;
   startHour: number;
 }) {
@@ -215,16 +217,18 @@ function AgendaDayColumn({
         const height = Math.max(20, duration * HOUR_HEIGHT / 60);
         const compact = height < 40;
         return (
-          <div
+          <button
             aria-label={`Turno libre a las ${formatTime(slot.starts_at)} para ${slot.serviceLabel}`}
             className={`calendar-event calendar-event-available ${compact ? "calendar-event-compact" : ""}`}
             key={slot.id ?? `${slot.service_id}-${slot.starts_at}`}
+            onClick={() => onOpenAvailableSlot(slot)}
             style={{ top: Math.max(0, minutes * HOUR_HEIGHT / 60), height }}
+            type="button"
           >
             <span className="font-mono text-[11px] font-semibold">{formatTime(slot.starts_at)}</span>
             <strong>Turno libre</strong>
             <small>{slot.serviceLabel}</small>
-          </div>
+          </button>
         );
       })}
       {denseAvailableGroups.map((group) => {
@@ -295,6 +299,7 @@ export function AgendaScreen() {
   const [currentTime] = useState(() => Date.now());
   const [filters, setFilters] = useState<AgendaFilters>({ serviceId: "all", status: "all" });
   const [createOpen, setCreateOpen] = useState(false);
+  const [selectedAgendaSlot, setSelectedAgendaSlot] = useState<SelectedAgendaSlot | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedHourKey, setSelectedHourKey] = useState<string | null>(null);
   const [selectedAvailableHourKey, setSelectedAvailableHourKey] = useState<string | null>(null);
@@ -375,10 +380,19 @@ export function AgendaScreen() {
     setAnchorDate((current) => addDays(current, direction * (view === "week" ? 7 : 1)));
   }
 
+  function openAvailableSlot(slot: AvailableSlot) {
+    setSelectedAvailableHourKey(null);
+    setSelectedAgendaSlot({
+      startsAt: new Date(slot.starts_at).toISOString(),
+      serviceId: filters.serviceId === "all" ? undefined : filters.serviceId,
+    });
+    setCreateOpen(true);
+  }
+
   return (
     <>
       <PageHeader
-        actions={<button className="button-primary" onClick={() => setCreateOpen(true)} type="button"><Plus aria-hidden="true" size={18} />Nuevo turno</button>}
+        actions={<button className="button-primary" onClick={() => { setSelectedAgendaSlot(null); setCreateOpen(true); }} type="button"><Plus aria-hidden="true" size={18} />Nuevo turno</button>}
         description="Navegá por día o semana, filtrá la operación y abrí cada turno sin perder el contexto temporal."
         title="Agenda"
       />
@@ -448,6 +462,7 @@ export function AgendaScreen() {
                     key={day.toISOString()}
                     onOpenAppointment={setSelectedId}
                     onOpenAvailableHour={setSelectedAvailableHourKey}
+                    onOpenAvailableSlot={openAvailableSlot}
                     onOpenHour={setSelectedHourKey}
                     startHour={startHour}
                   />
@@ -458,7 +473,7 @@ export function AgendaScreen() {
         </section>
       </div>
 
-      <NewAppointmentDrawer onClose={() => setCreateOpen(false)} open={createOpen} />
+      <NewAppointmentDrawer initialSlot={selectedAgendaSlot} key={selectedAgendaSlot ? `${selectedAgendaSlot.startsAt}-${selectedAgendaSlot.serviceId ?? "all"}` : "manual"} onClose={() => { setCreateOpen(false); setSelectedAgendaSlot(null); }} open={createOpen} />
       <Drawer
         description={selectedAvailableHourGroup ? `${DAY_HEADER.format(new Date(selectedAvailableHourGroup.slots[0].starts_at))} · ${formatHour(selectedAvailableHourGroup.hour)}–${formatHour(selectedAvailableHourGroup.hour + 1)}` : undefined}
         onClose={() => setSelectedAvailableHourKey(null)}
@@ -469,14 +484,15 @@ export function AgendaScreen() {
         {selectedAvailableHourGroup ? (
           <div className="divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]">
             {selectedAvailableHourGroup.slots.map((slot) => (
-              <div className="agenda-hour-row" key={slot.id ?? `${slot.service_id}-${slot.starts_at}`}>
+              <button aria-label={`Asignar turno libre a las ${formatTime(slot.starts_at)} para ${slot.serviceLabel}`} className="agenda-hour-row" key={slot.id ?? `${slot.service_id}-${slot.starts_at}`} onClick={() => openAvailableSlot(slot)} type="button">
                 <span className="agenda-hour-row-time"><Clock3 aria-hidden="true" size={15} />{formatTime(slot.starts_at)}</span>
                 <span className="min-w-0">
                   <strong>Turno libre</strong>
                   <small>{slot.serviceLabel}</small>
                 </span>
-                <span className="calendar-available-badge">Disponible</span>
-              </div>
+                <span className="status-badge status-confirmed">Disponible</span>
+                <ChevronRight aria-hidden="true" className="text-[var(--color-ink-muted)]" size={17} />
+              </button>
             ))}
           </div>
         ) : null}

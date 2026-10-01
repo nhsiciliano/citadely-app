@@ -199,6 +199,7 @@ export function formatAppointmentTime(value: string) {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   }).format(new Date(value));
 }
 
@@ -271,6 +272,7 @@ function buildSlotLabels(startsAt: Date) {
     timeLabel: new Intl.DateTimeFormat("es-AR", {
       hour: "2-digit",
       minute: "2-digit",
+      hourCycle: "h23",
     }).format(startsAt),
     label: new Intl.DateTimeFormat("es-AR", {
       weekday: "short",
@@ -278,6 +280,7 @@ function buildSlotLabels(startsAt: Date) {
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
+      hourCycle: "h23",
     }).format(startsAt),
   };
 }
