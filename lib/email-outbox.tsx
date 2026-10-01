@@ -62,6 +62,7 @@ function formatDate(value: string, timezone = DEFAULT_TIMEZONE) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
     timeZone: timezone,
   }).format(new Date(value));
 }

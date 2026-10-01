@@ -115,7 +115,7 @@ async function resetDemoData(client, businessId) {
   }
 }
 
-async function seedDemoData(client, business) {
+async function seedDemoData(client, admin, business) {
   const serviceResult = await client.database.from("services").insert([
     { business_id: business.id, name: "Consulta inicial", description: "Primera evaluación y definición del plan de atención.", duration_minutes: 45, price_cents: 2800000, requires_payment: true, deposit_type: "deposit", deposit_value_cents: 800000, is_active: true },
     { business_id: business.id, name: "Control clínico", description: "Seguimiento programado de 30 minutos.", duration_minutes: 30, price_cents: 1800000, requires_payment: false, deposit_type: "free", deposit_value_cents: 0, is_active: true },
@@ -177,7 +177,7 @@ async function seedDemoData(client, business) {
       deposit_expires_at: status === "pending_payment" ? addMinutes(new Date(), 90).toISOString() : null,
     };
   });
-  const appointmentResult = await client.database.from("appointments").insert(appointments);
+  const appointmentResult = await admin.database.from("appointments").insert(appointments);
   if (appointmentResult.error) throw new Error(appointmentResult.error.message);
 
   return { services: services.length, clients: clients.length, appointments: appointments.length, slots: slots.length };
@@ -192,7 +192,7 @@ async function main() {
   if (profileResult.error) throw new Error(profileResult.error.message);
   const business = await ensureBusiness(admin, user.id);
   await resetDemoData(client, business.id);
-  const counts = await seedDemoData(client, business);
+  const counts = await seedDemoData(client, admin, business);
   const notification = await client.database.from("business_notification_settings").upsert([{ business_id: business.id, email: credentials.email }], { onConflict: "business_id" });
   if (notification.error) throw new Error(notification.error.message);
   console.log(JSON.stringify({ ok: true, business: { name: business.name, slug: business.slug }, counts }, null, 2));

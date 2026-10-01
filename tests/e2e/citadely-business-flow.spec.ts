@@ -76,7 +76,7 @@ test("SEO público, indexación y errores reales", async ({ page, request }) => 
 
   await page.goto("/b/citadely-demo-ux");
   await expect(page).toHaveTitle("Consultorios Horizonte | Turnos online | Citadely");
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://citadely-demo-ux.citadely.com.ar/");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://citadely-demo-ux.citadely.com.ar");
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(2);
 
   const missingResponse = await page.goto("/b/seo-url-inexistente");
@@ -167,6 +167,9 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   await serviceDialog.locator('input[type="time"]').fill("11:00");
   await serviceDialog.getByRole("button", { name: "Agregar" }).click();
   await expect(serviceDialog.getByText("11:00")).toBeVisible();
+  await serviceDialog.locator('input[type="time"]').fill("12:00");
+  await serviceDialog.getByRole("button", { name: "Agregar" }).click();
+  await expect(serviceDialog.getByText("12:00")).toBeVisible();
   await serviceDialog.getByRole("button", { name: "Guardar servicio" }).click();
   await expect(serviceDialog).toBeHidden();
   await expect(page.getByText(serviceName)).toBeVisible();
@@ -204,11 +207,75 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   await page.getByLabel("Filtrar por estado").selectOption("all");
   await page.getByRole("button", { name: "Nuevo turno" }).click();
   const appointmentDialog = page.getByRole("dialog", { name: "Nuevo turno" });
-  await appointmentDialog.getByLabel("Cliente").selectOption({ label: clientName });
   await appointmentDialog.getByRole("button", { name: new RegExp(serviceName) }).click();
   await appointmentDialog.getByRole("button", { name: "11:00" }).click();
+  await appointmentDialog.getByRole("button", { name: "Seleccionar cliente" }).click();
+  const clientPicker = page.getByRole("dialog", { name: "Seleccionar cliente" });
+  const clientSearch = clientPicker.getByRole("searchbox", { name: "Buscar clientes" });
+  for (const query of [clientName, `cliente-${runId}@example.com`, "1122334455"]) {
+    await clientSearch.fill(query);
+    await expect(clientPicker.getByRole("button", { name: clientName })).toBeVisible();
+  }
+  await clientSearch.fill("sin-coincidencias-e2e");
+  await expect(clientPicker.getByText("No encontramos coincidencias")).toBeVisible();
+  await clientSearch.fill(clientName);
+  await clientPicker.getByRole("button", { name: clientName }).click();
+  await expect(clientPicker).toBeHidden();
+  await expect(appointmentDialog.getByRole("button", { name: clientName })).toBeVisible();
+  await expect(appointmentDialog.getByRole("button", { name: "11:00" })).toHaveAttribute("aria-pressed", "true");
+  await appointmentDialog.getByRole("button", { name: clientName }).click();
+  await clientPicker.getByRole("button", { name: "Crear nuevo cliente" }).click();
+  const quickClientDialog = page.getByRole("dialog", { name: "Nuevo cliente" });
+  const quickClientName = `Cliente rápido E2E ${runId}`;
+  await quickClientDialog.getByLabel("Nombre").fill(quickClientName);
+  await quickClientDialog.getByLabel("Email").fill(`rapido-${runId}@example.com`);
+  await quickClientDialog.getByLabel("Teléfono").fill("1199776655");
+  await quickClientDialog.getByRole("button", { name: "Guardar cliente" }).click();
+  await expect(quickClientDialog).toBeHidden();
+  await expect(appointmentDialog.getByRole("button", { name: quickClientName })).toBeVisible();
+  await expect(appointmentDialog.getByRole("button", { name: "11:00" })).toHaveAttribute("aria-pressed", "true");
   await appointmentDialog.getByRole("button", { name: "Guardar turno" }).click();
   await expect(appointmentDialog).toBeHidden();
+
+  await page.getByLabel("Filtrar por estado").selectOption("available");
+  await page.getByRole("button", { name: /Turno libre a las 12:00/ }).click();
+  const agendaAssignment = page.getByRole("dialog", { name: "Nuevo turno" });
+  await expect(agendaAssignment).toContainText("Asigná este horario libre a un cliente.");
+  await expect(agendaAssignment.getByText(/12:00/)).toBeVisible();
+  await expect(agendaAssignment.getByRole("button", { name: new RegExp(serviceName) })).toHaveAttribute("aria-pressed", "true");
+  await agendaAssignment.getByRole("button", { name: "Seleccionar cliente" }).click();
+  await page.getByRole("dialog", { name: "Seleccionar cliente" }).getByRole("button", { name: clientName }).click();
+  await agendaAssignment.getByRole("button", { name: "Guardar turno" }).click();
+  await expect(agendaAssignment).toBeHidden();
+  await expect(page.getByRole("button", { name: /Turno libre a las 12:00/ })).toHaveCount(0);
+  await expect(page.getByLabel("Filtrar por estado")).toHaveValue("available");
+  await expect(page.getByLabel("Filtrar por servicio").locator("option:checked")).toHaveText(serviceName);
+
+  const businessRows = await (await adminRequest("records/businesses?slug=eq.citadely-demo-ux&select=id&limit=1")).json() as { id: string }[];
+  const serviceRows = await (await adminRequest(`records/services?business_id=eq.${businessRows[0].id}&name=eq.${encodeURIComponent(serviceName)}&select=id&limit=1`)).json() as { id: string }[];
+  const denseSlots = [0, 15, 30].map((minute) => {
+    const startsAt = new Date(availabilityDate);
+    startsAt.setHours(13, minute, 0, 0);
+    return { business_id: businessRows[0].id, service_id: serviceRows[0].id, starts_at: startsAt.toISOString(), ends_at: new Date(startsAt.getTime() + 45 * 60_000).toISOString(), is_active: true };
+  });
+  await adminRequest("records/service_availability_slots", { method: "POST", body: JSON.stringify(denseSlots) });
+  await page.reload();
+  await page.getByRole("button", { name: "Día" }).click();
+  for (let day = 0; day < 7; day += 1) await page.getByRole("button", { name: "Período siguiente" }).click();
+  await page.getByLabel("Filtrar por servicio").selectOption({ label: serviceName });
+  await page.getByLabel("Filtrar por estado").selectOption("available");
+  await page.getByRole("button", { name: /3 horarios libres entre 13:00 y 14:00/ }).click();
+  await page.getByRole("button", { name: /Asignar turno libre a las 13:15/ }).click();
+  await expect(page.getByRole("dialog", { name: "Nuevo turno" }).getByText(/13:15/)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Nuevo turno" })).toBeHidden();
+  await expect(page.getByLabel("Filtrar por estado")).toHaveValue("available");
+
+  await page.getByLabel("Filtrar por servicio").selectOption("all");
+  await page.getByRole("button", { name: /Turno libre a las 17:00/ }).click();
+  await expect(page.getByRole("dialog", { name: "Nuevo turno" }).getByText(/17:00/)).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Nuevo turno" }).getByRole("group", { name: "Servicios disponibles" }).getByRole("button")).toHaveCount(4);
+  await page.getByRole("dialog", { name: "Nuevo turno" }).getByRole("button", { name: "Cerrar panel" }).click();
 
   await page.goto("/negocio#servicios");
   await expect(page).toHaveURL(/\/negocio\/servicios/);
@@ -232,6 +299,7 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   await expect(page.getByText("Elegí un servicio y uno de los horarios disponibles.")).toBeVisible();
   const publicService = page.getByRole("button", { name: new RegExp(serviceName) });
   await publicService.click();
+  await expect(page.getByRole("button", { name: "13:15", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /10:00/ }).last().click();
   await page.getByLabel("Nombre y apellido").fill(publicClientName);
   await page.getByLabel("Email").fill(`publico-${runId}@example.com`);
@@ -243,6 +311,36 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   await page.goto("/negocio/clientes");
   await page.getByRole("searchbox", { name: "Buscar clientes" }).fill(publicClientName);
   await expect(page.getByText(publicClientName)).toBeVisible();
+});
+
+test("RPC de turnos manuales: propiedad, inserción directa y concurrencia", async () => {
+  const result = execFileSync(process.execPath, ["--env-file=.env.local", "--input-type=module", "-e", `
+    import { createClient } from "@insforge/sdk";
+    import { randomUUID } from "node:crypto";
+    const makeClient = () => createClient({ baseUrl: process.env.NEXT_PUBLIC_INSFORGE_BASE_URL, anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY });
+    const first = makeClient();
+    const second = makeClient();
+    const credentials = { email: process.env.CITADELY_DEMO_EMAIL, password: process.env.CITADELY_DEMO_PASSWORD };
+    const logins = await Promise.all([first.auth.signInWithPassword(credentials), second.auth.signInWithPassword(credentials)]);
+    if (logins.some((login) => login.error)) throw new Error("Demo login failed");
+    const { data: business } = await first.database.from("businesses").select("id").eq("slug", "citadely-demo-ux").single();
+    const { data: client } = await first.database.from("clients").select("id").eq("business_id", business.id).limit(1).single();
+    const target = new Date();
+    target.setDate(target.getDate() + 8);
+    while (target.getDay() === 0 || target.getDay() === 6) target.setDate(target.getDate() + 1);
+    target.setHours(17, 0, 0, 0);
+    const { data: slots } = await first.database.from("service_availability_slots").select("service_id,starts_at,ends_at").eq("business_id", business.id).eq("starts_at", target.toISOString()).limit(1);
+    if (slots?.length !== 1) throw new Error("Test slot missing");
+    const slot = slots[0];
+    const payload = { p_business_id: business.id, p_client_id: client.id, p_service_id: slot.service_id, p_starts_at: slot.starts_at };
+    const anonymous = await makeClient().database.rpc("create_manual_appointment", payload);
+    const foreign = await first.database.rpc("create_manual_appointment", { ...payload, p_business_id: randomUUID() });
+    const direct = await first.database.from("appointments").insert([{ business_id: business.id, client_id: client.id, service_id: slot.service_id, starts_at: slot.starts_at, ends_at: slot.ends_at, status: "confirmed", source: "business" }]);
+    const results = await Promise.all([first.database.rpc("create_manual_appointment", payload), second.database.rpc("create_manual_appointment", payload)]);
+    const { data: created } = await first.database.from("appointments").select("id").eq("business_id", business.id).eq("starts_at", slot.starts_at);
+    process.stdout.write(JSON.stringify({ anonymousDenied: !!anonymous.error, foreignDenied: /no autorizado/i.test(foreign.error?.message ?? ""), directDenied: !!direct.error, successes: results.filter((item) => !item.error).length, conflict: results.some((item) => /ocupado/i.test(item.error?.message ?? "")), count: created?.length }));
+  `], { cwd: process.cwd(), encoding: "utf8", timeout: 60_000 });
+  expect(JSON.parse(result)).toEqual({ anonymousDenied: true, foreignDenied: true, directDenied: true, successes: 1, conflict: true, count: 1 });
 });
 
 test("oculta contacto y mapa cuando faltan datos públicos", async ({ page }) => {
@@ -272,6 +370,20 @@ test("dashboard responsive y navegación móvil", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Día" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Nuevo turno" }).click();
   await expect(page.getByRole("dialog", { name: "Nuevo turno" })).toBeVisible();
+  await page.getByRole("dialog", { name: "Nuevo turno" }).getByRole("button", { name: "Seleccionar cliente" }).click();
+  const clientPicker = page.getByRole("dialog", { name: "Seleccionar cliente" });
+  await expect(clientPicker.getByRole("table")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(clientPicker).toBeHidden();
+  await expect(page.getByRole("dialog", { name: "Nuevo turno" }).getByRole("button", { name: "Seleccionar cliente" })).toBeFocused();
+  await page.getByRole("dialog", { name: "Nuevo turno" }).getByRole("button", { name: "Cerrar panel" }).click();
+  const nextWeekday = new Date();
+  let daysAhead = 0;
+  do { daysAhead += 1; nextWeekday.setDate(nextWeekday.getDate() + 1); } while (nextWeekday.getDay() === 0 || nextWeekday.getDay() === 6);
+  for (let day = 0; day < daysAhead; day += 1) await page.getByRole("button", { name: "Período siguiente" }).click();
+  await page.getByLabel("Filtrar por estado").selectOption("available");
+  await page.getByRole("button", { name: /Turno libre a las 17:00/ }).click();
+  await expect(page.getByRole("dialog", { name: "Nuevo turno" })).toContainText("Asigná este horario libre a un cliente.");
 });
 
 test("permisos de prueba, Esencial, Pro y cambio pendiente", async ({ page, request }) => {
