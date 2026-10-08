@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CalendarDays, Check, Clock3, Pencil, Plus, Power, Tag } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
-import { centsFromCurrency, formatCurrency, getSubscriptionState, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { centsFromCurrency, formatCurrency, getSlotOccupancy, getSubscriptionState, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
 import { useWorkspace } from "../workspace-context";
@@ -54,7 +54,7 @@ function currencyInputValue(cents: number) {
 }
 
 export function ServicesScreen() {
-  const { availabilitySlots, business, refresh, services } = useWorkspace();
+  const { appointments, availabilitySlots, business, refresh, services } = useWorkspace();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [pending, setPending] = useState(false);
@@ -63,7 +63,7 @@ export function ServicesScreen() {
   const [selectedMonth, setSelectedMonth] = useState(options[0]?.key ?? monthKey(new Date()));
   const [selectedDate, setSelectedDate] = useState("");
   const [draftTime, setDraftTime] = useState("");
-  const [dateTimes, setDateTimes] = useState<Record<string, string[]>>({});
+  const [dateTimes, setDateTimes] = useState<Record<string, Record<string, number>>>({});
   const subscription = getSubscriptionState(business);
 
   useEffect(() => {
@@ -91,11 +91,11 @@ export function ServicesScreen() {
 
   function openEditService(service: Service) {
     const editableMonths = new Set(options.map((option) => option.key));
-    const serviceTimes = availabilitySlots.reduce<Record<string, string[]>>((result, slot) => {
+    const serviceTimes = availabilitySlots.reduce<Record<string, Record<string, number>>>((result, slot) => {
       const startsAt = new Date(slot.starts_at);
       if (slot.service_id !== service.id || !slot.is_active || !editableMonths.has(monthKey(startsAt))) return result;
       const day = dateKey(startsAt);
-      result[day] = [...(result[day] ?? []), timeKey(startsAt)].sort();
+      result[day] = { ...(result[day] ?? {}), [timeKey(startsAt)]: slot.capacity ?? 1 };
       return result;
     }, {});
 
@@ -117,18 +117,41 @@ export function ServicesScreen() {
       setMessage("Elegí un día y una hora para preparar la disponibilidad.");
       return;
     }
-    setDateTimes((current) => ({ ...current, [selectedDate]: Array.from(new Set([...(current[selectedDate] ?? []), draftTime])).sort() }));
+    setDateTimes((current) => ({ ...current, [selectedDate]: { ...(current[selectedDate] ?? {}), [draftTime]: current[selectedDate]?.[draftTime] ?? 1 } }));
     setDraftTime("");
   }
 
   function removeTime(day: string, time: string) {
     setDateTimes((current) => {
       const next = { ...current };
-      const remaining = (next[day] ?? []).filter((item) => item !== time);
-      if (remaining.length) next[day] = remaining;
+      const remaining = { ...(next[day] ?? {}) };
+      delete remaining[time];
+      if (Object.keys(remaining).length) next[day] = remaining;
       else delete next[day];
       return next;
     });
+  }
+
+  function changeCapacity(day: string, time: string, value: number) {
+    setDateTimes((current) => ({
+      ...current,
+      [day]: { ...(current[day] ?? {}), [time]: value },
+    }));
+  }
+
+  function requestedSlots(duration: number) {
+    return Object.entries(dateTimes).flatMap(([day, times]) => Object.entries(times).map(([time, capacity]) => {
+      const startsAt = new Date(`${day}T${time}:00`);
+      return { startsAt, endsAt: new Date(startsAt.getTime() + duration * 60000), capacity };
+    }));
+  }
+
+  function validateSlots(slots: ReturnType<typeof requestedSlots>) {
+    if (!slots.length) return "Agregá al menos un día y horario para publicar este servicio.";
+    if (slots.some((slot) => !Number.isInteger(slot.capacity) || slot.capacity < 1 || slot.capacity > 1000)) {
+      return "El cupo de cada horario debe estar entre 1 y 1000 personas.";
+    }
+    return null;
   }
 
   async function addService(event: FormEvent<HTMLFormElement>) {
@@ -139,13 +162,11 @@ export function ServicesScreen() {
     const duration = Number(form.get("duration_minutes") ?? 30);
     const price = centsFromCurrency(form.get("price"));
     const depositType = String(form.get("deposit_type")) as Service["deposit_type"];
-    const slots = Object.entries(dateTimes).flatMap(([day, times]) => times.map((time) => {
-      const startsAt = new Date(`${day}T${time}:00`);
-      return { startsAt, endsAt: new Date(startsAt.getTime() + duration * 60000) };
-    }));
+    const slots = requestedSlots(duration);
 
-    if (!slots.length) {
-      setMessage("Agregá al menos un día y horario para publicar este servicio.");
+    const slotError = validateSlots(slots);
+    if (slotError) {
+      setMessage(slotError);
       return;
     }
 
@@ -170,11 +191,12 @@ export function ServicesScreen() {
     }
 
     const createdService = created as Service;
-    const { error: slotsError } = await insforge.database.from("service_availability_slots").insert(slots.map(({ startsAt, endsAt }) => ({
+    const { error: slotsError } = await insforge.database.from("service_availability_slots").insert(slots.map(({ startsAt, endsAt, capacity }) => ({
       business_id: business.id,
       service_id: createdService.id,
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
+      capacity,
       is_active: true,
     })));
 
@@ -202,10 +224,20 @@ export function ServicesScreen() {
     const duration = Number(form.get("duration_minutes") ?? 30);
     const price = centsFromCurrency(form.get("price"));
     const depositType = String(form.get("deposit_type")) as Service["deposit_type"];
-    const desiredSlots = Object.entries(dateTimes).flatMap(([day, times]) => times.map((time) => {
-      const startsAt = new Date(`${day}T${time}:00`);
-      return { startsAt, endsAt: new Date(startsAt.getTime() + duration * 60000) };
-    }));
+    const desiredSlots = requestedSlots(duration);
+    const slotError = validateSlots(desiredSlots);
+    if (slotError) { setMessage(slotError); return; }
+
+    const desiredByStart = new Map(desiredSlots.map((slot) => [slot.startsAt.toISOString(), slot]));
+    for (const slot of availabilitySlots.filter((item) => item.service_id === editingService.id)) {
+      const occupancy = getSlotOccupancy(slot, appointments);
+      if (!occupancy.booked) continue;
+      const desired = desiredByStart.get(new Date(slot.starts_at).toISOString());
+      if ((!desired && slot.is_active) || (desired && (desired.capacity < occupancy.booked || desired.endsAt.toISOString() !== new Date(slot.ends_at).toISOString()))) {
+        setMessage("Hay reservas vigentes en uno de esos horarios. Conservá el horario y un cupo suficiente para ellas.");
+        return;
+      }
+    }
 
     setPending(true);
     setMessage(null);
@@ -232,7 +264,6 @@ export function ServicesScreen() {
       slot.service_id === editingService.id && editableMonths.has(monthKey(new Date(slot.starts_at))),
     );
     const existingByStart = new Map(existingSlots.map((slot) => [new Date(slot.starts_at).toISOString(), slot]));
-    const desiredByStart = new Map(desiredSlots.map((slot) => [slot.startsAt.toISOString(), slot]));
     const slotsToDeactivate = existingSlots.flatMap((slot) =>
       slot.id && slot.is_active && !desiredByStart.has(new Date(slot.starts_at).toISOString()) ? [slot.id] : [],
     );
@@ -241,10 +272,12 @@ export function ServicesScreen() {
       const desired = desiredByStart.get(new Date(slot.starts_at).toISOString());
       if (!desired) return [];
       const desiredEnd = desired.endsAt.toISOString();
-      if (slot.is_active && new Date(slot.ends_at).toISOString() === desiredEnd) return [];
-      return [{ id: slot.id, endsAt: desiredEnd }];
+      if (slot.is_active && new Date(slot.ends_at).toISOString() === desiredEnd && slot.capacity === desired.capacity) return [];
+      return [{ id: slot.id, endsAt: desiredEnd, capacity: desired.capacity }];
     });
-    const newSlots = desiredSlots.filter((slot) => !existingByStart.has(slot.startsAt.toISOString()));
+    const newSlots = [...desiredByStart.entries()]
+      .filter(([startsAt]) => !existingByStart.has(startsAt))
+      .map(([, slot]) => slot);
     const { error: deactivateError } = slotsToDeactivate.length
       ? await insforge.database
           .from("service_availability_slots")
@@ -253,25 +286,28 @@ export function ServicesScreen() {
           .eq("business_id", business.id)
       : { error: null };
     let updateError = deactivateError;
-    for (const slot of slotsToUpdate) {
-      const { error } = await insforge.database
-        .from("service_availability_slots")
-        .update({ ends_at: slot.endsAt, is_active: true })
-        .eq("id", slot.id)
-        .eq("business_id", business.id);
-      if (error) {
-        updateError = error;
-        break;
+    if (!updateError) {
+      for (const slot of slotsToUpdate) {
+        const { error } = await insforge.database
+          .from("service_availability_slots")
+          .update({ ends_at: slot.endsAt, capacity: slot.capacity, is_active: true })
+          .eq("id", slot.id)
+          .eq("business_id", business.id);
+        if (error) {
+          updateError = error;
+          break;
+        }
       }
     }
-    const { error: insertError } = newSlots.length
-      ? await insforge.database.from("service_availability_slots").insert(newSlots.map(({ startsAt, endsAt }) => ({
+    const { error: insertError } = !updateError && newSlots.length
+      ? await insforge.database.from("service_availability_slots").upsert(newSlots.map(({ startsAt, endsAt, capacity }) => ({
           business_id: business.id,
           service_id: editingService.id,
           starts_at: startsAt.toISOString(),
           ends_at: endsAt.toISOString(),
+          capacity,
           is_active: true,
-        })))
+        })), { onConflict: "service_id,starts_at" })
       : { error: null };
 
     setPending(false);
@@ -343,13 +379,24 @@ export function ServicesScreen() {
             <div className="calendar-month">
               {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map((day) => <span className="calendar-weekday" key={day}>{day}</span>)}
               {monthDays(selectedMonth).map((day) => day.blank ? <span key={day.key} /> : (
-                <button aria-pressed={selectedDate === day.key} className={selectedDate === day.key ? "is-selected" : dateTimes[day.key]?.length ? "has-slots" : ""} key={day.key} onClick={() => setSelectedDate(day.key)} type="button"><strong>{day.date.getDate()}</strong><small>{WEEKDAY_FORMATTER.format(day.date)}</small>{dateTimes[day.key]?.length ? <span><Check aria-hidden="true" size={11} />{dateTimes[day.key].length}</span> : null}</button>
+                <button aria-pressed={selectedDate === day.key} className={selectedDate === day.key ? "is-selected" : Object.keys(dateTimes[day.key] ?? {}).length ? "has-slots" : ""} key={day.key} onClick={() => setSelectedDate(day.key)} type="button"><strong>{day.date.getDate()}</strong><small>{WEEKDAY_FORMATTER.format(day.date)}</small>{Object.keys(dateTimes[day.key] ?? {}).length ? <span><Check aria-hidden="true" size={11} />{Object.keys(dateTimes[day.key]).length}</span> : null}</button>
               ))}
             </div>
             <div className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-4">
               <p className="text-sm font-semibold">{selectedDate ? `Horarios para ${selectedDate}` : "Elegí un día del calendario"}</p>
               <div className="mt-3 flex gap-2"><label className="sr-only" htmlFor="service-time">Hora</label><input className="form-control" disabled={!selectedDate} id="service-time" onChange={(event) => setDraftTime(event.target.value)} type="time" value={draftTime} /><button className="button-secondary" disabled={!selectedDate || !draftTime} onClick={addTime} type="button">Agregar</button></div>
-              <div className="mt-3 flex flex-wrap gap-2">{selectedDate && !(dateTimes[selectedDate]?.length) ? <span className="text-sm text-[var(--color-ink-muted)]">Sin horarios para este día.</span> : null}{(dateTimes[selectedDate] ?? []).map((time) => <button className="time-chip" key={time} onClick={() => removeTime(selectedDate, time)} type="button">{time}<span aria-hidden="true">×</span><span className="sr-only">Quitar</span></button>)}</div>
+              <div className="mt-3 grid gap-2">{selectedDate && !Object.keys(dateTimes[selectedDate] ?? {}).length ? <span className="text-sm text-[var(--color-ink-muted)]">Sin horarios para este día.</span> : null}{Object.entries(dateTimes[selectedDate] ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([time, capacity]) => {
+                const existing = availabilitySlots.find((slot) => editingService && slot.service_id === editingService.id && dateKey(new Date(slot.starts_at)) === selectedDate && timeKey(new Date(slot.starts_at)) === time);
+                const booked = existing ? getSlotOccupancy(existing, appointments).booked : 0;
+                return <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-line)] py-2 last:border-0" key={time}>
+                  <span className="min-w-16 font-mono text-sm font-semibold">{time}</span>
+                  <label className="flex items-center gap-2 text-sm" htmlFor={`capacity-${selectedDate}-${time}`}>Cupo
+                    <input className="form-control w-24 tabular-nums" id={`capacity-${selectedDate}-${time}`} max={1000} min={Math.max(1, booked)} onChange={(event) => changeCapacity(selectedDate, time, Number(event.target.value))} required type="number" value={capacity} />
+                  </label>
+                  {booked > 0 ? <span className="text-xs text-[var(--color-ink-soft)]">{booked} {booked === 1 ? "reserva" : "reservas"}</span> : null}
+                  <button aria-label={`Quitar horario ${time}`} className="button-secondary ml-auto" disabled={booked > 0} onClick={() => removeTime(selectedDate, time)} type="button">Quitar</button>
+                </div>;
+              })}</div>
             </div>
           </section>
           {message ? <FormMessage type="error">{message}</FormMessage> : null}

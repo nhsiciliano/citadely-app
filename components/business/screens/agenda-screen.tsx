@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CalendarRange, ChevronLeft, ChevronRight, Clock3, Filter, List, Plus } from "lucide-react";
-import type { Appointment, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { getSlotOccupancy, type Appointment, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { AppointmentDetailDrawer, NewAppointmentDrawer, type SelectedAgendaSlot } from "../appointment-actions";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
@@ -33,7 +33,7 @@ type AppointmentLayout = {
   top: number;
 };
 
-type AvailableSlot = ServiceAvailabilitySlot & { serviceLabel: string };
+type AvailableSlot = ServiceAvailabilitySlot & { serviceLabel: string; booked: number; remaining: number };
 
 type AvailableHourGroup = {
   hour: number;
@@ -218,7 +218,7 @@ function AgendaDayColumn({
         const compact = height < 40;
         return (
           <button
-            aria-label={`Turno libre a las ${formatTime(slot.starts_at)} para ${slot.serviceLabel}`}
+            aria-label={`Turno libre a las ${formatTime(slot.starts_at)} para ${slot.serviceLabel}. ${slot.remaining} de ${slot.capacity} lugares disponibles`}
             className={`calendar-event calendar-event-available ${compact ? "calendar-event-compact" : ""}`}
             key={slot.id ?? `${slot.service_id}-${slot.starts_at}`}
             onClick={() => onOpenAvailableSlot(slot)}
@@ -227,7 +227,7 @@ function AgendaDayColumn({
           >
             <span className="font-mono text-[11px] font-semibold">{formatTime(slot.starts_at)}</span>
             <strong>Turno libre</strong>
-            <small>{slot.serviceLabel}</small>
+            <small>{slot.serviceLabel} · {slot.remaining} de {slot.capacity}</small>
           </button>
         );
       })}
@@ -335,17 +335,12 @@ export function AgendaScreen() {
   const visibleAvailableSlots = useMemo(() => {
     if (filters.status !== "available") return [];
     const activeServiceIds = new Set(services.filter((service) => service.is_active).map((service) => service.id));
-    const freeSlots = availabilitySlots.filter((slot) => {
-      if (!slot.is_active || !activeServiceIds.has(slot.service_id) || new Date(slot.starts_at).getTime() <= currentTime) return false;
-      if (filters.serviceId !== "all" && slot.service_id !== filters.serviceId) return false;
-      if (!days.some((day) => sameDay(new Date(slot.starts_at), day))) return false;
-      const startsAt = new Date(slot.starts_at).getTime();
-      const endsAt = new Date(slot.ends_at).getTime();
-      return !appointments.some((appointment) => (
-        appointment.status !== "cancelled"
-        && startsAt < new Date(appointment.ends_at).getTime()
-        && endsAt > new Date(appointment.starts_at).getTime()
-      ));
+    const freeSlots = availabilitySlots.flatMap((slot) => {
+      if (!slot.is_active || !activeServiceIds.has(slot.service_id) || new Date(slot.starts_at).getTime() <= currentTime) return [];
+      if (filters.serviceId !== "all" && slot.service_id !== filters.serviceId) return [];
+      if (!days.some((day) => sameDay(new Date(slot.starts_at), day))) return [];
+      const occupancy = getSlotOccupancy(slot, appointments, currentTime);
+      return occupancy.remaining > 0 ? [{ ...slot, booked: occupancy.booked, remaining: occupancy.remaining }] : [];
     });
 
     if (filters.serviceId !== "all") {
@@ -353,7 +348,7 @@ export function AgendaScreen() {
       return freeSlots.map((slot) => ({ ...slot, serviceLabel: service?.name ?? "Servicio" }));
     }
 
-    const grouped = new Map<string, ServiceAvailabilitySlot[]>();
+    const grouped = new Map<string, (ServiceAvailabilitySlot & { booked: number; remaining: number })[]>();
     for (const slot of freeSlots) {
       const key = new Date(slot.starts_at).toISOString();
       grouped.set(key, [...(grouped.get(key) ?? []), slot]);
@@ -488,7 +483,7 @@ export function AgendaScreen() {
                 <span className="agenda-hour-row-time"><Clock3 aria-hidden="true" size={15} />{formatTime(slot.starts_at)}</span>
                 <span className="min-w-0">
                   <strong>Turno libre</strong>
-                  <small>{slot.serviceLabel}</small>
+                  <small>{slot.serviceLabel} · {slot.remaining} de {slot.capacity} lugares</small>
                 </span>
                 <span className="status-badge status-confirmed">Disponible</span>
                 <ChevronRight aria-hidden="true" className="text-[var(--color-ink-muted)]" size={17} />

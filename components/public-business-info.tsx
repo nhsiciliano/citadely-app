@@ -1,4 +1,5 @@
 import { CalendarDays, Clock3, ExternalLink, MapPin, MessageCircle, Video } from "lucide-react";
+import type { CSSProperties } from "react";
 import {
   formatWhatsAppPhone,
   getGoogleMapsEmbedUrl,
@@ -26,6 +27,7 @@ export function PublicBusinessInfo({
   virtualPlatforms = [],
   whatsappPhone,
   compact = false,
+  themeStyle,
 }: {
   address: string | null | undefined;
   businessName: string;
@@ -35,6 +37,7 @@ export function PublicBusinessInfo({
   virtualPlatforms?: VirtualPlatform[];
   whatsappPhone: string | null | undefined;
   compact?: boolean;
+  themeStyle?: CSSProperties;
 }) {
   const normalizedAddress = normalizePublicAddress(address);
   const formattedPhone = formatWhatsAppPhone(whatsappPhone);
@@ -49,7 +52,7 @@ export function PublicBusinessInfo({
   if (!formattedPhone && !normalizedAddress && !hasAvailability && !isVirtual) return null;
 
   return (
-    <section aria-labelledby="informacion-servicio-titulo" className={`border-b border-[var(--color-line)] bg-white ${compact ? "py-8" : "py-10 sm:py-14"}`}>
+    <section aria-labelledby="informacion-servicio-titulo" className={`border-b border-[var(--color-line)] bg-white ${compact ? "py-8" : "py-10 sm:py-14"} ${themeStyle ? "public-theme-active public-theme-info" : ""}`} style={themeStyle}>
       <div className={`mx-auto grid max-w-7xl ${compact ? "gap-6 px-6 sm:px-9" : "gap-8 px-5 sm:px-8 lg:px-10"} ${hasLocationPanel ? compact ? "sm:grid-cols-[.8fr_1.2fr] sm:items-stretch" : "lg:grid-cols-[.78fr_1.22fr] lg:items-stretch" : ""}`}>
         <div className="min-w-0">
           <h2 className={`font-display font-semibold tracking-[-0.035em] ${compact ? "text-2xl" : "text-3xl sm:text-4xl"}`} id="informacion-servicio-titulo">Información del servicio</h2>

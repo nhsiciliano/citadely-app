@@ -10,10 +10,12 @@ import { getErrorMessage } from "@/lib/auth";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { insforge } from "@/lib/insforge";
 import { normalizePublicAddress, normalizeWhatsAppPhone } from "@/lib/public-profile";
+import { normalizePublicTheme } from "@/lib/public-theme";
 import { normalizeVirtualPlatforms, VIRTUAL_PLATFORM_OPTIONS, type ServiceMode, type VirtualPlatform } from "@/lib/virtual-service";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "../workspace-ui";
 import { PublicPagePreview } from "../public-page-preview";
+import { PublicThemeEditor } from "../public-theme-editor";
 
 type DraftFaq = Omit<Pick<BusinessFaq, "id" | "question" | "answer" | "sort_order">, "id"> & { id?: string; localId: string };
 
@@ -57,6 +59,7 @@ export function PublicPageScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [description, setDescription] = useState(business.description ?? "");
   const [brandColor, setBrandColor] = useState(business.brand_color ?? "#0957d9");
+  const [publicTheme, setPublicTheme] = useState(() => normalizePublicTheme(business.public_theme));
   const [whatsappPhone, setWhatsappPhone] = useState(business.whatsapp_phone ?? "");
   const [publicAddress, setPublicAddress] = useState(business.public_address ?? "");
   const [serviceMode, setServiceMode] = useState<ServiceMode>(business.service_mode ?? "physical");
@@ -134,6 +137,7 @@ export function PublicPageScreen() {
       const { error } = await insforge.database.from("businesses").update({
         description,
         brand_color: brandColor,
+        public_theme: normalizePublicTheme(publicTheme),
         whatsapp_phone: normalizedPhone,
         public_address: normalizedAddress,
         service_mode: serviceMode,
@@ -224,6 +228,11 @@ export function PublicPageScreen() {
             <FileUpload current={business.logo_url} label="Logo" name="logo_file" note="JPG, PNG o WebP. Hasta 2 MB; recomendado 512 × 512 px." />
             <FileUpload current={business.cover_image_url} label="Portada" name="cover_file" note="JPG, PNG o WebP. Hasta 5 MB; recomendado 1600 × 600 px." />
           </div>
+          </section>
+
+          <section className="surface-section">
+            <div className="section-heading-row"><div><h2>Colores de la página</h2><p>Personalizá cada sección sin cambiar el contenido.</p></div><Palette aria-hidden="true" className="text-[var(--color-primary)]" size={21} /></div>
+            <PublicThemeEditor brandColor={brandColor} onChange={setPublicTheme} theme={publicTheme} />
           </section>
 
           <section className="surface-section">
@@ -338,6 +347,7 @@ export function PublicPageScreen() {
             faqs={draftFaqs}
             galleryImages={visibleGalleryImages}
             publicAddress={publicAddress}
+            publicTheme={publicTheme}
             serviceMode={serviceMode}
             services={services}
             virtualPlatforms={virtualPlatforms}

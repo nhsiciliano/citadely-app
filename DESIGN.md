@@ -125,7 +125,7 @@ components:
 
 Citadely se comporta como una central de turnos en actividad: profesional, precisa e intensa. La interfaz convierte tiempo, estados, señas y próximas acciones en una trama operativa visible; el cobalto marca lo que requiere decisión, el azul noche sostiene la estructura y las reglas finas mantienen cada dato en su lugar.
 
-La expresión pública y la operación comparten el mismo mundo, pero cambian de énfasis. La landing narra el movimiento de una reserva mediante una línea temporal; el producto prioriza agenda, métricas tabulares, filas accionables y drawers que conservan el contexto. En la reserva pública domina la identidad configurada por cada negocio y Citadely se retira a una firma discreta.
+La expresión pública y la operación comparten el mismo mundo, pero cambian de énfasis. La landing narra el movimiento de una reserva mediante una línea temporal; el producto prioriza agenda, métricas tabulares, filas accionables y drawers que conservan el contexto. En la página pública editorial domina la identidad configurada por cada negocio: su nombre, imagen y color abren el recorrido, mientras Citadely se retira a una firma discreta.
 
 La intensidad nace del contraste, el ritmo y la información, no de efectos ornamentales. Se excluyen el beige, el glassmorphism, los gradientes decorativos, el redondeado excesivo, el hero SaaS con captura flotante y la repetición de tarjetas genéricas intercambiables.
 
@@ -199,6 +199,8 @@ La estructura se apoya en divisiones, no en grupos de tarjetas flotantes. La lan
 En escritorio, la barra lateral mide 256px y puede contraerse a 84px. En móvil se transforma en un panel superpuesto de 286px y deja el contenido completo detrás. Los encabezados operativos usan 20px de gutter móvil, 32px desde `sm` y 40px desde `lg`; los bloques de trabajo repiten un ritmo vertical de 24px.
 
 Los puntos de cambio observados son 640px (`sm`), 768px (`md`), 1024px (`lg`) y 1280px (`xl`). La agenda fuerza vista diaria por debajo de 768px; la vista semanal conserva un ancho mínimo de 1020px con desplazamiento horizontal. Los drawers ocupan todo el ancho móvil y se limitan a 420px o 480px desde `sm`; a partir de 1280px, el contenido principal descuenta su ancho para mantener el contexto visible.
+
+La página pública usa un hero dividido entre imagen y contenido desde 960px; por debajo apila la imagen sobre el texto. El catálogo muestra tres servicios visibles desde 1024px, dos desde 640px y una card con la siguiente parcialmente visible en móvil. Reserva y confirmación forman dos columnas desde `lg`, con resumen sticky a la derecha; en móvil se apilan. El calendario mensual conserva siete columnas de días desplazables si falta ancho, y su panel de horarios se ubica al lado solo cuando el propio contenedor alcanza 660px. La vista previa reproduce el recorrido dentro de un marco desplazable de 720px con variantes compactas.
 
 **The Rule-Built Grid Rule.** Cuando varios elementos forman una secuencia o conjunto, se construyen como una grilla compartida con divisores, no como una colección de tarjetas independientes.
 
@@ -275,7 +277,18 @@ El drawer es un panel modal blanco de ancho completo en móvil y 420px/480px en 
 
 ### Public Booking
 
-La página pública hereda estructura, tipografía y tokens neutros de Citadely, pero reemplaza el cobalto de selección por `--booking-brand`. Servicio, día y horario usan contorno más ring o relleno para selección; el resumen final se eleva y permanece sticky en escritorio. El logo y la portada del negocio dominan, mientras Citadely firma en escala reducida al final.
+La página pública hereda estructura, tipografía y tokens neutros de Citadely, pero usa `--booking-brand` para sus acciones, selecciones y foco. El encabezado azul noche presenta el logo del negocio o la inicial de su nombre; el hero editorial divide una portada real y un panel blanco con nombre en Funnel Display, descripción, horarios, modalidad o ubicación y un enlace al catálogo. Si falta portada, muestra el logo sobre fondo frío o un monograma grande y tenue. La firma Citadely queda reducida al pie.
+
+Desde «Página pública», el negocio puede configurar fondo y acento por sección: encabezado, portada, servicios, reserva, galería, información y preguntas. Los valores ausentes conservan la apariencia anterior y el color principal sigue siendo la base de las acciones. La vista previa usa los mismos colores que el sitio publicado. El color de la portada se limita al panel de texto; fotos, tarjetas internas, diálogos y firma Citadely mantienen sus superficies. Texto, bordes y variantes para controles sobre tarjetas claras se derivan automáticamente con contraste legible.
+
+El flujo visible numera servicio, día y horario, y confirmación. La selección inicial está vacía. El calendario mensual aparece al elegir un servicio: navega entre meses publicados, marca los días con horarios y presenta las horas del día seleccionado. Los horarios completos o bloqueados conservan su explicación visible; en servicios con varios cupos, “Cupos” abre un tooltip con los lugares restantes al pasar el puntero, enfocar o seleccionar, y la misma cantidad integra el nombre accesible. Día y horario seleccionados usan relleno de la marca además de `aria-pressed`. El resumen final permanece sticky en escritorio y muestra servicio, fecha, precio, importe a pagar y, cuando corresponde, datos e instrucciones de seña; los campos de contacto y el resultado de la reserva completan el flujo real.
+
+#### Catálogo público e interacciones compartidas
+
+- **Servicios (`PublicServiceCarousel`):** carrusel horizontal manual de cards compactas con imagen real o inicial, nombre, precio y duración; muestra tres en escritorio, dos desde 640px y una con la siguiente parcialmente visible en móvil. El detalle usa un `dialog` nativo con imagen completa, descripción y condiciones de pago, cuerpo desplazable y acción persistente. Abrirlo conserva la reserva; “Elegir este servicio” confirma la selección y lleva el foco al calendario. Cerrar sin elegir devuelve el foco a la card. La entrada del modal dura 220ms.
+- **Galería (`PublicGalleryCarousel`):** composición editorial con una imagen central completa y vistas laterales parcialmente visibles; con dos fotos aparece una sola vista lateral. Las flechas, los puntos desplazables, el teclado y el gesto horizontal navegan circularmente. La siguiente imagen se precarga antes del fundido de 240ms. Al abrir la foto central, un `dialog` oscuro la muestra completa con navegación, contador y retorno del foco al cerrar. La vista previa usa la misma composición compacta.
+- **Preguntas (`PublicFaqs`):** columna de lectura centrada con preguntas azul noche y respuestas blancas de borde fino. La primera abre al cargar; las demás pueden abrirse sin cerrar otras. Cada control comunica su estado expandido y conserva la transición de 200ms. El enlace «Hacer una consulta» aparece únicamente si el negocio configuró WhatsApp y usa su dirección real.
+- **Vista previa (`PublicPagePreview`):** reutiliza hero, catálogo, modal, calendario, galería y preguntas en variantes compactas con la marca del negocio. Permite explorar y elegir servicio y horario dentro del marco, pero representa la confirmación como vista previa sin enviar la reserva. Los controles interactivos mantienen un área mínima de 44px, foco visible y navegación por teclado; `prefers-reduced-motion` elimina las animaciones del modal, galería y preguntas y el desplazamiento suave.
 
 ## Do's and Don'ts
 

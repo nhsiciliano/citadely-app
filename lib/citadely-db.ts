@@ -1,5 +1,6 @@
 import type { SubscriptionPlanId } from "@/lib/subscription-plans";
 import type { ServiceMode, VirtualPlatform } from "@/lib/virtual-service";
+import type { PublicTheme } from "@/lib/public-theme";
 
 export type Business = {
   id: string;
@@ -20,6 +21,7 @@ export type Business = {
   cover_image_url: string | null;
   cover_image_key: string | null;
   brand_color: string | null;
+  public_theme: PublicTheme;
   trial_ends_at: string;
   promotion_starts_at: string | null;
   promotion_ends_at: string | null;
@@ -55,6 +57,7 @@ export const PUBLIC_BUSINESS_COLUMNS = [
   "logo_url",
   "cover_image_url",
   "brand_color",
+  "public_theme",
   "currency",
   "timezone",
   "is_public",
@@ -77,6 +80,7 @@ export type PublicBusiness = Pick<
   | "logo_url"
   | "cover_image_url"
   | "brand_color"
+  | "public_theme"
   | "currency"
   | "timezone"
   | "is_public"
@@ -134,6 +138,10 @@ export type PublicBookingSlot = {
   timeLabel: string;
   label: string;
   available: boolean;
+  capacity: number;
+  booked: number;
+  remaining: number;
+  blockedByOtherService: boolean;
 };
 
 export type WorkingHour = {
@@ -153,7 +161,43 @@ export type ServiceAvailabilitySlot = {
   starts_at: string;
   ends_at: string;
   is_active: boolean;
+  capacity: number;
+  booked_count?: number;
+  blocked_by_other_service?: boolean;
 };
+
+export function appointmentHoldsSeat(appointment: Appointment, now = Date.now()): boolean {
+  return appointment.status !== "cancelled" && (
+    appointment.status !== "pending_payment"
+    || !appointment.deposit_expires_at
+    || new Date(appointment.deposit_expires_at).getTime() > now
+  );
+}
+
+export function getSlotOccupancy(slot: ServiceAvailabilitySlot, appointments: Appointment[], now = Date.now()) {
+  if (slot.booked_count !== undefined) {
+    const capacity = slot.capacity ?? 1;
+    const booked = slot.booked_count;
+    const blockedByOtherService = slot.blocked_by_other_service ?? false;
+    return { booked, capacity, remaining: blockedByOtherService ? 0 : Math.max(0, capacity - booked), blockedByOtherService };
+  }
+  const start = new Date(slot.starts_at).getTime();
+  const end = new Date(slot.ends_at).getTime();
+  let booked = 0;
+  let blockedByOtherService = false;
+
+  for (const appointment of appointments) {
+    if (!appointmentHoldsSeat(appointment, now)) continue;
+    const appointmentStart = new Date(appointment.starts_at).getTime();
+    const appointmentEnd = new Date(appointment.ends_at).getTime();
+    if (start >= appointmentEnd || end <= appointmentStart) continue;
+    if (appointment.service_id === slot.service_id && appointmentStart === start && appointmentEnd === end) booked += 1;
+    else blockedByOtherService = true;
+  }
+
+  const capacity = slot.capacity ?? 1;
+  return { booked, capacity, remaining: blockedByOtherService ? 0 : Math.max(0, capacity - booked), blockedByOtherService };
+}
 
 export type BusinessGalleryImage = {
   id: string;
@@ -259,20 +303,36 @@ export function getSubscriptionState(business: Business) {
   };
 }
 
+export const PUBLIC_BOOKING_TIME_ZONE = "America/Argentina/Buenos_Aires";
+
+export function formatPublicBookingDateKey(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: PUBLIC_BOOKING_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function buildSlotLabels(startsAt: Date) {
   return {
-    dateKey: startsAt.toISOString().slice(0, 10),
+    dateKey: formatPublicBookingDateKey(startsAt),
     dateLabel: new Intl.DateTimeFormat("es-AR", {
       day: "2-digit",
       month: "short",
+      timeZone: PUBLIC_BOOKING_TIME_ZONE,
     }).format(startsAt),
     weekdayLabel: new Intl.DateTimeFormat("es-AR", {
       weekday: "short",
+      timeZone: PUBLIC_BOOKING_TIME_ZONE,
     }).format(startsAt),
     timeLabel: new Intl.DateTimeFormat("es-AR", {
       hour: "2-digit",
       minute: "2-digit",
       hourCycle: "h23",
+      timeZone: PUBLIC_BOOKING_TIME_ZONE,
     }).format(startsAt),
     label: new Intl.DateTimeFormat("es-AR", {
       weekday: "short",
@@ -281,6 +341,7 @@ function buildSlotLabels(startsAt: Date) {
       hour: "2-digit",
       minute: "2-digit",
       hourCycle: "h23",
+      timeZone: PUBLIC_BOOKING_TIME_ZONE,
     }).format(startsAt),
   };
 }
@@ -294,12 +355,6 @@ export function buildBookingSlots(
 
   const slots: PublicBookingSlot[] = [];
   const now = new Date();
-  const taken = appointments
-    .filter((appointment) => appointment.status !== "cancelled")
-    .map((appointment) => ({
-      startsAt: new Date(appointment.starts_at).getTime(),
-      endsAt: new Date(appointment.ends_at).getTime(),
-    }));
   const activeSlots = availabilitySlots
     .filter((slot) => slot.is_active && slot.service_id === service.id)
     .sort((left, right) => new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime());
@@ -310,15 +365,17 @@ export function buildBookingSlots(
 
     if (startsAt <= now) continue;
 
-    const overlaps = taken.some(
-      (appointment) => startsAt.getTime() < appointment.endsAt && endsAt.getTime() > appointment.startsAt,
-    );
+    const occupancy = getSlotOccupancy(slot, appointments, now.getTime());
 
     slots.push({
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
       ...buildSlotLabels(startsAt),
-      available: !overlaps,
+      available: occupancy.remaining > 0,
+      capacity: occupancy.capacity,
+      booked: occupancy.booked,
+      remaining: occupancy.remaining,
+      blockedByOtherService: occupancy.blockedByOtherService,
     });
   }
 
