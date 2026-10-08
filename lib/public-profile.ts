@@ -35,22 +35,16 @@ export function getPublicAvailabilitySummary(slots: ServiceAvailabilitySlot[], a
   const dates = new Set<string>();
   const weekdays = new Set<number>();
   const times: string[] = [];
-  const activeAppointments = appointments.filter((appointment) => appointment.status !== "cancelled");
 
   for (const slot of slots) {
-    const startsAt = new Date(slot.starts_at).getTime();
-    const endsAt = new Date(slot.ends_at).getTime();
-    const overlaps = activeAppointments.some((appointment) => {
-      const appointmentStart = new Date(appointment.starts_at).getTime();
-      const appointmentEnd = new Date(appointment.ends_at).getTime();
-      return startsAt < appointmentEnd && endsAt > appointmentStart;
-    });
-    if (overlaps) continue;
+    if (!slot.is_active || new Date(slot.starts_at).getTime() <= Date.now() || getSlotOccupancy(slot, appointments).remaining === 0) continue;
 
     const date = new Date(slot.starts_at);
-    dates.add(slot.starts_at.slice(0, 10));
-    weekdays.add(date.getDay());
-    times.push(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date));
+    const dateKey = formatPublicBookingDateKey(date);
+    const [year, month, day] = dateKey.split("-").map(Number);
+    dates.add(dateKey);
+    weekdays.add(new Date(year, month - 1, day).getDay());
+    times.push(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: PUBLIC_BOOKING_TIME_ZONE }).format(date));
   }
 
   const weekdayLabel = Array.from(weekdays).sort((a, b) => a - b).map((day) => WEEKDAYS[day]).join(", ");
@@ -61,6 +55,6 @@ export function getPublicAvailabilitySummary(slots: ServiceAvailabilitySlot[], a
     schedule: weekdayLabel && sortedTimes.length ? `${weekdayLabel} · ${sortedTimes[0]}–${sortedTimes.at(-1)}` : null,
   };
 }
-import type { Appointment, ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { formatPublicBookingDateKey, getSlotOccupancy, PUBLIC_BOOKING_TIME_ZONE, type Appointment, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
 
 const WEEKDAYS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];

@@ -86,6 +86,11 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
       setMessage("Elegí un servicio y uno de sus horarios disponibles.");
       return;
     }
+    if (slot.capacity > 1 && !selectedClient.email?.trim()) {
+      setMessage("Este horario tiene cupos para varias personas. Agregá un email al cliente para poder asignarle una plaza.");
+      clientTriggerRef.current?.focus();
+      return;
+    }
     setPending(true);
     setMessage(null);
 
@@ -99,7 +104,7 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
     setPending(false);
     if (error) {
       const errorMessage = getErrorMessage(error);
-      if (/ocupado|disponible|habilitado/i.test(errorMessage)) {
+      if (/ocupado|disponible|habilitado|cupos|superpone/i.test(errorMessage)) {
         await refresh();
         setMessage("El horario ya no está disponible. Elegí otro turno libre.");
       } else setMessage(errorMessage);
@@ -158,7 +163,7 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
                   <p className="text-sm font-semibold capitalize text-[var(--color-ink)]">{group.label}</p>
                   <div className="flex flex-wrap gap-2">
                     {group.slots.map((slot) => (
-                      <button aria-pressed={startsAtValue === slot.startsAt} className={`time-chip ${startsAtValue === slot.startsAt ? "!bg-[var(--color-primary)] !text-white" : ""}`} key={slot.startsAt} onClick={() => { setStartsAtValue(slot.startsAt); setMessage(null); }} type="button">{slot.timeLabel}</button>
+                      <button aria-pressed={startsAtValue === slot.startsAt} className={`time-chip ${startsAtValue === slot.startsAt ? "!bg-[var(--color-primary)] !text-white" : ""}`} key={slot.startsAt} onClick={() => { setStartsAtValue(slot.startsAt); setMessage(null); }} type="button">{slot.timeLabel} · {slot.remaining} de {slot.capacity} libres</button>
                     ))}
                   </div>
                 </div>
@@ -232,8 +237,8 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
     const { data: created, error } = await insforge.database.from("clients").insert([{
       business_id: business.id,
       name,
-      email: String(form.get("client_email") ?? "").trim(),
-      phone: String(form.get("client_phone") ?? "").trim(),
+      email: String(form.get("client_email") ?? "").trim().toLowerCase() || null,
+      phone: String(form.get("client_phone") ?? "").trim() || null,
     }]).select("id,business_id,user_id,name,email,phone,notes_summary").single();
     setPending(false);
     if (error || !created) {

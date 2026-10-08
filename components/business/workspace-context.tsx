@@ -23,6 +23,26 @@ export type WorkspaceContextValue = {
 };
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
+const AVAILABILITY_PAGE_SIZE = 500;
+
+async function loadAvailabilitySlots(businessId: string): Promise<ServiceAvailabilitySlot[]> {
+  const slots: ServiceAvailabilitySlot[] = [];
+
+  for (let offset = 0; ; offset += AVAILABILITY_PAGE_SIZE) {
+    const { data, error } = await insforge.database
+      .from("service_availability_slots")
+      .select("id,business_id,service_id,starts_at,ends_at,is_active,capacity")
+      .eq("business_id", businessId)
+      .order("starts_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(offset, offset + AVAILABILITY_PAGE_SIZE - 1);
+
+    if (error) throw new Error(getErrorMessage(error));
+    const page = (data ?? []) as ServiceAvailabilitySlot[];
+    slots.push(...page);
+    if (page.length < AVAILABILITY_PAGE_SIZE) return slots;
+  }
+}
 
 export function useWorkspace() {
   const value = useContext(WorkspaceContext);
@@ -44,7 +64,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [faqs, setFaqs] = useState<BusinessFaq[]>([]);
 
   async function loadBusinessData(businessId: string) {
-    const [servicesResult, clientsResult, appointmentsResult, availabilityResult, galleryResult, faqResult] = await Promise.all([
+    const [servicesResult, clientsResult, appointmentsResult, availabilityRows, galleryResult, faqResult] = await Promise.all([
       insforge.database.from("services").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
       insforge.database.from("clients").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
       insforge.database
@@ -52,11 +72,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         .select("*, clients(name,email,phone), services(name,duration_minutes,price_cents)")
         .eq("business_id", businessId)
         .order("starts_at", { ascending: true }),
-      insforge.database
-        .from("service_availability_slots")
-        .select("*")
-        .eq("business_id", businessId)
-        .order("starts_at", { ascending: true }),
+      loadAvailabilitySlots(businessId),
       insforge.database
         .from("business_gallery_images")
         .select("id,business_id,image_url,image_key,sort_order")
@@ -71,13 +87,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         .limit(10),
     ]);
 
-    const workspaceError = servicesResult.error ?? clientsResult.error ?? appointmentsResult.error ?? availabilityResult.error ?? galleryResult.error ?? faqResult.error;
+    const workspaceError = servicesResult.error ?? clientsResult.error ?? appointmentsResult.error ?? galleryResult.error ?? faqResult.error;
     if (workspaceError) throw new Error(getErrorMessage(workspaceError));
 
     setServices((servicesResult.data ?? []) as Service[]);
     setClients((clientsResult.data ?? []) as Client[]);
     setAppointments((appointmentsResult.data ?? []) as Appointment[]);
-    setAvailabilitySlots((availabilityResult.data ?? []) as ServiceAvailabilitySlot[]);
+    setAvailabilitySlots(availabilityRows);
     setGalleryImages((galleryResult.data ?? []) as BusinessGalleryImage[]);
     setFaqs((faqResult.data ?? []) as BusinessFaq[]);
   }
