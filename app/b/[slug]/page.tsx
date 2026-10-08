@@ -28,14 +28,29 @@ type PublicPageProps = {
 };
 
 const getPublicBusiness = cache(async (slug: string) => {
-  const { data } = await insforge.database
+  const { data, error } = await insforge.database
     .from("businesses")
     .select(PUBLIC_BUSINESS_COLUMNS)
     .eq("slug", slug)
     .eq("is_public", true)
     .maybeSingle();
 
-  return (data as PublicBusiness | null) ?? null;
+  if (!error) return (data as PublicBusiness | null) ?? null;
+
+  console.error("Public business lookup failed", { code: error.code, message: error.message });
+  const legacyColumns = PUBLIC_BUSINESS_COLUMNS.split(",").filter((column) => column !== "public_theme").join(",");
+  const legacy = await insforge.database
+    .from("businesses")
+    .select(legacyColumns)
+    .eq("slug", slug)
+    .eq("is_public", true)
+    .maybeSingle();
+  if (legacy.error) {
+    console.error("Public business fallback failed", { code: legacy.error.code, message: legacy.error.message });
+    return null;
+  }
+  const legacyBusiness = legacy.data as Omit<PublicBusiness, "public_theme"> | null;
+  return legacyBusiness ? { ...legacyBusiness, public_theme: {} } : null;
 });
 
 function getBusinessDescription(business: PublicBusiness) {
