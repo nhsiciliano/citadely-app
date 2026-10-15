@@ -10,6 +10,7 @@ import { createClient } from "@/lib/clients";
 import { READ_ONLY_HINT } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
 import { Drawer, StatusBadge } from "./workspace-ui";
+import { APPOINTMENT_STATUS_LABELS, CANCELLATION_REASON_MAX, getStatusOptions, requiresStatusConfirmation, type AppointmentStatus } from "@/lib/appointment-status";
 import { useClientSearch } from "./use-client-search";
 import { useWorkspace } from "./workspace-context";
 
@@ -316,14 +317,40 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function updateStatus(status: Appointment["status"]) {
+  // Cancelar y "No asistió" no se aplican al elegir la opción: piden confirmación (y motivo al cancelar).
+  const [pendingChange, setPendingChange] = useState<{ appointmentId: string; status: AppointmentStatus } | null>(null);
+  // La confirmación pertenece al turno que la originó: si se abre otro turno, desaparece.
+  const pendingStatus = pendingChange && pendingChange.appointmentId === appointment?.id ? pendingChange.status : null;
+  const [reason, setReason] = useState("");
+  const [referenceTime] = useState(() => Date.now());
+
+  async function applyStatus(status: AppointmentStatus, statusReason?: string) {
     if (!appointment) return;
     setPending(true);
     setMessage(null);
-    const { error } = await insforge.database.from("appointments").update({ status }).eq("id", appointment.id);
+    const { error } = await insforge.database.rpc("update_appointment_status", {
+      p_appointment_id: appointment.id,
+      p_status: status,
+      p_reason: statusReason ?? null,
+    });
     setPending(false);
-    if (error) setMessage(getErrorMessage(error));
-    else await refresh();
+    if (error) {
+      setMessage(getErrorMessage(error));
+      return;
+    }
+    setPendingChange(null);
+    setReason("");
+    await refresh();
+  }
+
+  function chooseStatus(status: AppointmentStatus) {
+    if (!appointment || status === appointment.status) return;
+    setMessage(null);
+    if (requiresStatusConfirmation(status)) {
+      setPendingChange({ appointmentId: appointment.id, status });
+      return;
+    }
+    void applyStatus(status);
   }
 
   async function confirmDeposit() {
@@ -375,16 +402,35 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
 
           <label className="form-label">
             Estado del turno
-            <select className="form-control" disabled={pending || readOnly} onChange={(event) => updateStatus(event.target.value as Appointment["status"])} value={appointment.status}>
-              <option value="pending_payment">Seña pendiente</option>
-              {appointment.status === "pending_payment" && appointment.deposit_amount_cents > 0 ? null : (
-                <option value="confirmed">Confirmado</option>
-              )}
-              <option value="cancelled">Cancelado</option>
-              <option value="completed">Completado</option>
-              <option value="no_show">No asistió</option>
+            <select className="form-control" disabled={pending || readOnly} onChange={(event) => chooseStatus(event.target.value as AppointmentStatus)} value={appointment.status}>
+              {getStatusOptions(appointment, referenceTime).map((status) => <option key={status} value={status}>{APPOINTMENT_STATUS_LABELS[status]}</option>)}
             </select>
           </label>
+
+          {appointment.status === "cancelled" && appointment.cancellation_reason ? (
+            <p className="text-sm text-[var(--color-ink-soft)]"><strong className="text-[var(--color-ink)]">Motivo de la cancelación:</strong> {appointment.cancellation_reason}</p>
+          ) : null}
+
+          {pendingStatus ? (
+            <div className="grid gap-4 border border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] p-4" role="group" aria-label="Confirmar cambio de estado">
+              <p className="font-semibold">{pendingStatus === "cancelled" ? "¿Cancelar este turno?" : "¿Marcar que el cliente no asistió?"}</p>
+              <p className="text-sm text-[var(--color-ink-soft)]">
+                {pendingStatus === "cancelled"
+                  ? "El horario se libera y el cliente recibe un email de cancelación."
+                  : "Quedará registrado como inasistencia en el historial del cliente."}
+              </p>
+              {pendingStatus === "cancelled" ? (
+                <label className="form-label">
+                  Motivo (opcional)
+                  <textarea className="form-control min-h-20" maxLength={CANCELLATION_REASON_MAX} onChange={(event) => setReason(event.target.value)} placeholder="Se incluye en el email al cliente" value={reason} />
+                </label>
+              ) : null}
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button className="button-secondary" disabled={pending} onClick={() => { setPendingChange(null); setReason(""); }} type="button">Volver</button>
+                <button className="button-primary" disabled={pending} onClick={() => void applyStatus(pendingStatus, reason)} type="button">{pendingStatus === "cancelled" ? "Sí, cancelar turno" : "Sí, marcar inasistencia"}</button>
+              </div>
+            </div>
+          ) : null}
 
           {appointment.status === "pending_payment" && appointment.deposit_amount_cents > 0 ? (
             <button className="button-primary" disabled={pending || readOnly} onClick={confirmDeposit} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><CheckCircle2 aria-hidden="true" size={18} />Confirmar seña recibida</button>

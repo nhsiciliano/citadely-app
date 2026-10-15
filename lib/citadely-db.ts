@@ -124,6 +124,7 @@ export type Appointment = {
   status: "pending_payment" | "confirmed" | "cancelled" | "completed" | "no_show";
   source: "business" | "public_booking" | "client";
   client_message: string | null;
+  cancellation_reason?: string | null;
   deposit_amount_cents: number;
   deposit_expires_at: string | null;
   deposit_confirmed_at: string | null;
