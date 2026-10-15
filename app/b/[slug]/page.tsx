@@ -19,7 +19,7 @@ import {
 import { insforge } from "@/lib/insforge";
 import { formatWhatsAppPhone, getPublicAvailabilitySummary, getWhatsAppUrl } from "@/lib/public-profile";
 import { normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
-import { INDEX_ROBOTS, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
+import { INDEX_ROBOTS, NO_INDEX_ROBOTS, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
 import { getBusinessPublicUrl } from "@/lib/urls";
 
 type PublicPageProps = {
@@ -53,6 +53,18 @@ const getPublicBusiness = cache(async (slug: string) => {
   return legacyBusiness ? { ...legacyBusiness, public_theme: {} } : null;
 });
 
+// Reservas habilitadas según la regla de la base. Ante un error se cierra la reserva por seguridad.
+const getBookingAccess = cache(async (businessId: string) => {
+  const { data, error } = await insforge.database.rpc("business_has_booking_access", {
+    target_business_id: businessId,
+  });
+  if (error) {
+    console.error("Booking access lookup failed", { message: error.message });
+    return false;
+  }
+  return data === true;
+});
+
 function getBusinessDescription(business: PublicBusiness) {
   const fallback = `Reservá un turno en ${business.name}. Consultá servicios, fechas y horarios disponibles online.`;
   const description = business.description?.trim() || fallback;
@@ -69,6 +81,7 @@ export async function generateMetadata({ params }: PublicPageProps): Promise<Met
     };
   }
 
+  const bookable = await getBookingAccess(business.id);
   const title = `${business.name} | Turnos online`;
   const description = getBusinessDescription(business);
   const canonicalUrl = getBusinessPublicUrl(business.slug);
@@ -81,7 +94,7 @@ export async function generateMetadata({ params }: PublicPageProps): Promise<Met
   return {
     title,
     description,
-    robots: INDEX_ROBOTS,
+    robots: bookable ? INDEX_ROBOTS : NO_INDEX_ROBOTS,
     alternates: { canonical: canonicalUrl },
     openGraph: {
       type: "website",
@@ -106,7 +119,8 @@ export default async function PublicBookingPage({ params, searchParams }: Public
   const business = await getPublicBusiness(slug);
   if (!business) notFound();
 
-  const [{ data: serviceRows }, { data: availabilityRows }, { data: galleryRows }, { data: faqRows }] = await Promise.all([
+  const [bookable, { data: serviceRows }, { data: availabilityRows }, { data: galleryRows }, { data: faqRows }] = await Promise.all([
+    getBookingAccess(business.id),
     insforge.database.from("services").select("*").eq("business_id", business.id).eq("is_active", true).order("created_at", { ascending: false }),
     insforge.database
       .from("service_availability_slots")
@@ -245,7 +259,13 @@ export default async function PublicBookingPage({ params, searchParams }: Public
             </div>
           ) : null}
 
-        <div id="reservar"><PublicBookingForm availabilitySlots={availabilitySlots} business={business} services={services} /></div>
+        <div id="reservar">
+          {bookable ? (
+            <PublicBookingForm availabilitySlots={availabilitySlots} business={business} services={services} />
+          ) : (
+            <BookingUnavailable businessName={business.name} whatsappUrl={whatsappUrl} />
+          )}
+        </div>
       </div></section>
 
       {galleryImages.length > 0 ? <PublicGalleryCarousel businessName={business.name} images={galleryImages} themeStyle={sectionThemeStyle("gallery", publicTheme, brandColor)} /> : null}
@@ -259,5 +279,23 @@ export default async function PublicBookingPage({ params, searchParams }: Public
         </div>
       </footer>
     </main>
+  );
+}
+
+function BookingUnavailable({ businessName, whatsappUrl }: { businessName: string; whatsappUrl: string | null }) {
+  return (
+    <section className="grid max-w-2xl gap-4" aria-labelledby="reservas-no-disponibles">
+      <h2 id="reservas-no-disponibles" className="font-display text-3xl font-semibold tracking-[-0.04em]">
+        Reservas no disponibles
+      </h2>
+      <p className="text-[var(--color-ink-soft)]">
+        {businessName} no está recibiendo reservas online por el momento.
+      </p>
+      {whatsappUrl ? (
+        <a className="button-secondary w-fit" href={whatsappUrl} rel="noopener noreferrer" target="_blank">
+          Consultar por WhatsApp
+        </a>
+      ) : null}
+    </section>
   );
 }
