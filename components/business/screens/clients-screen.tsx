@@ -1,21 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Mail, Phone, Plus, Search, UserRound } from "lucide-react";
+import { CalendarClock, Mail, Phone, Plus, Search, UserRound } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
-import type { Client } from "@/lib/citadely-db";
+import { formatAppointmentTime, type Appointment, type Client } from "@/lib/citadely-db";
 import { getClientSaveErrorMessage } from "@/lib/client-errors";
 import { insforge } from "@/lib/insforge";
 import { useWorkspace } from "../workspace-context";
-import { Drawer, EmptyState, PageHeader } from "../workspace-ui";
+import { Drawer, EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
+
+const HISTORY_LIMIT = 10;
 
 export function ClientsScreen() {
-  const { business, clients, refresh } = useWorkspace();
+  const { appointments, business, clients, refresh } = useWorkspace();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Client | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // Referencia para separar turnos próximos y pasados; se fija al montar la pantalla.
+  const [referenceTime] = useState(() => Date.now());
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -29,6 +33,20 @@ export function ClientsScreen() {
     if (!normalized) return clients;
     return clients.filter((client) => [client.name, client.email, client.phone].some((value) => value?.toLocaleLowerCase("es").includes(normalized)));
   }, [clients, query]);
+
+  // Historial calculado con los turnos ya cargados en el workspace: próximo turno y últimos turnos pasados.
+  const clientHistory = useMemo(() => {
+    if (!selected) return { upcoming: null, past: [] as Appointment[] };
+    const now = referenceTime;
+    const own = appointments
+      .filter((appointment) => appointment.client_id === selected.id)
+      .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+    const upcoming = own
+      .filter((appointment) => new Date(appointment.starts_at).getTime() >= now && appointment.status !== "cancelled")
+      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0] ?? null;
+    const past = own.filter((appointment) => new Date(appointment.starts_at).getTime() < now).slice(0, HISTORY_LIMIT);
+    return { upcoming, past };
+  }, [appointments, referenceTime, selected]);
 
   async function addClient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,7 +96,7 @@ export function ClientsScreen() {
         </section>
       </div>
 
-      <Drawer description="La ficha conserva los datos cargados actualmente. En esta etapa no incluye edición ni historial." onClose={() => setSelected(null)} open={Boolean(selected)} title="Ficha del cliente" width="medium">
+      <Drawer description="Datos de contacto e historial de turnos del cliente." onClose={() => setSelected(null)} open={Boolean(selected)} title="Ficha del cliente" width="medium">
         {selected ? <div className="grid gap-6">
           <div className="grid h-16 w-16 place-items-center rounded-md bg-[var(--color-primary)] text-2xl font-semibold text-white">{selected.name.slice(0, 1).toUpperCase()}</div>
           <div><p className="text-xl font-semibold">{selected.name}</p><p className="mt-1 font-mono text-xs text-[var(--color-ink-muted)]">#{selected.id.slice(0, 8).toUpperCase()}</p></div>
@@ -86,6 +104,39 @@ export function ClientsScreen() {
             <div className="grid grid-cols-[24px_1fr] gap-3 py-4"><Mail aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><div><dt className="text-xs text-[var(--color-ink-muted)]">Email</dt><dd className="mt-1 text-sm font-semibold">{selected.email || "Sin email"}</dd></div></div>
             <div className="grid grid-cols-[24px_1fr] gap-3 py-4"><Phone aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><div><dt className="text-xs text-[var(--color-ink-muted)]">Teléfono</dt><dd className="mt-1 text-sm font-semibold">{selected.phone || "Sin teléfono"}</dd></div></div>
           </dl>
+
+          <section aria-labelledby="proximo-turno-cliente" className="grid gap-3">
+            <h3 className="text-sm font-semibold" id="proximo-turno-cliente">Próximo turno</h3>
+            {clientHistory.upcoming ? (
+              <div className="flex items-center justify-between gap-3 border border-[var(--color-line)] p-4 text-sm">
+                <span className="flex min-w-0 items-center gap-2">
+                  <CalendarClock aria-hidden="true" className="shrink-0 text-[var(--color-primary)]" size={17} />
+                  <span className="min-w-0">
+                    <strong className="block">{formatAppointmentTime(clientHistory.upcoming.starts_at, business.timezone)}</strong>
+                    <small className="text-[var(--color-ink-soft)]">{clientHistory.upcoming.services?.name ?? "Servicio"}</small>
+                  </span>
+                </span>
+                <StatusBadge status={clientHistory.upcoming.status} />
+              </div>
+            ) : <p className="text-sm text-[var(--color-ink-soft)]">Sin turnos próximos.</p>}
+          </section>
+
+          <section aria-labelledby="historial-cliente" className="grid gap-3">
+            <h3 className="text-sm font-semibold" id="historial-cliente">Historial</h3>
+            {clientHistory.past.length > 0 ? (
+              <ul className="divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]">
+                {clientHistory.past.map((appointment) => (
+                  <li className="flex items-center justify-between gap-3 py-3 text-sm" key={appointment.id}>
+                    <span className="min-w-0">
+                      <strong className="block truncate">{appointment.services?.name ?? "Servicio"}</strong>
+                      <small className="text-[var(--color-ink-soft)]">{formatAppointmentTime(appointment.starts_at, business.timezone)}</small>
+                    </span>
+                    <StatusBadge status={appointment.status} />
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-sm text-[var(--color-ink-soft)]">Todavía no tiene turnos pasados.</p>}
+          </section>
         </div> : null}
       </Drawer>
 
