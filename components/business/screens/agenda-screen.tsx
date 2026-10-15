@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarRange, ChevronLeft, ChevronRight, Clock3, Filter, List, Plus } from "lucide-react";
 import { getSlotOccupancy, type Appointment, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { READ_ONLY_HINT } from "@/lib/business-access";
-import { addDaysToDateKey, formatDateKey, formatInTimeZone, getMinutesOfDay, startOfWeekDateKey, toDateKey, toTimeKey } from "@/lib/time";
+import { addDaysToDateKey, formatDateKey, formatInTimeZone, getMinutesOfDay, startOfDayInTimeZone, startOfWeekDateKey, toDateKey, toTimeKey } from "@/lib/time";
 import { AppointmentDetailDrawer, NewAppointmentDrawer, type SelectedAgendaSlot } from "../appointment-actions";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
@@ -284,7 +284,7 @@ function AgendaDayColumn({
 }
 
 export function AgendaScreen() {
-  const { access, appointments, availabilitySlots, business, services } = useWorkspace();
+  const { access, appointments, availabilitySlots, business, ensureHistoryFrom, services } = useWorkspace();
   const readOnly = !access.hasDashboardAccess;
   const timeZone = business.timezone;
   const [view, setView] = useState<CalendarView>("week");
@@ -320,6 +320,13 @@ export function AgendaScreen() {
     () => view === "week" ? Array.from({ length: 7 }, (_, index) => addDaysToDateKey(weekStart, index)) : [anchorDate],
     [anchorDate, view, weekStart],
   );
+  // El workspace solo trae los últimos días: al navegar más atrás se piden los turnos y horarios que faltan.
+  const firstVisibleDay = days[0];
+  useEffect(() => {
+    void ensureHistoryFrom(startOfDayInTimeZone(firstVisibleDay, timeZone));
+    // ensureHistoryFrom cambia en cada render del proveedor; solo importa el primer día visible.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstVisibleDay, timeZone]);
   const visibleAppointments = useMemo(() => appointments.filter((appointment) => {
     if (filters.status === "available") return false;
     if (filters.serviceId !== "all" && appointment.service_id !== filters.serviceId) return false;

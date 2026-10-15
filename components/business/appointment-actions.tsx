@@ -10,12 +10,13 @@ import { createClient } from "@/lib/clients";
 import { READ_ONLY_HINT } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
 import { Drawer, StatusBadge } from "./workspace-ui";
+import { useClientSearch } from "./use-client-search";
 import { useWorkspace } from "./workspace-context";
 
 export type SelectedAgendaSlot = { startsAt: string; serviceId?: string };
 
 export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boolean; onClose: () => void; initialSlot?: SelectedAgendaSlot | null }) {
-  const { access, appointments, availabilitySlots, business, clients, services, refresh } = useWorkspace();
+  const { access, appointments, availabilitySlots, business, services, refresh } = useWorkspace();
   const readOnly = !access.hasDashboardAccess;
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -187,13 +188,13 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
         </div>
       </form>
     </Drawer>
-    <ClientPickerDialog clients={clients} onClose={closeClientPicker} onClosed={() => clientTriggerRef.current?.focus()} onSelect={chooseClient} open={open && clientPickerOpen} />
+    <ClientPickerDialog onClose={closeClientPicker} onClosed={() => clientTriggerRef.current?.focus()} onSelect={chooseClient} open={open && clientPickerOpen} />
     </>
   );
 }
 
-function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { clients: Client[]; onClose: () => void; onClosed: () => void; onSelect: (client: Client) => void; open: boolean }) {
-  const { access, business, refresh } = useWorkspace();
+function ClientPickerDialog({ onClose, onClosed, onSelect, open }: { onClose: () => void; onClosed: () => void; onSelect: (client: Client) => void; open: boolean }) {
+  const { access, business } = useWorkspace();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
@@ -201,11 +202,8 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
   const [creating, setCreating] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const filteredClients = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("es");
-    if (!normalized) return clients;
-    return clients.filter((client) => [client.name, client.email, client.phone].some((value) => value?.toLocaleLowerCase("es").includes(normalized)));
-  }, [clients, query]);
+  // Búsqueda y paginación en el servidor: solo se consulta mientras el selector está abierto.
+  const { clients: filteredClients, error: searchError, hasMore, loadMore, loading: searching, reload } = useClientSearch({ businessId: business.id, query, enabled: open });
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -249,7 +247,7 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
     onSelect(created as Client);
     setCreating(false);
     setQuery("");
-    void refresh();
+    reload();
   }
 
   return (
@@ -297,6 +295,8 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
             </div>
           ) : <div className="border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] px-5 py-8 text-center"><p className="font-semibold">{query ? "No encontramos coincidencias" : "Todavía no hay clientes"}</p><p className="mt-2 text-sm text-[var(--color-ink-soft)]">{query ? "Probá con otra búsqueda o creá un cliente." : "Creá el primer cliente para asignarle un turno."}</p></div>}
           {filteredClients.length > 0 ? <p className="text-xs text-[var(--color-ink-muted)] sm:hidden">Deslizá la tabla para ver todos los datos de contacto.</p> : null}
+          {searchError ? <FormMessage type="error">{searchError}</FormMessage> : null}
+          {hasMore ? <button className="button-secondary w-full sm:w-fit" disabled={searching} onClick={() => void loadMore()} type="button">{searching ? "Cargando…" : "Cargar más clientes"}</button> : null}
           <button className="button-secondary w-full sm:w-fit" disabled={!access.hasDashboardAccess} onClick={() => { setCreating(true); setMessage(null); }} title={access.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Plus aria-hidden="true" size={18} />Crear nuevo cliente</button>
         </div>
       )}
