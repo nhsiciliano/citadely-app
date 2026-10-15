@@ -6,5 +6,6 @@ export const config: VercelConfig = {
   crons: [
     { path: "/api/cron/transactional-email", schedule: "* * * * *" },
     { path: "/api/cron/cancel-expired-deposits", schedule: "*/10 * * * *" },
+    { path: "/api/cron/failure-alerts", schedule: "*/15 * * * *" },
   ],
 };
