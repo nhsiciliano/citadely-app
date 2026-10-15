@@ -34,6 +34,7 @@ export type MercadoPagoPreapprovalResponse = {
   reason?: string;
   external_reference?: string;
   next_payment_date?: string;
+  date_created?: string;
   payer_email?: string;
   auto_recurring?: {
     frequency?: number;
@@ -100,6 +101,21 @@ export async function updateMercadoPagoPreapproval(preapprovalId: string, body: 
     method: "PUT",
     body: JSON.stringify(body),
   });
+}
+
+export type MercadoPagoSearchResponse<T> = {
+  paging?: { offset?: number; limit?: number; total?: number };
+  results?: T[];
+};
+
+export async function searchMercadoPagoPreapprovals({ status, offset, limit }: { status: string; offset: number; limit: number }) {
+  const params = new URLSearchParams({ status, offset: String(offset), limit: String(limit) });
+  return mercadoPagoRequest<MercadoPagoSearchResponse<MercadoPagoPreapprovalResponse>>(`/preapproval/search?${params}`);
+}
+
+export async function searchMercadoPagoAuthorizedPayments(preapprovalId: string, { offset = 0, limit = 50 } = {}) {
+  const params = new URLSearchParams({ preapproval_id: preapprovalId, offset: String(offset), limit: String(limit) });
+  return mercadoPagoRequest<MercadoPagoSearchResponse<MercadoPagoAuthorizedPaymentResponse>>(`/authorized_payments/search?${params}`);
 }
 
 export async function getMercadoPagoAuthorizedPayment(authorizedPaymentId: string) {
