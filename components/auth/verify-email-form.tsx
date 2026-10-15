@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { resendVerificationEmailAction, setProfileAction, verifyEmailAction } from "@/app/auth/actions";
 import { clearPendingProfileName, readPendingProfileName } from "@/lib/auth";
+import { syncSessionFromCookie } from "@/lib/insforge";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
 export function VerifyEmailForm() {
@@ -34,6 +35,7 @@ export function VerifyEmailForm() {
       return;
     }
 
+    syncSessionFromCookie();
     const profile = await setProfileAction({ name: defaultName, role: "business", onboarding_complete: false });
 
     setPending(false);

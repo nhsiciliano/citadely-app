@@ -1,11 +1,12 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { UserSchema } from "@insforge/sdk";
 import { getErrorMessage, getPostAuthPath, type CitadelyProfile } from "@/lib/auth";
 import { OAUTH_VERIFIER_COOKIE } from "@/lib/auth-cookies";
 import { createInsforgeAuthActions, createInsforgeServerClient } from "@/lib/insforge-server";
+import { getRequestOrigin } from "@/lib/request-origin";
 
 // Todo lo que crea, cambia o cierra la sesión corre acá: la refresh cookie es httpOnly y la escribe el servidor.
 // Las acciones devuelven solo datos seguros (nunca tokens) y errores como texto ya traducido.
@@ -14,13 +15,6 @@ export type AuthActionResult<T = undefined> = { ok: true; data: T } | { ok: fals
 
 function fail(error: unknown): { ok: false; error: string } {
   return { ok: false, error: getErrorMessage(error) };
-}
-
-async function getOrigin() {
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host?.startsWith("127.0.0.1") || host?.startsWith("localhost") ? "http" : "https");
-  return `${protocol}://${host}`;
 }
 
 export async function signInWithPasswordAction(input: { email: string; password: string }): Promise<AuthActionResult<{ redirectTo: string }>> {
@@ -32,7 +26,7 @@ export async function signInWithPasswordAction(input: { email: string; password:
 
 export async function signUpAction(input: { name: string; email: string; password: string }): Promise<AuthActionResult<{ requireEmailVerification: boolean }>> {
   const auth = await createInsforgeAuthActions();
-  const { data, error } = await auth.signUp({ ...input, redirectTo: `${await getOrigin()}/login` });
+  const { data, error } = await auth.signUp({ ...input, redirectTo: `${await getRequestOrigin()}/login` });
   if (error) return fail(error);
   return { ok: true, data: { requireEmailVerification: Boolean(data?.requireEmailVerification) } };
 }
@@ -46,7 +40,7 @@ export async function verifyEmailAction(input: { email: string; otp: string }): 
 
 export async function resendVerificationEmailAction(email: string): Promise<AuthActionResult> {
   const client = await createInsforgeServerClient();
-  const { error } = await client.auth.resendVerificationEmail({ email, redirectTo: `${await getOrigin()}/login` });
+  const { error } = await client.auth.resendVerificationEmail({ email, redirectTo: `${await getRequestOrigin()}/login` });
   if (error) return fail(error);
   return { ok: true, data: undefined };
 }
@@ -61,7 +55,7 @@ export async function setProfileAction(profile: CitadelyProfile): Promise<AuthAc
 
 export async function sendResetPasswordEmailAction(email: string): Promise<AuthActionResult> {
   const client = await createInsforgeServerClient();
-  const { error } = await client.auth.sendResetPasswordEmail({ email, redirectTo: `${await getOrigin()}/recuperar-password` });
+  const { error } = await client.auth.sendResetPasswordEmail({ email, redirectTo: `${await getRequestOrigin()}/recuperar-password` });
   if (error) return fail(error);
   return { ok: true, data: undefined };
 }
@@ -91,7 +85,7 @@ export async function signOutAction(): Promise<AuthActionResult> {
 export async function startGoogleSignInAction(): Promise<AuthActionResult> {
   const auth = await createInsforgeAuthActions();
   const { data, error } = await auth.signInWithOAuth("google", {
-    redirectTo: `${await getOrigin()}/auth/callback`,
+    redirectTo: `${await getRequestOrigin()}/auth/callback`,
     skipBrowserRedirect: true,
   });
   if (error || !data.url || !data.codeVerifier) return fail(error ?? "No pudimos conectar con Google.");

@@ -19,7 +19,7 @@ import {
 } from "@/lib/citadely-db";
 import { getPublicAvailabilitySummary, getWhatsAppUrl, normalizeWhatsAppPhone } from "@/lib/public-profile";
 import { resolveSectionColors, sectionThemeStyle, type PublicTheme } from "@/lib/public-theme";
-import { getBusinessPublicUrl } from "@/lib/urls";
+import { useWorkspace } from "./workspace-context";
 import type { ServiceMode, VirtualPlatform } from "@/lib/virtual-service";
 
 type PreviewFaq = {
@@ -57,6 +57,7 @@ export function PublicPagePreview({
   virtualPlatforms: VirtualPlatform[];
   whatsappPhone: string;
 }) {
+  const { publicUrl } = useWorkspace();
   const publishedServices = services.filter((service) => service.is_active);
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [selectedDateKey, setSelectedDateKey] = useState("");
@@ -80,7 +81,7 @@ export function PublicPagePreview({
     <section aria-label="Vista previa de la página pública" className="overflow-hidden border border-line bg-white shadow-raised">
       <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
         <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-muted">Vista previa</span>
-        <span className="truncate text-xs text-ink-muted">{getBusinessPublicUrl(business.slug).replace(/^https?:\/\//, "")}</span>
+        <span className="truncate text-xs text-ink-muted">{publicUrl.replace(/^https?:\/\//, "")}</span>
       </div>
 
       <div

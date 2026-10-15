@@ -149,6 +149,10 @@ test("un usuario sin onboarding completo va a /onboarding, no al panel", async (
   await expect(page).toHaveURL(/\/onboarding$/);
   await page.goto("/negocio");
   await expect(page).toHaveURL(/\/onboarding$/);
+  // El formulario queda usable (el usuario lo resuelve el servidor; no rebota a /login).
+  await expect(page.getByRole("button", { name: /Guardar|Continuar|Crear/ }).first()).toBeEnabled();
+  await page.waitForTimeout(1500);
+  await expect(page).toHaveURL(/\/onboarding$/);
 });
 
 test("el cliente del navegador renueva el access token por /api/auth/refresh", async ({ page }) => {
@@ -161,4 +165,30 @@ test("el cliente del navegador renueva el access token por /api/auth/refresh", a
 
   await page.context().clearCookies();
   expect(await page.evaluate(async () => (await fetch("/api/auth/refresh", { method: "POST" })).status)).toBe(401);
+});
+
+test("tras el login, sin recargar, el cliente del navegador escribe con la sesión", async ({ page }) => {
+  await signIn(page);
+  // Navegación cliente: el módulo del cliente InsForge es el mismo que se creó en /login sin sesión.
+  await page.getByRole("link", { name: "Configuración", exact: true }).click();
+  await expect(page).toHaveURL(/\/negocio\/configuracion$/);
+  const alias = `ssr.${runId}`.slice(0, 40);
+  await page.getByLabel("Alias").fill(alias);
+  await page.getByRole("button", { name: "Guardar configuración" }).click();
+  await expect(page.getByText("Configuración guardada.")).toBeVisible();
+
+  const rows = await (await admin(`database/records/businesses?id=eq.${businessId}&select=payment_alias`)).json() as { payment_alias: string }[];
+  expect(rows[0]?.payment_alias).toBe(alias);
+});
+
+test("las rutas API del panel reciben la sesión por cookie", async ({ page }) => {
+  await signIn(page);
+  await page.getByRole("link", { name: "Configuración", exact: true }).click();
+  const redeem = page.waitForResponse((response) => response.url().endsWith("/api/promo-codes/redeem"));
+  await page.getByLabel("Ingresá tu código").fill("CTD-NO-EXISTE-0000");
+  await page.getByRole("button", { name: "Canjear código" }).click();
+  const response = await redeem;
+  expect(response.status()).not.toBe(401);
+  expect(response.status()).not.toBe(403);
+  await expect(page.getByText(/sesión venció/)).toHaveCount(0);
 });

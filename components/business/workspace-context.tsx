@@ -6,6 +6,7 @@ import { getErrorMessage } from "@/lib/auth";
 import type { BusinessAccessState } from "@/lib/business-access";
 import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
+import { getBusinessPublicUrl } from "@/lib/urls";
 import { loadRange, loadWorkspaceData, type InitialWorkspace } from "@/lib/workspace-data";
 
 export type WorkspaceContextValue = {
@@ -17,6 +18,8 @@ export type WorkspaceContextValue = {
   galleryImages: BusinessGalleryImage[];
   faqs: BusinessFaq[];
   userEmail: string;
+  /** URL pública del negocio, igual en servidor y navegador. */
+  publicUrl: string;
   error: string | null;
   refresh: () => Promise<void>;
   /** Appointments and slots are loaded from HISTORY_WINDOW_DAYS ago onward; call this to see further back. */
@@ -110,6 +113,7 @@ export function WorkspaceProvider({ children, initial }: { children: ReactNode; 
     galleryImages,
     faqs,
     userEmail,
+    publicUrl: getBusinessPublicUrl(business.slug, initial.publicOrigin),
     error,
     refresh,
     ensureHistoryFrom,

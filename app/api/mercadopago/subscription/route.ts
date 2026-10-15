@@ -56,12 +56,12 @@ function getWebhookUrl(origin: string) {
 }
 
 async function getOwnedBusiness(request: NextRequest, businessId: string) {
+  const accessToken = getRequestAccessToken(request);
+  if (!accessToken) return { ok: false as const, error: "Sesion requerida.", status: 401 as const };
   // Con la cookie de sesión (sin Bearer) se exige mismo origen, además de SameSite=Lax.
   if (!request.headers.get("authorization") && !hasSameOrigin(request)) {
     return { ok: false as const, error: "Solicitud no autorizada.", status: 403 as const };
   }
-  const accessToken = getRequestAccessToken(request);
-  if (!accessToken) return { ok: false as const, error: "Sesion requerida.", status: 401 as const };
 
   const userClient = createInsforgeTokenClient(accessToken);
   const { data: authData, error: authError } = await userClient.auth.getCurrentUser();

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { signInWithPasswordAction, startGoogleSignInAction } from "@/app/auth/actions";
+import { syncSessionFromCookie } from "@/lib/insforge";
 import { Field, FormMessage, GoogleIcon, LoadingSpinner, SubmitButton } from "@/components/ui";
 import { PasswordField } from "@/components/auth/password-field";
 
@@ -35,6 +36,7 @@ export function LoginForm() {
       return;
     }
 
+    syncSessionFromCookie();
     // Volver a la página del panel que pidió el login (solo rutas internas de /negocio).
     const next = searchParams.get("next");
     const destination = result.data.redirectTo === "/negocio" && next && /^\/negocio(\/[a-z0-9-]*)*$/.test(next)

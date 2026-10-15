@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { setProfileAction, signUpAction } from "@/app/auth/actions";
 import { storePendingProfileName } from "@/lib/auth";
+import { syncSessionFromCookie } from "@/lib/insforge";
 import { getPasswordValidationError } from "@/lib/password";
 import { PasswordField } from "@/components/auth/password-field";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
@@ -46,6 +47,7 @@ export function RegisterForm() {
       return;
     }
 
+    syncSessionFromCookie();
     const profile = await setProfileAction({ name, role: "business", onboarding_complete: false });
 
     setPending(false);

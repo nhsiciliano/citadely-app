@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import {
-  getCitadelyProfile,
   getErrorMessage,
   slugifyBusinessName,
+  type CitadelyProfile,
 } from "@/lib/auth";
 import { setProfileAction } from "@/app/auth/actions";
-import { insforge } from "@/lib/insforge";
+import { ensureFreshSession, insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
 import { BUSINESS_SLUG_MAX_LENGTH, BUSINESS_SLUG_PATTERN, validateBusinessSlug } from "@/lib/business-slug";
@@ -18,7 +18,10 @@ import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
 type SlugStatus = { state: "idle" | "checking" | "available" | "taken" | "invalid"; message?: string };
 
-export function OnboardingForm() {
+export type OnboardingUser = { id: string; email: string | null; profile: CitadelyProfile };
+
+// La página resuelve la sesión y los redirects en el servidor; el formulario recibe el usuario ya validado.
+export function OnboardingForm({ publicOrigin, user }: { publicOrigin: string; user: OnboardingUser }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -38,32 +41,13 @@ export function OnboardingForm() {
     let mounted = true;
 
     async function loadUser() {
-      const { data, error: userError } = await insforge.auth.getCurrentUser();
-
-      if (!mounted) return;
-
-      if (userError || !data.user) {
-        router.replace("/login");
-        return;
-      }
-
-      const profile = getCitadelyProfile(data.user);
-      if (profile.role === "client") {
-        router.replace("/");
-        return;
-      }
-
-      // Un negocio ya configurado no debe volver a pasar por el onboarding.
-      if (profile.onboarding_complete) {
-        router.replace("/negocio");
-        return;
-      }
+      const profile = user.profile;
 
       // El negocio guardado manda sobre el perfil: así reabrir el formulario nunca pisa sus datos.
       const { data: business } = await insforge.database
         .from("businesses")
         .select("id,name,slug,category")
-        .eq("owner_id", data.user.id)
+        .eq("owner_id", user.id)
         .maybeSingle();
 
       if (!mounted) return;
@@ -89,7 +73,7 @@ export function OnboardingForm() {
     return () => {
       mounted = false;
     };
-  }, [router]);
+  }, [user]);
 
   // Disponibilidad de la URL: validación local inmediata y consulta al servidor con debounce.
   useEffect(() => {
@@ -150,16 +134,14 @@ export function OnboardingForm() {
 
     setPending(true);
 
-    const { data: userData, error: userError } = await insforge.auth.getCurrentUser();
-
-    if (userError || !userData.user) {
+    if (!(await ensureFreshSession())) {
       setPending(false);
       setError("Tu sesión expiró. Volvé a ingresar para continuar.");
       return;
     }
 
     const businessPayload = {
-      owner_id: userData.user.id,
+      owner_id: user.id,
       name: businessName,
       category: businessCategory,
       slug: businessSlug,
@@ -212,7 +194,7 @@ export function OnboardingForm() {
 
     if (businessId) {
       const { error: notificationError } =
-        (await saveBusinessNotificationEmail(businessId, userData.user.email)) ?? {};
+        (await saveBusinessNotificationEmail(businessId, user.email)) ?? {};
 
       if (notificationError) {
         setPending(false);
@@ -240,7 +222,7 @@ export function OnboardingForm() {
     router.refresh();
   }
 
-  const publicUrl = getBusinessPublicUrl(slug || "tu-negocio");
+  const publicUrl = getBusinessPublicUrl(slug || "tu-negocio", publicOrigin);
   const slugHint = slugLocked
     ? "La URL de un negocio existente no se cambia desde acá para no romper los enlaces ya compartidos."
     : slugStatus.state === "checking"

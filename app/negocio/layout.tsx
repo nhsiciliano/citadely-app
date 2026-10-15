@@ -6,6 +6,7 @@ import { WorkspaceProvider } from "@/components/business/workspace-context";
 import { getErrorMessage, getPostAuthPath } from "@/lib/auth";
 import type { Business } from "@/lib/citadely-db";
 import { createInsforgeServerClient } from "@/lib/insforge-server";
+import { getRequestOrigin } from "@/lib/request-origin";
 import { NO_INDEX_ROBOTS } from "@/lib/seo";
 import { getHistoryStart, loadWorkspaceData } from "@/lib/workspace-data";
 
@@ -36,10 +37,10 @@ export default async function BusinessLayout({ children }: { children: ReactNode
 
   const business = businessRow as Business;
   const historyStart = getHistoryStart();
-  const data = await loadWorkspaceData(client, business.id, historyStart);
+  const [data, publicOrigin] = await Promise.all([loadWorkspaceData(client, business.id, historyStart), getRequestOrigin()]);
 
   return (
-    <WorkspaceProvider initial={{ ...data, business, userEmail: user.email ?? "", historyStart }}>
+    <WorkspaceProvider initial={{ ...data, business, userEmail: user.email ?? "", historyStart, publicOrigin }}>
       <BusinessShell>{children}</BusinessShell>
     </WorkspaceProvider>
   );

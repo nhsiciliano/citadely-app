@@ -21,6 +21,8 @@ export type InitialWorkspace = WorkspaceData & {
   business: Business;
   userEmail: string;
   historyStart: string;
+  /** Origen de la request, para que las URLs públicas coincidan entre servidor y navegador. */
+  publicOrigin: string;
 };
 
 const PAGE_SIZE = 500;
