@@ -6,6 +6,7 @@ import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { buildBookingSlots, formatAppointmentTime, formatCurrency, type Appointment, type Client } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
 import { getClientSaveErrorMessage } from "@/lib/client-errors";
+import { createClient } from "@/lib/clients";
 import { insforge } from "@/lib/insforge";
 import { Drawer, StatusBadge } from "./workspace-ui";
 import { useWorkspace } from "./workspace-context";
@@ -229,19 +230,14 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
   async function addClient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const name = String(form.get("client_name") ?? "").trim();
-    if (!name) {
-      setMessage("Ingresá el nombre y apellido del cliente.");
-      return;
-    }
     setPending(true);
     setMessage(null);
-    const { data: created, error } = await insforge.database.from("clients").insert([{
-      business_id: business.id,
-      name,
-      email: String(form.get("client_email") ?? "").trim().toLowerCase() || null,
-      phone: String(form.get("client_phone") ?? "").trim() || null,
-    }]).select("id,business_id,user_id,name,email,phone,notes_summary").single();
+    const { data: created, error } = await createClient({
+      businessId: business.id,
+      name: String(form.get("client_name") ?? ""),
+      email: String(form.get("client_email") ?? ""),
+      phone: String(form.get("client_phone") ?? ""),
+    });
     setPending(false);
     if (error || !created) {
       setMessage(error ? getClientSaveErrorMessage(error) : "No pudimos crear el cliente. Intentá nuevamente.");

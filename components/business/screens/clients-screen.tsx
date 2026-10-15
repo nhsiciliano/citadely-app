@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CalendarClock, Mail, Phone, Plus, Search, UserRound } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { formatAppointmentTime, type Appointment, type Client } from "@/lib/citadely-db";
+import { createClient } from "@/lib/clients";
 import { getClientSaveErrorMessage } from "@/lib/client-errors";
-import { insforge } from "@/lib/insforge";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
 
@@ -54,12 +54,12 @@ export function ClientsScreen() {
     const form = new FormData(formElement);
     setPending(true);
     setMessage(null);
-    const { error } = await insforge.database.from("clients").insert([{
-      business_id: business.id,
+    const { error } = await createClient({
+      businessId: business.id,
       name: String(form.get("client_name") ?? ""),
       email: String(form.get("client_email") ?? ""),
       phone: String(form.get("client_phone") ?? ""),
-    }]);
+    });
     setPending(false);
     if (error) {
       setMessage(getClientSaveErrorMessage(error));

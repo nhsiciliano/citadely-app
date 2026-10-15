@@ -271,7 +271,7 @@ export function SettingsScreen() {
             <Field defaultValue={business.payment_cbu ?? ""} label="CBU o CVU" name="payment_cbu" placeholder="00000031000…" required={false} />
             <Field defaultValue={business.payment_instructions ?? ""} label="Instrucciones de pago" name="payment_instructions" placeholder="Indicaciones para enviar el comprobante" required={false} />
             <div className="flex items-center gap-2 border-t border-[var(--color-line)] pt-4"><MessageCircle aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><h3 className="font-semibold">WhatsApp</h3></div>
-            <Field defaultValue={business.whatsapp_phone ?? ""} label="Número para comprobantes" name="whatsapp_phone" placeholder="5491123456789" required={false} />
+            <Field defaultValue={business.whatsapp_phone ?? ""} label="WhatsApp de contacto" name="whatsapp_phone" placeholder="5491123456789" required={false} />
             <p className="text-xs leading-5 text-[var(--color-ink-muted)]">Ingresalo con código de país, sin +, espacios ni guiones.</p>
             {!subscription.hasAccess ? <FormMessage type="error">Activá el plan mensual para modificar estos datos.</FormMessage> : null}
             <SubmitButton disabled={!subscription.hasAccess} pending={paymentPending}>Guardar configuración</SubmitButton>
