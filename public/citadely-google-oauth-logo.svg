@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" fill="#FFFFFF"/>
+
+  <g aria-label="Símbolo de Citadely">
+    <rect x="164" y="66" width="184" height="184" rx="40" fill="#0957D9"/>
+    <path d="M213 56V86M299 56V86" stroke="#071F3D" stroke-width="18" stroke-linecap="round"/>
+    <path d="M199 112H313" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+    <path d="M294 151A50 50 0 1 0 294 225" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round"/>
+  </g>
+
+  <text
+    x="256"
+    y="350"
+    fill="#071F3D"
+    font-family="Funnel Display, Arial, Helvetica, sans-serif"
+    font-size="72"
+    font-weight="650"
+    letter-spacing="-2.1"
+    text-anchor="middle"
+  >Citadely</text>
+
+  <text
+    x="256"
+    y="397"
+    fill="#526078"
+    font-family="Geist, Arial, Helvetica, sans-serif"
+    font-size="17"
+    font-weight="700"
+    letter-spacing="4.7"
+    text-anchor="middle"
+  >CENTRAL DE TURNOS</text>
+</svg>
