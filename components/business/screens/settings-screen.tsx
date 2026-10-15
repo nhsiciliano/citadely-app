@@ -6,7 +6,7 @@ import { BadgeDollarSign, Building2, CalendarClock, Check, Clock3, CreditCard, G
 import { Field, FormMessage, LoadingSpinner, SubmitButton } from "@/components/ui";
 import { getErrorMessage } from "@/lib/auth";
 import { READ_ONLY_HINT } from "@/lib/business-access";
-import { insforge } from "@/lib/insforge";
+import { ensureFreshSession, insforge } from "@/lib/insforge";
 import { formatPlanPrice, SUBSCRIPTION_PLAN_DETAILS, type SubscriptionPlanId } from "@/lib/subscription-plans";
 import { useSubscriptionPlans } from "../use-subscription-plans";
 import { useWorkspace } from "../workspace-context";
@@ -37,8 +37,8 @@ export function SettingsScreen() {
     event.preventDefault();
     setRedeeming(true);
     setMessage(null);
-    const { data: session, error: sessionError } = await insforge.auth.refreshSession();
-    if (sessionError || !session?.accessToken) {
+    // Renueva la cookie de sesión antes de llamar a la ruta, que la lee del request.
+    if (!(await ensureFreshSession())) {
       setRedeeming(false);
       setMessageType("error");
       setMessage("Tu sesión venció. Volvé a iniciar sesión para canjear el código.");
@@ -48,7 +48,7 @@ export function SettingsScreen() {
     try {
       const response = await fetch("/api/promo-codes/redeem", {
         method: "POST",
-        headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ businessId: business.id, code: promoCode }),
       });
       const data = await readJson<{ startsAt?: string; endsAt?: string }>(response);
@@ -70,8 +70,8 @@ export function SettingsScreen() {
     setRequestedPlan(plan);
     setMessage(null);
     setMessageType("success");
-    const { data: session, error: sessionError } = await insforge.auth.refreshSession();
-    if (sessionError || !session?.accessToken) {
+    // Renueva la cookie de sesión antes de llamar a la ruta, que la lee del request.
+    if (!(await ensureFreshSession())) {
       setSubscriptionPending(false);
       setRequestedPlan(null);
       setMessageType("error");
@@ -81,7 +81,7 @@ export function SettingsScreen() {
 
     const response = await fetch("/api/mercadopago/subscription", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ businessId: business.id, plan, requestId: crypto.randomUUID() }),
     }).catch(() => null);
     if (!response) {
@@ -125,8 +125,8 @@ export function SettingsScreen() {
 
     setCancellationPending(true);
     setMessage(null);
-    const { data: session, error: sessionError } = await insforge.auth.refreshSession();
-    if (sessionError || !session?.accessToken) {
+    // Renueva la cookie de sesión antes de llamar a la ruta, que la lee del request.
+    if (!(await ensureFreshSession())) {
       setCancellationPending(false);
       setMessageType("error");
       setMessage("Tu sesión venció. Volvé a iniciar sesión para cancelar la suscripción.");
@@ -135,7 +135,7 @@ export function SettingsScreen() {
 
     const response = await fetch("/api/mercadopago/subscription", {
       method: "DELETE",
-      headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ businessId: business.id, requestId: crypto.randomUUID() }),
     }).catch(() => null);
     if (!response) {

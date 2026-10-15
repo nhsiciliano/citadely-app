@@ -2,8 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { clearPendingProfileName, getErrorMessage, readPendingProfileName } from "@/lib/auth";
-import { insforge } from "@/lib/insforge";
+import { resendVerificationEmailAction, setProfileAction, verifyEmailAction } from "@/app/auth/actions";
+import { clearPendingProfileName, readPendingProfileName } from "@/lib/auth";
+import { syncSessionFromCookie } from "@/lib/insforge";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
 export function VerifyEmailForm() {
@@ -26,29 +27,27 @@ export function VerifyEmailForm() {
     const email = String(form.get("email") ?? "");
     const otp = String(form.get("otp") ?? "");
 
-    const { error: verifyError } = await insforge.auth.verifyEmail({ email, otp });
+    const verified = await verifyEmailAction({ email, otp });
 
-    if (verifyError) {
+    if (!verified.ok) {
       setPending(false);
-      setError(getErrorMessage(verifyError));
+      setError(verified.error);
       return;
     }
 
-    const { error: profileError } = await insforge.auth.setProfile({
-      name: defaultName,
-      role: "business",
-      onboarding_complete: false,
-    });
+    syncSessionFromCookie();
+    const profile = await setProfileAction({ name: defaultName, role: "business", onboarding_complete: false });
 
     setPending(false);
 
-    if (profileError) {
-      setError(getErrorMessage(profileError));
+    if (!profile.ok) {
+      setError(profile.error);
       return;
     }
 
     clearPendingProfileName();
     router.push("/onboarding");
+    router.refresh();
   }
 
   async function resendCode() {
@@ -56,15 +55,12 @@ export function VerifyEmailForm() {
     setError(null);
     setSuccess(null);
 
-    const { error: resendError } = await insforge.auth.resendVerificationEmail({
-      email: defaultEmail,
-      redirectTo: `${window.location.origin}/login`,
-    });
+    const resent = await resendVerificationEmailAction(defaultEmail);
 
     setPending(false);
 
-    if (resendError) {
-      setError(getErrorMessage(resendError));
+    if (!resent.ok) {
+      setError(resent.error);
       return;
     }
 

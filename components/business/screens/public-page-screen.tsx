@@ -7,7 +7,6 @@ import { FormMessage, LoadingSpinner, TextArea } from "@/components/ui";
 import { VirtualPlatformIcon } from "@/components/virtual-platform-icon";
 import type { BusinessFaq, BusinessGalleryImage } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
-import { getBusinessPublicUrl } from "@/lib/urls";
 import { insforge } from "@/lib/insforge";
 import { normalizePublicAddress, normalizeWhatsAppPhone } from "@/lib/public-profile";
 import { DEFAULT_BRAND_COLOR, normalizePublicTheme } from "@/lib/public-theme";
@@ -55,7 +54,7 @@ function FileUpload({ label, name, current, note }: { label: string; name: strin
 }
 
 export function PublicPageScreen() {
-  const { access: subscription, appointments, availabilitySlots, business, galleryImages, faqs, refresh, services } = useWorkspace();
+  const { access: subscription, appointments, availabilitySlots, business, galleryImages, faqs, publicUrl, refresh, services } = useWorkspace();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [description, setDescription] = useState(business.description ?? "");
@@ -71,7 +70,6 @@ export function PublicPageScreen() {
   const [draftFaqs, setDraftFaqs] = useState<DraftFaq[]>(
     faqs.map((faq) => ({ ...faq, localId: faq.id })),
   );
-  const publicUrl = getBusinessPublicUrl(business.slug);
   const visibleGalleryImages = savedGalleryImages.filter((image) => !removedGalleryIds.includes(image.id));
 
   if (!subscription.hasPublicPageAccess) {

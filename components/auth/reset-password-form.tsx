@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { getErrorMessage } from "@/lib/auth";
-import { insforge } from "@/lib/insforge";
+import { exchangeResetPasswordTokenAction, resetPasswordAction, sendResetPasswordEmailAction } from "@/app/auth/actions";
 import { getPasswordValidationError } from "@/lib/password";
 import { PasswordField } from "@/components/auth/password-field";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
@@ -24,15 +23,12 @@ export function ResetPasswordForm() {
 
     const form = new FormData(event.currentTarget);
     const nextEmail = String(form.get("email") ?? "");
-    const { error: requestError } = await insforge.auth.sendResetPasswordEmail({
-      email: nextEmail,
-      redirectTo: `${window.location.origin}/recuperar-password`,
-    });
+    const requested = await sendResetPasswordEmailAction(nextEmail);
 
     setPending(false);
 
-    if (requestError) {
-      setError(getErrorMessage(requestError));
+    if (!requested.ok) {
+      setError(requested.error);
       return;
     }
 
@@ -49,19 +45,16 @@ export function ResetPasswordForm() {
 
     const form = new FormData(event.currentTarget);
     const code = String(form.get("code") ?? "");
-    const { data, error: exchangeError } = await insforge.auth.exchangeResetPasswordToken({
-      email,
-      code,
-    });
+    const exchanged = await exchangeResetPasswordTokenAction({ email, code });
 
     setPending(false);
 
-    if (exchangeError) {
-      setError(getErrorMessage(exchangeError));
+    if (!exchanged.ok) {
+      setError(exchanged.error);
       return;
     }
 
-    setToken(data?.token ?? "");
+    setToken(exchanged.data.token);
     setSuccess("Código validado. Ingresá tu nueva contraseña.");
   }
 
@@ -80,15 +73,12 @@ export function ResetPasswordForm() {
     }
 
     setPending(true);
-    const { error: resetError } = await insforge.auth.resetPassword({
-      newPassword,
-      otp: token,
-    });
+    const reset = await resetPasswordAction({ newPassword, otp: token });
 
     setPending(false);
 
-    if (resetError) {
-      setError(getErrorMessage(resetError));
+    if (!reset.ok) {
+      setError(reset.error);
       return;
     }
 

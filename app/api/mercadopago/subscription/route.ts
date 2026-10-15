@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@insforge/sdk";
+import { hasSameOrigin } from "@/lib/blog-admin-auth";
+import { createInsforgeTokenClient, getRequestAccessToken } from "@/lib/insforge-server";
 import { getPayerEmailOverride, getProtectionBypassSecret } from "@/lib/env";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 import {
@@ -55,14 +56,14 @@ function getWebhookUrl(origin: string) {
 }
 
 async function getOwnedBusiness(request: NextRequest, businessId: string) {
-  const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-  const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
+  const accessToken = getRequestAccessToken(request);
+  if (!accessToken) return { ok: false as const, error: "Sesion requerida.", status: 401 as const };
+  // Con la cookie de sesión (sin Bearer) se exige mismo origen, además de SameSite=Lax.
+  if (!request.headers.get("authorization") && !hasSameOrigin(request)) {
+    return { ok: false as const, error: "Solicitud no autorizada.", status: 403 as const };
+  }
 
-  if (!accessToken || !baseUrl) return { ok: false as const, error: "Sesion requerida.", status: 401 as const };
-
-  const userClient = createClient({ baseUrl, ...(anonKey ? { anonKey } : {}), isServerMode: true });
-  userClient.setAccessToken(accessToken);
+  const userClient = createInsforgeTokenClient(accessToken);
   const { data: authData, error: authError } = await userClient.auth.getCurrentUser();
   const user = authData?.user;
   if (authError || !user) return { ok: false as const, error: "Sesion invalida.", status: 401 as const };

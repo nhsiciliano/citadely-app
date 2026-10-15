@@ -21,7 +21,6 @@ import {
   X,
 } from "lucide-react";
 import { LogoSymbol } from "@/components/ui";
-import { getBusinessPublicUrl } from "@/lib/urls";
 import { useWorkspace } from "./workspace-context";
 
 const NAV_ITEMS = [
@@ -43,10 +42,9 @@ const LEGACY_HASHES: Record<string, string> = {
 export function BusinessShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { access: subscription, business, error, signOut, userEmail } = useWorkspace();
+  const { access: subscription, business, error, publicUrl, signOut, userEmail } = useWorkspace();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const publicUrl = getBusinessPublicUrl(business.slug);
   const isDemoWorkspace = business.is_demo === true;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 

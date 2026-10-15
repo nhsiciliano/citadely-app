@@ -78,7 +78,7 @@ export function parseBusinessAccessState(raw: RawAccessState): BusinessAccessSta
   };
 }
 
-export async function fetchBusinessAccessState(client: InsForgeClient, businessId: string) {
+export async function fetchBusinessAccessState(client: Pick<InsForgeClient, "database">, businessId: string) {
   const { data, error } = await client.database.rpc("get_business_access_state", { p_business_id: businessId });
   if (error || !data) throw new Error(error?.message ?? "No se pudo leer el estado de la suscripción.");
   return parseBusinessAccessState(data as RawAccessState);

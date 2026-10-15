@@ -6,7 +6,6 @@ import { ArrowRight, CalendarPlus, CircleDollarSign, Copy, ExternalLink, Plus, S
 import { calculateStats, formatCurrency } from "@/lib/citadely-db";
 import { READ_ONLY_HINT } from "@/lib/business-access";
 import { formatInTimeZone, isSameDayInTimeZone, toTimeKey } from "@/lib/time";
-import { getBusinessPublicUrl } from "@/lib/urls";
 import { AppointmentDetailDrawer, NewAppointmentDrawer } from "../appointment-actions";
 import { useWorkspace } from "../workspace-context";
 import { EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
@@ -14,7 +13,7 @@ import { EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
 const DATE_OPTIONS = { weekday: "long", day: "numeric", month: "long" } as const;
 
 export function OverviewScreen() {
-  const { access, appointments, availabilitySlots, business, services } = useWorkspace();
+  const { access, appointments, availabilitySlots, business, publicUrl, services } = useWorkspace();
   const readOnly = !access.hasDashboardAccess;
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -24,7 +23,6 @@ export function OverviewScreen() {
   const stats = calculateStats(appointments, services, timeZone, now, availabilitySlots);
   const formatDate = (value: Date | string) => formatInTimeZone(value, timeZone, DATE_OPTIONS);
   const formatTime = (value: string) => toTimeKey(value, timeZone);
-  const publicUrl = getBusinessPublicUrl(business.slug);
   const isDemoWorkspace = business.slug === "citadely-demo-ux";
 
   const activeAppointments = useMemo(() => appointments.filter((appointment) => appointment.status !== "cancelled"), [appointments]);

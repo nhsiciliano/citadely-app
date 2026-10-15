@@ -10,7 +10,7 @@ import {
   type ServiceAvailabilitySlot,
 } from "@/lib/citadely-db";
 import { getPublicBookingWindow, PUBLIC_SLOT_LIMIT } from "@/lib/booking-window";
-import { insforge } from "@/lib/insforge";
+import { insforgePublic as insforge } from "@/lib/insforge-public";
 
 // The public page is cached per business. It is refreshed when: the owner saves something that
 // affects it (/api/revalidate-public-page), a public booking is created, or this many seconds pass
