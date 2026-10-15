@@ -16,7 +16,7 @@ import {
   type Service,
   type ServiceAvailabilitySlot,
 } from "@/lib/citadely-db";
-import { insforge } from "@/lib/insforge";
+import { insforgePublic as insforge } from "@/lib/insforge-public";
 import { formatWhatsAppPhone, getPublicAvailabilitySummary, getWhatsAppUrl } from "@/lib/public-profile";
 import { DEFAULT_BRAND_COLOR, normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
 import { getPublicBookingWindow, PUBLIC_SLOT_LIMIT } from "@/lib/booking-window";

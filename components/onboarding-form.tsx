@@ -7,6 +7,7 @@ import {
   getErrorMessage,
   slugifyBusinessName,
 } from "@/lib/auth";
+import { setProfileAction } from "@/app/auth/actions";
 import { insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
@@ -220,7 +221,7 @@ export function OnboardingForm() {
       }
     }
 
-    const { error: profileError } = await insforge.auth.setProfile({
+    const profile = await setProfileAction({
       role: "business",
       onboarding_complete: true,
       business_name: businessName,
@@ -230,12 +231,13 @@ export function OnboardingForm() {
 
     setPending(false);
 
-    if (profileError) {
-      setError(getErrorMessage(profileError));
+    if (!profile.ok) {
+      setError(profile.error);
       return;
     }
 
     router.push("/negocio");
+    router.refresh();
   }
 
   const publicUrl = getBusinessPublicUrl(slug || "tu-negocio");

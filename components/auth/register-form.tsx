@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { getErrorMessage, storePendingProfileName } from "@/lib/auth";
-import { insforge } from "@/lib/insforge";
+import { setProfileAction, signUpAction } from "@/app/auth/actions";
+import { storePendingProfileName } from "@/lib/auth";
 import { getPasswordValidationError } from "@/lib/password";
 import { PasswordField } from "@/components/auth/password-field";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
@@ -31,40 +31,32 @@ export function RegisterForm() {
 
     setPending(true);
 
-    const { data, error: signUpError } = await insforge.auth.signUp({
-      email,
-      password,
-      name,
-      redirectTo: `${window.location.origin}/login`,
-    });
+    const signUp = await signUpAction({ email, password, name });
 
-    if (signUpError) {
+    if (!signUp.ok) {
       setPending(false);
-      setError(getErrorMessage(signUpError));
+      setError(signUp.error);
       return;
     }
 
-    if (data?.requireEmailVerification) {
+    if (signUp.data.requireEmailVerification) {
       storePendingProfileName(name);
       const params = new URLSearchParams({ email });
       router.push(`/verificar-email?${params.toString()}`);
       return;
     }
 
-    const { error: profileError } = await insforge.auth.setProfile({
-      name,
-      role: "business",
-      onboarding_complete: false,
-    });
+    const profile = await setProfileAction({ name, role: "business", onboarding_complete: false });
 
     setPending(false);
 
-    if (profileError) {
-      setError(getErrorMessage(profileError));
+    if (!profile.ok) {
+      setError(profile.error);
       return;
     }
 
     router.push("/onboarding");
+    router.refresh();
   }
 
   return (

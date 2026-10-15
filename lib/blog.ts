@@ -1,5 +1,5 @@
 import "server-only";
-import { insforge } from "@/lib/insforge";
+import { insforgePublic as insforge } from "@/lib/insforge-public";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 
 export type BlogBlockKind = "heading2" | "heading3" | "paragraph" | "ordered_list" | "unordered_list" | "quote";

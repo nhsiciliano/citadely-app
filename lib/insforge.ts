@@ -1,14 +1,13 @@
-import { createClient } from "@insforge/sdk";
+import { createBrowserClient } from "@insforge/sdk/ssr";
+import { getInsforgePublicConfig } from "@/lib/insforge-config";
 
-const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
+// Cliente para Client Components. Lee la sesión de la cookie insforge_access_token y la renueva por
+// /api/auth/refresh. Su auth es de solo lectura: ingresar, salir y editar el perfil van por app/auth/actions.ts.
+// En Server Components y rutas usá lib/insforge-server.ts (con sesión) o lib/insforge-public.ts (anónimo).
+export const insforge = createBrowserClient(getInsforgePublicConfig());
 
-const anonKey = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
-
-if (!baseUrl) {
-  throw new Error("Missing NEXT_PUBLIC_INSFORGE_BASE_URL.");
+/** Renueva la cookie de sesión si venció, antes de llamar a una ruta API que la lee. */
+export async function ensureFreshSession() {
+  const { data } = await insforge.auth.getCurrentUser();
+  return data.user;
 }
-
-export const insforge = createClient({
-  baseUrl,
-  ...(anonKey ? { anonKey } : {}),
-});

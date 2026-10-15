@@ -1,7 +1,7 @@
-import { createClient } from "@insforge/sdk";
 import { NextResponse } from "next/server";
 import { hasSameOrigin } from "@/lib/blog-admin-auth";
 import { insforgeAdmin } from "@/lib/insforge-admin";
+import { createInsforgeTokenClient, getRequestAccessToken } from "@/lib/insforge-server";
 import { getMercadoPagoPreapproval } from "@/lib/mercadopago";
 import { normalizePromoCode, promoCodeHash } from "@/lib/promo-codes";
 
@@ -19,13 +19,10 @@ export async function POST(request: Request) {
   if (!hasSameOrigin(request)) return NextResponse.json({ error: "Solicitud no autorizada." }, { status: 403 });
   if (!insforgeAdmin) return NextResponse.json({ error: "Backend no configurado." }, { status: 503 });
 
-  const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-  const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
-  if (!accessToken || !baseUrl) return NextResponse.json({ error: "Sesión requerida." }, { status: 401 });
+  const accessToken = getRequestAccessToken(request);
+  if (!accessToken) return NextResponse.json({ error: "Sesión requerida." }, { status: 401 });
 
-  const userClient = createClient({ baseUrl, ...(anonKey ? { anonKey } : {}), isServerMode: true });
-  userClient.setAccessToken(accessToken);
+  const userClient = createInsforgeTokenClient(accessToken);
   const { data: authData, error: authError } = await userClient.auth.getCurrentUser();
   if (authError || !authData?.user) return NextResponse.json({ error: "Sesión inválida." }, { status: 401 });
 

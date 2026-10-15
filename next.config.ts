@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
       "node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/node_modules/@img/sharp-libvips-linux-x64/**/*",
     ],
   },
+  // Next logs Server Function arguments in dev; the auth actions receive passwords and reset codes.
+  logging: { serverFunctions: false },
   images: {
     // Portadas y fotos del negocio se sirven desde el storage de InsForge (parent y branches).
     remotePatterns: [

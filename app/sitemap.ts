@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { mapWithConcurrency } from "@/lib/concurrency";
-import { insforge } from "@/lib/insforge";
+import { insforgePublic as insforge } from "@/lib/insforge-public";
 import { SITE_ORIGIN } from "@/lib/seo";
 import { getBusinessPublicUrl } from "@/lib/urls";
 
