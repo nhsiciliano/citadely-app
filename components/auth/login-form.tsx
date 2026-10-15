@@ -60,7 +60,7 @@ export function LoginForm() {
         </FormMessage>
       ) : null}
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
-      <form className="grid gap-4" onSubmit={handlePasswordLogin}>
+      <form method="post" className="grid gap-4" onSubmit={handlePasswordLogin}>
         <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
         <PasswordField autoComplete="current-password" placeholder="Tu contraseña" />
         <SubmitButton disabled={pendingAction !== null} pending={pendingAction === "password"}>Ingresar</SubmitButton>

@@ -141,7 +141,7 @@ export function ClientsScreen() {
       </Drawer>
 
       <Drawer description="Creá una ficha básica para poder asignarle turnos manuales." onClose={() => setCreateOpen(false)} open={createOpen} title="Nuevo cliente" width="medium">
-        <form className="grid gap-5" onSubmit={addClient}>
+        <form method="post" className="grid gap-5" onSubmit={addClient}>
           <div className="grid h-12 w-12 place-items-center rounded-md bg-[var(--color-primary-soft)] text-[var(--color-primary)]"><UserRound aria-hidden="true" size={22} /></div>
           <Field label="Nombre" name="client_name" placeholder="Nombre y apellido" />
           <Field autoComplete="email" label="Email" name="client_email" placeholder="cliente@ejemplo.com" required={false} type="email" />

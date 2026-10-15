@@ -253,7 +253,7 @@ export async function renderOutboxEmail(row: EmailOutboxRow): Promise<RenderedOu
         { label: "3", value: "Compartí tu página pública" },
       ],
       actionLabel: "Configurar mi negocio",
-      actionUrl: `${(process.env.APP_BASE_URL || "https://citadely.com.ar").replace(/\/$/, "")}/onboarding`,
+      actionUrl: `${(process.env.APP_BASE_URL || "https://www.citadely.com.ar").replace(/\/$/, "")}/onboarding`,
     };
     const element = <CitadelyEmail {...props} />;
     return { subject: "Bienvenido a Citadely", html: await render(element), text: await render(element, { plainText: true }) };

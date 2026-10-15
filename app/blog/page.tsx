@@ -60,7 +60,7 @@ export default async function BlogPage({ searchParams }: SearchParams) {
         {featured ? (
           <section className="mx-auto grid max-w-[1440px] border-b border-[var(--color-line)] lg:grid-cols-[1.18fr_.82fr]">
             <Link aria-label={`Leer ${featured.title}`} className="relative block aspect-[16/10] overflow-hidden bg-[var(--color-primary-soft)] lg:aspect-auto" href={`/blog/${featured.slug}`}>
-              <Image alt={featured.cover_alt} className="object-cover transition-transform duration-300 hover:scale-[1.02]" fill priority sizes="(max-width: 1024px) 100vw, 60vw" src={featured.cover_url!} unoptimized />
+              <Image alt={featured.cover_alt} className="object-cover transition-transform duration-300 hover:scale-[1.02]" fill preload sizes="(max-width: 1024px) 100vw, 60vw" src={featured.cover_url!} />
             </Link>
             <div className="flex flex-col justify-center px-5 py-10 sm:px-8 lg:px-12 lg:py-16">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">Publicación reciente</p>
@@ -85,7 +85,7 @@ export default async function BlogPage({ searchParams }: SearchParams) {
               {entries.map((post) => (
                 <article className="grid gap-6 py-8 sm:grid-cols-[220px_1fr] sm:items-center" key={post.id}>
                   <Link aria-label={`Leer ${post.title}`} className="relative block aspect-[16/10] overflow-hidden bg-[var(--color-primary-soft)]" href={`/blog/${post.slug}`}>
-                    <Image alt={post.cover_alt} className="object-cover transition-transform duration-300 hover:scale-[1.03]" fill sizes="(max-width: 640px) 100vw, 220px" src={post.cover_url!} unoptimized />
+                    <Image alt={post.cover_alt} className="object-cover transition-transform duration-300 hover:scale-[1.03]" fill sizes="(max-width: 640px) 100vw, 220px" src={post.cover_url!} />
                   </Link>
                   <div><time className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-ink-muted)]" dateTime={post.published_at!}>{blogDate(post.published_at!)}</time><h3 className="font-display mt-3 text-2xl font-semibold leading-tight text-[var(--color-navy)]"><Link className="hover:text-[var(--color-primary)]" href={`/blog/${post.slug}`}>{post.title}</Link></h3><Link className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]" href={`/blog/${post.slug}`}>Leer publicación<ArrowRight aria-hidden="true" size={16} /></Link></div>
                 </article>

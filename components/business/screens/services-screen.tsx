@@ -347,7 +347,7 @@ export function ServicesScreen() {
       </div>
 
       <Drawer description={editingService ? "Actualizá los datos y la disponibilidad de los próximos seis meses." : "Completá los datos y publicá al menos un horario mensual."} onClose={closeDrawer} open={drawerOpen} title={editingService ? "Editar servicio" : "Nuevo servicio"}>
-        <form className="grid gap-6" key={editingService?.id ?? "new-service"} onSubmit={editingService ? updateService : addService}>
+        <form method="post" className="grid gap-6" key={editingService?.id ?? "new-service"} onSubmit={editingService ? updateService : addService}>
           <section className="grid gap-4">
             <div className="flex items-center gap-2 border-b border-[var(--color-line)] pb-3"><Tag aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><h3 className="font-semibold">Datos del servicio</h3></div>
             <Field defaultValue={editingService?.name} label="Nombre" name="name" placeholder="Consulta clínica general" />

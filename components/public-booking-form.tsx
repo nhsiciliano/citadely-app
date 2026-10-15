@@ -149,7 +149,7 @@ export function PublicBookingForm({
   }
 
   return (
-    <form
+    <form method="post"
       className={`grid min-w-0 gap-x-10 gap-y-9 lg:grid-cols-[minmax(0,1fr)_340px] ${bookingStyle ? "public-theme-active public-theme-booking" : ""}`}
       onSubmit={reserveAppointment}
       style={bookingStyle ?? { "--booking-brand": brandColor } as CSSProperties}

@@ -73,7 +73,7 @@ test("SEO público, indexación y errores reales", async ({ page, request }) => 
 
   await page.goto("/");
   await expect(page).toHaveTitle("Citadely | Agenda y turnos online para negocios");
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://citadely.com.ar");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://www.citadely.com.ar");
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /citadely\.com\.ar\/opengraph-image/);
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
@@ -92,10 +92,10 @@ test("SEO público, indexación y errores reales", async ({ page, request }) => 
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 
   const robots = await request.get("/robots.txt");
-  expect(await robots.text()).toContain("Sitemap: https://citadely.com.ar/sitemap.xml");
+  expect(await robots.text()).toContain("Sitemap: https://www.citadely.com.ar/sitemap.xml");
   const sitemap = await request.get("/sitemap.xml");
   const sitemapBody = await sitemap.text();
-  expect(sitemapBody).toContain("https://citadely.com.ar");
+  expect(sitemapBody).toContain("https://www.citadely.com.ar");
   expect(sitemapBody).toContain("/b/citadely-demo-ux");
 });
 

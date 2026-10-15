@@ -1,5 +1,5 @@
 export const SITE_NAME = "Citadely";
-export const SITE_ORIGIN = "https://citadely.com.ar";
+export const SITE_ORIGIN = "https://www.citadely.com.ar";
 export const SITE_URL = new URL(SITE_ORIGIN);
 
 export const HOME_TITLE = "Citadely | Agenda y turnos online para negocios";

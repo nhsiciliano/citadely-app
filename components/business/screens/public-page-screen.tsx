@@ -213,7 +213,7 @@ export function PublicPageScreen() {
         description="Editá la identidad del negocio y comprobá el resultado antes de guardarlo."
         title="Página pública"
       />
-      <form className="grid gap-6 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(320px,.78fr)_minmax(440px,1.22fr)] lg:items-start lg:px-10 lg:py-8" id="public-page-form" onSubmit={save}>
+      <form method="post" className="grid gap-6 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(320px,.78fr)_minmax(440px,1.22fr)] lg:items-start lg:px-10 lg:py-8" id="public-page-form" onSubmit={save}>
         {message ? <div className="lg:col-span-2"><FormMessage type={message.includes("actualizada") ? "success" : "error"}>{message}</FormMessage></div> : null}
 
         <div className="grid min-w-0 gap-6">
