@@ -6,5 +6,5 @@ export const metadata: Metadata = { title: "Panel administrativo", robots: NO_IN
 export const dynamic = "force-dynamic";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return <div className="min-h-screen bg-[var(--color-canvas)]">{children}</div>;
+  return <div className="min-h-screen bg-canvas">{children}</div>;
 }

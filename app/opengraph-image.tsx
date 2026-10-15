@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { DEFAULT_BRAND_COLOR } from "@/lib/public-theme";
 
 export const alt = "Citadely — Agenda y turnos online para negocios";
 export const size = { width: 1200, height: 630 };
@@ -24,7 +25,7 @@ export default function OpenGraphImage() {
             <div
               style={{
                 alignItems: "center",
-                background: "#0957d9",
+                background: DEFAULT_BRAND_COLOR,
                 borderRadius: 12,
                 display: "flex",
                 height: 62,

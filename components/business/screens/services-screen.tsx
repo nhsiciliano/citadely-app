@@ -220,7 +220,7 @@ export function ServicesScreen() {
       <div className="grid gap-5 px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
         {!subscription.hasDashboardAccess ? <FormMessage type="error">{READ_ONLY_HINT}</FormMessage> : null}
         {message ? <FormMessage type="error">{message}</FormMessage> : null}
-        <section className="overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)]">
+        <section className="overflow-hidden border border-line bg-white shadow-surface">
           {services.length === 0 ? <div className="p-6"><EmptyState action={<button className="button-primary" disabled={!subscription.hasDashboardAccess} onClick={openNewService} title={subscription.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Plus aria-hidden="true" size={17} />Crear servicio</button>} text="Definí nombre, duración, precio, seña y los primeros horarios disponibles." title="Todavía no hay servicios" /></div> : (
             <div className="overflow-x-auto">
               <table className="data-table min-w-[980px]">
@@ -228,7 +228,7 @@ export function ServicesScreen() {
                 <tbody>
                   {services.map((service) => (
                     <tr key={service.id}>
-                      <td><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--color-primary-soft)] font-semibold text-[var(--color-primary)]">{service.name.slice(0, 1).toUpperCase()}</span><span><strong>{service.name}</strong><small>{service.description || "Sin descripción"}</small></span></div></td>
+                      <td><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-md bg-primary-soft font-semibold text-primary">{service.name.slice(0, 1).toUpperCase()}</span><span><strong>{service.name}</strong><small>{service.description || "Sin descripción"}</small></span></div></td>
                       <td><span className={service.is_active ? "status-badge status-confirmed" : "status-badge status-cancelled"}>{service.is_active ? "Activo" : "Pausado"}</span></td>
                       <td><span className="inline-flex items-center gap-2"><Clock3 aria-hidden="true" size={16} />{service.duration_minutes} min</span></td>
                       <td className="font-mono font-semibold">{formatCurrency(service.price_cents, business.currency)}</td>
@@ -247,7 +247,7 @@ export function ServicesScreen() {
       <Drawer description={editingService ? "Actualizá los datos y la disponibilidad de los próximos seis meses." : "Completá los datos y publicá al menos un horario mensual."} onClose={closeDrawer} open={drawerOpen} title={editingService ? "Editar servicio" : "Nuevo servicio"}>
         <form method="post" className="grid gap-6" key={editingService?.id ?? "new-service"} onSubmit={saveService}>
           <section className="grid gap-4">
-            <div className="flex items-center gap-2 border-b border-[var(--color-line)] pb-3"><Tag aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><h3 className="font-semibold">Datos del servicio</h3></div>
+            <div className="flex items-center gap-2 border-b border-line pb-3"><Tag aria-hidden="true" className="text-primary" size={18} /><h3 className="font-semibold">Datos del servicio</h3></div>
             <Field defaultValue={editingService?.name} label="Nombre" maxLength={SERVICE_LIMITS.nameMax} name="name" placeholder="Consulta clínica general" />
             <Field defaultValue={editingService?.description ?? ""} label="Descripción" name="description" placeholder="Qué incluye o cómo prepararse" required={false} />
             <Field defaultValue={editingService?.image_url ?? ""} label="Imagen del servicio" name="image_url" placeholder="https://…" required={false} type="url" />
@@ -257,7 +257,7 @@ export function ServicesScreen() {
           </section>
 
           <section className="grid gap-4">
-            <div className="flex items-center gap-2 border-b border-[var(--color-line)] pb-3"><CalendarDays aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><h3 className="font-semibold">Disponibilidad mensual</h3></div>
+            <div className="flex items-center gap-2 border-b border-line pb-3"><CalendarDays aria-hidden="true" className="text-primary" size={18} /><h3 className="font-semibold">Disponibilidad mensual</h3></div>
             <label className="form-label">Mes<select className="form-control capitalize" onChange={(event) => { setSelectedMonth(event.target.value); setSelectedDate(""); }} value={selectedMonth}>{options.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}</select></label>
             <div className="calendar-month">
               {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map((day) => <span className="calendar-weekday" key={day}>{day}</span>)}
@@ -265,25 +265,25 @@ export function ServicesScreen() {
                 <button aria-pressed={selectedDate === day.key} disabled={day.key < todayKey} title={day.key < todayKey ? "Este día ya pasó" : undefined} className={selectedDate === day.key ? "is-selected" : Object.keys(dateTimes[day.key] ?? {}).length ? "has-slots" : ""} key={day.key} onClick={() => setSelectedDate(day.key)} type="button"><strong>{day.day}</strong><small>{day.weekday}</small>{Object.keys(dateTimes[day.key] ?? {}).length ? <span><Check aria-hidden="true" size={11} />{Object.keys(dateTimes[day.key]).length}</span> : null}</button>
               ))}
             </div>
-            <div className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-4">
+            <div className="border border-line bg-surface-subtle p-4">
               <p className="text-sm font-semibold">{selectedDate ? `Horarios para ${selectedDate}` : "Elegí un día del calendario"}</p>
               <div className="mt-3 flex gap-2"><label className="sr-only" htmlFor="service-time">Hora</label><input className="form-control" disabled={!selectedDate} id="service-time" onChange={(event) => setDraftTime(event.target.value)} type="time" value={draftTime} /><button className="button-secondary" disabled={!selectedDate || !draftTime} onClick={addTime} type="button">Agregar</button></div>
-              <div className="mt-3 grid gap-2">{selectedDate && !Object.keys(dateTimes[selectedDate] ?? {}).length ? <span className="text-sm text-[var(--color-ink-muted)]">Sin horarios para este día.</span> : null}{Object.entries(dateTimes[selectedDate] ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([time, capacity]) => {
+              <div className="mt-3 grid gap-2">{selectedDate && !Object.keys(dateTimes[selectedDate] ?? {}).length ? <span className="text-sm text-ink-muted">Sin horarios para este día.</span> : null}{Object.entries(dateTimes[selectedDate] ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([time, capacity]) => {
                 const existing = availabilitySlots.find((slot) => editingService && slot.service_id === editingService.id && toDateKey(slot.starts_at, timeZone) === selectedDate && toTimeKey(slot.starts_at, timeZone) === time);
                 const booked = existing ? getSlotOccupancy(existing, appointments).booked : 0;
-                return <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-line)] py-2 last:border-0" key={time}>
+                return <div className="flex flex-wrap items-center gap-3 border-b border-line py-2 last:border-0" key={time}>
                   <span className="min-w-16 font-mono text-sm font-semibold">{time}</span>
                   <label className="flex items-center gap-2 text-sm" htmlFor={`capacity-${selectedDate}-${time}`}>Cupo
                     <input className="form-control w-24 tabular-nums" id={`capacity-${selectedDate}-${time}`} max={1000} min={Math.max(1, booked)} onChange={(event) => changeCapacity(selectedDate, time, Number(event.target.value))} required type="number" value={capacity} />
                   </label>
-                  {booked > 0 ? <span className="text-xs text-[var(--color-ink-soft)]">{booked} {booked === 1 ? "reserva" : "reservas"}</span> : null}
+                  {booked > 0 ? <span className="text-xs text-ink-soft">{booked} {booked === 1 ? "reserva" : "reservas"}</span> : null}
                   <button aria-label={`Quitar horario ${time}`} className="button-secondary ml-auto" disabled={booked > 0} onClick={() => removeTime(selectedDate, time)} type="button">Quitar</button>
                 </div>;
               })}</div>
             </div>
           </section>
           {message ? <FormMessage type="error">{message}</FormMessage> : null}
-          <div className="sticky bottom-0 -mx-5 border-t border-[var(--color-line)] bg-white px-5 pt-5 sm:-mx-7 sm:px-7"><SubmitButton disabled={!subscription.hasDashboardAccess} pending={pending}>{editingService ? "Guardar cambios" : "Guardar servicio"}</SubmitButton></div>
+          <div className="sticky bottom-0 -mx-5 border-t border-line bg-white px-5 pt-5 sm:-mx-7 sm:px-7"><SubmitButton disabled={!subscription.hasDashboardAccess} pending={pending}>{editingService ? "Guardar cambios" : "Guardar servicio"}</SubmitButton></div>
         </form>
       </Drawer>
     </>

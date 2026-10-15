@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { DEFAULT_BRAND_COLOR } from "@/lib/public-theme";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -8,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     background_color: "#f7f8fa",
-    theme_color: "#0957d9",
+    theme_color: DEFAULT_BRAND_COLOR,
     lang: "es-AR",
     icons: [
       {

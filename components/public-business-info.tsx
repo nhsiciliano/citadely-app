@@ -52,53 +52,53 @@ export function PublicBusinessInfo({
   if (!formattedPhone && !normalizedAddress && !hasAvailability && !isVirtual) return null;
 
   return (
-    <section aria-labelledby="informacion-servicio-titulo" className={`border-b border-[var(--color-line)] bg-white ${compact ? "py-8" : "py-10 sm:py-14"} ${themeStyle ? "public-theme-active public-theme-info" : ""}`} style={themeStyle}>
+    <section aria-labelledby="informacion-servicio-titulo" className={`border-b border-line bg-white ${compact ? "py-8" : "py-10 sm:py-14"} ${themeStyle ? "public-theme-active public-theme-info" : ""}`} style={themeStyle}>
       <div className={`mx-auto grid max-w-7xl ${compact ? "gap-6 px-6 sm:px-9" : "gap-8 px-5 sm:px-8 lg:px-10"} ${hasLocationPanel ? compact ? "sm:grid-cols-[.8fr_1.2fr] sm:items-stretch" : "lg:grid-cols-[.78fr_1.22fr] lg:items-stretch" : ""}`}>
         <div className="min-w-0">
           <h2 className={`font-display font-semibold tracking-[-0.035em] ${compact ? "text-2xl" : "text-3xl sm:text-4xl"}`} id="informacion-servicio-titulo">Información del servicio</h2>
-          <div className={`${compact ? "mt-5" : "mt-7"} divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]`}>
+          <div className={`${compact ? "mt-5" : "mt-7"} divide-y divide-line border-y border-line`}>
             {hasAvailability ? (
               <div className="grid grid-cols-[36px_1fr] gap-3 py-5">
                 <CalendarDays aria-hidden="true" className="mt-0.5 text-[var(--booking-brand)]" size={21} />
-                <div><p className="font-semibold">Días y horarios</p>{schedule ? <p className="mt-1 flex items-center gap-2 text-sm capitalize text-[var(--color-ink-soft)]"><Clock3 aria-hidden="true" size={15} />{schedule}</p> : null}</div>
+                <div><p className="font-semibold">Días y horarios</p>{schedule ? <p className="mt-1 flex items-center gap-2 text-sm capitalize text-ink-soft"><Clock3 aria-hidden="true" size={15} />{schedule}</p> : null}</div>
               </div>
             ) : (
               <div className="grid grid-cols-[36px_1fr] gap-3 py-5">
-                <CalendarDays aria-hidden="true" className="mt-0.5 text-[var(--color-ink-muted)]" size={21} />
-                <p className="font-semibold text-[var(--color-ink-soft)]">Sin fechas disponibles</p>
+                <CalendarDays aria-hidden="true" className="mt-0.5 text-ink-muted" size={21} />
+                <p className="font-semibold text-ink-soft">Sin fechas disponibles</p>
               </div>
             )}
             {whatsappUrl && formattedPhone ? (
               <a className="group grid grid-cols-[36px_1fr] gap-3 py-5 hover:text-[var(--booking-brand)]" href={whatsappUrl} rel="noreferrer" target="_blank">
                 <MessageCircle aria-hidden="true" className="mt-0.5 text-[var(--booking-brand)]" size={21} />
-                <span><span className="block text-sm text-[var(--color-ink-soft)] group-hover:text-current">WhatsApp</span><strong className="mt-1 block font-mono tabular-nums">{formattedPhone}</strong></span>
+                <span><span className="block text-sm text-ink-soft group-hover:text-current">WhatsApp</span><strong className="mt-1 block font-mono tabular-nums">{formattedPhone}</strong></span>
               </a>
             ) : null}
             {isVirtual ? (
               <div className="grid grid-cols-[36px_1fr] gap-3 py-5">
                 <Video aria-hidden="true" className="mt-0.5 text-[var(--booking-brand)]" size={21} />
                 <div>
-                  <p className="text-sm text-[var(--color-ink-soft)]">Modalidad</p>
+                  <p className="text-sm text-ink-soft">Modalidad</p>
                   <p className="mt-1 font-semibold">Servicio virtual</p>
-                  {selectedPlatforms.length > 0 ? <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">Atención por {selectedPlatforms.map((option) => option.label).join(", ")}.</p> : null}
+                  {selectedPlatforms.length > 0 ? <p className="mt-1 text-sm leading-6 text-ink-soft">Atención por {selectedPlatforms.map((option) => option.label).join(", ")}.</p> : null}
                 </div>
               </div>
             ) : normalizedAddress ? (
               <div className="grid grid-cols-[36px_1fr] gap-3 py-5">
                 <MapPin aria-hidden="true" className="mt-0.5 text-[var(--booking-brand)]" size={21} />
-                <div><p className="text-sm text-[var(--color-ink-soft)]">Dirección</p><p className="mt-1 font-semibold leading-6">{normalizedAddress}</p>{mapsSearchUrl ? <a className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--booking-brand)] underline-offset-4 hover:underline" href={mapsSearchUrl} rel="noreferrer" target="_blank">Abrir en Google Maps<ExternalLink aria-hidden="true" size={15} /></a> : null}</div>
+                <div><p className="text-sm text-ink-soft">Dirección</p><p className="mt-1 font-semibold leading-6">{normalizedAddress}</p>{mapsSearchUrl ? <a className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--booking-brand)] underline-offset-4 hover:underline" href={mapsSearchUrl} rel="noreferrer" target="_blank">Abrir en Google Maps<ExternalLink aria-hidden="true" size={15} /></a> : null}</div>
               </div>
             ) : null}
           </div>
         </div>
         {isVirtual && selectedPlatforms.length > 0 ? (
-          <div aria-label="Plataformas de atención virtual" className={`${compact ? "min-h-[250px] p-5" : "min-h-[320px] p-7 sm:p-9"} flex flex-col justify-center border border-[var(--color-line)] bg-[var(--color-surface-subtle)]`}>
-            <span className="grid h-12 w-12 place-items-center rounded-md bg-white text-[var(--booking-brand)] shadow-[var(--shadow-surface)]"><Video aria-hidden="true" size={24} /></span>
+          <div aria-label="Plataformas de atención virtual" className={`${compact ? "min-h-[250px] p-5" : "min-h-[320px] p-7 sm:p-9"} flex flex-col justify-center border border-line bg-surface-subtle`}>
+            <span className="grid h-12 w-12 place-items-center rounded-md bg-white text-[var(--booking-brand)] shadow-surface"><Video aria-hidden="true" size={24} /></span>
             <p className={`${compact ? "mt-4 text-xl" : "mt-5 text-2xl"} font-display font-semibold tracking-[-0.03em]`}>Atención por videollamada</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">Al confirmar el turno, el negocio coordinará el acceso a la consulta.</p>
+            <p className="mt-2 text-sm leading-6 text-ink-soft">Al confirmar el turno, el negocio coordinará el acceso a la consulta.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {selectedPlatforms.map((platform) => (
-                <div className="flex min-h-16 items-center gap-3 rounded-md border border-[var(--color-line)] bg-white px-4 py-3 shadow-[var(--shadow-surface)]" key={platform.id}>
+                <div className="flex min-h-16 items-center gap-3 rounded-md border border-line bg-white px-4 py-3 shadow-surface" key={platform.id}>
                   <VirtualPlatformIcon className="h-9 w-9 shrink-0" platform={platform.id} />
                   <strong className="text-sm">{platform.label}</strong>
                 </div>
@@ -106,7 +106,7 @@ export function PublicBusinessInfo({
             </div>
           </div>
         ) : mapsEmbedUrl ? (
-          <div className={`${compact ? "min-h-[250px]" : "min-h-[320px]"} overflow-hidden border border-[var(--color-line)] bg-[var(--color-surface-subtle)]`}>
+          <div className={`${compact ? "min-h-[250px]" : "min-h-[320px]"} overflow-hidden border border-line bg-surface-subtle`}>
             <iframe allowFullScreen className={`h-full w-full border-0 ${compact ? "min-h-[250px]" : "min-h-[320px]"}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={mapsEmbedUrl} title={`Mapa de ${businessName}`} />
           </div>
         ) : null}

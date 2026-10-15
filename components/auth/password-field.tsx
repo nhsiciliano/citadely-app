@@ -41,7 +41,7 @@ export function PasswordField({
         <button
           aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-1 flex min-h-11 min-w-11 items-center justify-center text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-primary)]"
+          className="absolute inset-y-0 right-1 flex min-h-11 min-w-11 items-center justify-center text-ink-muted transition-colors hover:text-primary"
           onClick={() => setVisible((current) => !current)}
           type="button"
         >
@@ -49,7 +49,7 @@ export function PasswordField({
         </button>
       </div>
       {requireStrongPassword ? (
-        <p className="text-xs leading-5 text-[var(--color-ink-muted)]" id={requirementsId}>
+        <p className="text-xs leading-5 text-ink-muted" id={requirementsId}>
           {PASSWORD_REQUIREMENTS}
         </p>
       ) : null}

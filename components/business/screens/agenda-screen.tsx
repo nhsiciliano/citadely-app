@@ -199,7 +199,7 @@ function AgendaDayColumn({
 
   return (
     <div className="calendar-day-column" style={{ height: (hours.length - 1) * HOUR_HEIGHT }}>
-      {hours.map((hour) => <span aria-hidden="true" className="absolute inset-x-0 border-t border-[var(--color-line)]" key={hour} style={{ top: (hour - startHour) * HOUR_HEIGHT }} />)}
+      {hours.map((hour) => <span aria-hidden="true" className="absolute inset-x-0 border-t border-line" key={hour} style={{ top: (hour - startHour) * HOUR_HEIGHT }} />)}
       {individualAvailableSlots.map((slot) => {
         const start = new Date(slot.starts_at);
         const end = new Date(slot.ends_at);
@@ -394,13 +394,13 @@ export function AgendaScreen() {
       />
 
       <div className="px-4 py-5 sm:px-8 lg:px-10 lg:py-8">
-        <section className="overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)]">
-          <div className="flex flex-col gap-4 border-b border-[var(--color-line)] px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <section className="overflow-hidden border border-line bg-white shadow-surface">
+          <div className="flex flex-col gap-4 border-b border-line px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
               <button aria-label="Período anterior" className="icon-button" onClick={() => navigate(-1)} type="button"><ChevronLeft aria-hidden="true" size={18} /></button>
               <button className="button-secondary" onClick={() => setAnchorDate(toDateKey(new Date(), timeZone))} type="button">Hoy</button>
               <button aria-label="Período siguiente" className="icon-button" onClick={() => navigate(1)} type="button"><ChevronRight aria-hidden="true" size={18} /></button>
-              <p className="ml-2 text-sm font-semibold capitalize text-[var(--color-ink)]">{rangeLabel}</p>
+              <p className="ml-2 text-sm font-semibold capitalize text-ink">{rangeLabel}</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -411,8 +411,8 @@ export function AgendaScreen() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-3 sm:px-6">
-            <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-muted)]"><Filter aria-hidden="true" size={15} />Filtros</span>
+          <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface-subtle px-4 py-3 sm:px-6">
+            <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink-muted"><Filter aria-hidden="true" size={15} />Filtros</span>
             <label className="sr-only" htmlFor="agenda-service">Filtrar por servicio</label>
             <select className="compact-control" id="agenda-service" onChange={(event) => setFilters((current) => ({ ...current, serviceId: event.target.value }))} value={filters.serviceId}>
               <option value="all">Todos los servicios</option>
@@ -436,19 +436,19 @@ export function AgendaScreen() {
 
           <div className="overflow-x-auto">
             <div className={view === "week" ? "min-w-[1020px]" : "min-w-[520px]"}>
-              <div className="grid border-b border-[var(--color-line)]" style={{ gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))` }}>
-                <div className="border-r border-[var(--color-line)] bg-[var(--color-surface-subtle)]" />
+              <div className="grid border-b border-line" style={{ gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))` }}>
+                <div className="border-r border-line bg-surface-subtle" />
                 {days.map((day) => (
-                  <div className={`border-r border-[var(--color-line)] px-3 py-3 text-center last:border-r-0 ${day === todayKey ? "bg-[var(--color-primary-soft)]" : ""}`} key={day}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-muted)]">{formatDateKey(day, DAY_HEADER).split(" ")[0]}</p>
-                    <p className={`mt-1 font-mono text-lg font-semibold ${day === todayKey ? "text-[var(--color-primary)]" : ""}`}>{Number(day.slice(8))}</p>
+                  <div className={`border-r border-line px-3 py-3 text-center last:border-r-0 ${day === todayKey ? "bg-primary-soft" : ""}`} key={day}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-muted">{formatDateKey(day, DAY_HEADER).split(" ")[0]}</p>
+                    <p className={`mt-1 font-mono text-lg font-semibold ${day === todayKey ? "text-primary" : ""}`}>{Number(day.slice(8))}</p>
                   </div>
                 ))}
               </div>
 
               <div className="grid" style={{ gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))` }}>
-                <div className="relative border-r border-[var(--color-line)] bg-[var(--color-surface-subtle)]" style={{ height: calendarHeight }}>
-                  {hours.map((hour) => <span className="absolute right-3 -translate-y-1/2 font-mono text-[11px] text-[var(--color-ink-muted)]" key={hour} style={{ top: (hour - startHour) * HOUR_HEIGHT }}>{String(hour).padStart(2, "0")}:00</span>)}
+                <div className="relative border-r border-line bg-surface-subtle" style={{ height: calendarHeight }}>
+                  {hours.map((hour) => <span className="absolute right-3 -translate-y-1/2 font-mono text-[11px] text-ink-muted" key={hour} style={{ top: (hour - startHour) * HOUR_HEIGHT }}>{String(hour).padStart(2, "0")}:00</span>)}
                 </div>
                 {days.map((day) => (
                   <AgendaDayColumn
@@ -479,7 +479,7 @@ export function AgendaScreen() {
         width="medium"
       >
         {selectedAvailableHourGroup ? (
-          <div className="divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]">
+          <div className="divide-y divide-line border-y border-line">
             {selectedAvailableHourGroup.slots.map((slot) => (
               <button aria-label={`Asignar turno libre a las ${formatTime(slot.starts_at, timeZone)} para ${slot.serviceLabel}`} className="agenda-hour-row" key={slot.id ?? `${slot.service_id}-${slot.starts_at}`} onClick={() => openAvailableSlot(slot)} type="button">
                 <span className="agenda-hour-row-time"><Clock3 aria-hidden="true" size={15} />{formatTime(slot.starts_at, timeZone)}</span>
@@ -488,7 +488,7 @@ export function AgendaScreen() {
                   <small>{slot.serviceLabel} · {slot.remaining} de {slot.capacity} lugares</small>
                 </span>
                 <span className="status-badge status-confirmed">Disponible</span>
-                <ChevronRight aria-hidden="true" className="text-[var(--color-ink-muted)]" size={17} />
+                <ChevronRight aria-hidden="true" className="text-ink-muted" size={17} />
               </button>
             ))}
           </div>
@@ -502,7 +502,7 @@ export function AgendaScreen() {
         width="medium"
       >
         {selectedHourGroup ? (
-          <div className="divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]">
+          <div className="divide-y divide-line border-y border-line">
             {selectedHourGroup.appointments.map((appointment) => (
               <button
                 aria-label={`Abrir turno de ${appointment.clients?.name ?? "Cliente"} a las ${formatTime(appointment.starts_at, timeZone)}`}
@@ -520,7 +520,7 @@ export function AgendaScreen() {
                   <small>{appointment.services?.name ?? "Servicio"}</small>
                 </span>
                 <StatusBadge status={appointment.status} />
-                <ChevronRight aria-hidden="true" className="text-[var(--color-ink-muted)]" size={17} />
+                <ChevronRight aria-hidden="true" className="text-ink-muted" size={17} />
               </button>
             ))}
           </div>

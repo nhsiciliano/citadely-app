@@ -74,7 +74,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${funnelDisplay.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[var(--color-canvas)] text-[var(--color-ink)]">
+      <body className="min-h-full bg-canvas text-ink">
         {children}
         <Analytics />
         <SpeedInsights />

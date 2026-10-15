@@ -65,10 +65,10 @@ export function LoginForm() {
         <PasswordField autoComplete="current-password" placeholder="Tu contraseña" />
         <SubmitButton disabled={pendingAction !== null} pending={pendingAction === "password"}>Ingresar</SubmitButton>
       </form>
-      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-        <span className="h-px flex-1 bg-[var(--line)]" />
+      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+        <span className="h-px flex-1 bg-line" />
         o 
-        <span className="h-px flex-1 bg-[var(--line)]" />
+        <span className="h-px flex-1 bg-line" />
       </div>
       <button
         className="button-secondary"
@@ -79,13 +79,13 @@ export function LoginForm() {
       >
         {pendingAction === "google" ? <LoadingSpinner label="Conectando con Google" /> : <><GoogleIcon />Continuar con Google</>}
       </button>
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--ink-soft)]">
-        <Link className="font-semibold text-[var(--reception)]" href="/recuperar-password">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft">
+        <Link className="font-semibold text-primary" href="/recuperar-password">
           Olvidé mi contraseña
         </Link>
         <span>
           ¿No tenés cuenta?{" "}
-          <Link className="font-semibold text-[var(--reception)]" href="/registro">
+          <Link className="font-semibold text-primary" href="/registro">
             Crear cuenta
           </Link>
         </span>

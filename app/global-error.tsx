@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { DEFAULT_BRAND_COLOR } from "@/lib/public-theme";
 
 // Reemplaza al layout raíz cuando falla, así que no puede usar sus estilos ni componentes.
 export default function GlobalError({
@@ -38,9 +39,9 @@ export default function GlobalError({
               marginTop: 24,
               minHeight: 44,
               padding: "0 16px",
-              border: "1px solid #0957d9",
+              border: `1px solid ${DEFAULT_BRAND_COLOR}`,
               borderRadius: 6,
-              background: "#0957d9",
+              background: DEFAULT_BRAND_COLOR,
               color: "#fff",
               fontWeight: 650,
               cursor: "pointer",

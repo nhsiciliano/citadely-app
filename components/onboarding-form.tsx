@@ -293,12 +293,12 @@ export function OnboardingForm() {
           />
           <p
             aria-live="polite"
-            className={`text-sm leading-6 ${slugInvalid ? "text-[var(--color-danger)]" : "text-[var(--color-ink-soft)]"}`}
+            className={`text-sm leading-6 ${slugInvalid ? "text-danger" : "text-ink-soft"}`}
             id="business_slug_hint"
           >
             {slugHint}
           </p>
-          <p className="text-sm leading-6 text-[var(--color-ink-soft)]">
+          <p className="text-sm leading-6 text-ink-soft">
             Tu página pública quedará disponible en <strong>{publicUrl}</strong>. Incluye 7 días de uso gratuito sin restricciones.
           </p>
         </div>

@@ -134,18 +134,18 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
           <span className="form-label">Cliente</span>
           <button aria-haspopup="dialog" className="form-control flex items-center justify-between gap-3 text-left" disabled={pending} onClick={() => setClientPickerOpen(true)} ref={clientTriggerRef} type="button">
             <span className="min-w-0 truncate font-medium">{selectedClient?.name ?? "Seleccionar cliente"}</span>
-            <UserRound aria-hidden="true" className="shrink-0 text-[var(--color-primary)]" size={18} />
+            <UserRound aria-hidden="true" className="shrink-0 text-primary" size={18} />
           </button>
-          {selectedClient ? <p className="truncate text-xs text-[var(--color-ink-soft)]">{[selectedClient.email, selectedClient.phone].filter(Boolean).join(" · ") || "Sin datos de contacto"}</p> : null}
+          {selectedClient ? <p className="truncate text-xs text-ink-soft">{[selectedClient.email, selectedClient.phone].filter(Boolean).join(" · ") || "Sin datos de contacto"}</p> : null}
         </div>
         <fieldset className="grid gap-3">
           <legend className="form-label">Servicios disponibles</legend>
           {serviceOptions.length > 0 ? (
-            <div className="divide-y divide-[var(--color-line)] border border-[var(--color-line)]">
+            <div className="divide-y divide-line border border-line">
               {serviceOptions.map(({ service, slots }) => (
                 <button
                   aria-pressed={resolvedServiceId === service.id}
-                  className={`flex min-h-14 w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${resolvedServiceId === service.id ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)]" : "bg-white hover:bg-[var(--color-surface-subtle)]"}`}
+                  className={`flex min-h-14 w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${resolvedServiceId === service.id ? "bg-primary-soft text-primary" : "bg-white hover:bg-surface-subtle"}`}
                   disabled={pending}
                   key={service.id}
                   onClick={() => selectService(service.id)}
@@ -156,21 +156,21 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
                 </button>
               ))}
             </div>
-          ) : <p className="border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] px-4 py-4 text-sm leading-6 text-[var(--color-ink-soft)]">{initialSlot ? "Este horario ya no está disponible para ningún servicio." : "No hay servicios con horarios disponibles."}</p>}
+          ) : <p className="border border-dashed border-line-strong bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">{initialSlot ? "Este horario ya no está disponible para ningún servicio." : "No hay servicios con horarios disponibles."}</p>}
         </fieldset>
 
         <fieldset className="grid gap-3">
           <legend className="form-label">Fecha y hora</legend>
-          {initialSlot ? <p className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-4 font-mono text-sm font-semibold text-[var(--color-ink)]">{formatAppointmentTime(initialSlot.startsAt, business.timezone)}</p> : null}
-          {!initialSlot && !selectedOption ? <p className="border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] px-4 py-4 text-sm leading-6 text-[var(--color-ink-soft)]">Seleccioná un servicio para ver sus horarios.</p> : null}
+          {initialSlot ? <p className="border border-line bg-surface-subtle px-4 py-4 font-mono text-sm font-semibold text-ink">{formatAppointmentTime(initialSlot.startsAt, business.timezone)}</p> : null}
+          {!initialSlot && !selectedOption ? <p className="border border-dashed border-line-strong bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">Seleccioná un servicio para ver sus horarios.</p> : null}
           {!initialSlot && selectedOption ? (
-            <div className="divide-y divide-[var(--color-line)] border border-[var(--color-line)]">
+            <div className="divide-y divide-line border border-line">
               {groupedSlots.map(([date, group]) => (
                 <div className="grid gap-3 px-4 py-4" key={date}>
-                  <p className="text-sm font-semibold capitalize text-[var(--color-ink)]">{group.label}</p>
+                  <p className="text-sm font-semibold capitalize text-ink">{group.label}</p>
                   <div className="flex flex-wrap gap-2">
                     {group.slots.map((slot) => (
-                      <button aria-pressed={startsAtValue === slot.startsAt} className={`time-chip ${startsAtValue === slot.startsAt ? "!bg-[var(--color-primary)] !text-white" : ""}`} key={slot.startsAt} onClick={() => { setStartsAtValue(slot.startsAt); setMessage(null); }} type="button">{slot.timeLabel} · {slot.remaining} de {slot.capacity} libres</button>
+                      <button aria-pressed={startsAtValue === slot.startsAt} className={`time-chip ${startsAtValue === slot.startsAt ? "!bg-primary !text-white" : ""}`} key={slot.startsAt} onClick={() => { setStartsAtValue(slot.startsAt); setMessage(null); }} type="button">{slot.timeLabel} · {slot.remaining} de {slot.capacity} libres</button>
                     ))}
                   </div>
                 </div>
@@ -184,7 +184,7 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
           <FormMessage type="error">Necesitás un servicio activo con horarios disponibles antes de crear el turno.</FormMessage>
         ) : null}
         {message ? <FormMessage type="error">{message}</FormMessage> : null}
-        <div className="sticky bottom-0 -mx-5 mt-3 border-t border-[var(--color-line)] bg-white px-5 pt-5 sm:-mx-7 sm:px-7">
+        <div className="sticky bottom-0 -mx-5 mt-3 border-t border-line bg-white px-5 pt-5 sm:-mx-7 sm:px-7">
           <SubmitButton disabled={readOnly || !selectedClient || serviceOptions.length === 0 || !startsAtValue} pending={pending}>Guardar turno</SubmitButton>
         </div>
       </form>
@@ -254,18 +254,18 @@ function ClientPickerDialog({ onClose, onClosed, onSelect, open }: { onClose: ()
   return (
     <dialog
       aria-labelledby={titleId}
-      className="client-picker-dialog m-auto max-h-[min(85dvh,760px)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto border border-[var(--color-line)] bg-white p-0 text-[var(--color-ink)] shadow-[var(--shadow-raised)] backdrop:bg-[rgba(4,20,42,.48)]"
+      className="client-picker-dialog m-auto max-h-[min(85dvh,760px)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto border border-line bg-white p-0 text-ink shadow-raised backdrop:bg-[rgba(4,20,42,.48)]"
       onCancel={(event) => { event.preventDefault(); close(); }}
       onClose={onClosed}
       ref={dialogRef}
       style={{ animation: "none" }}
     >
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line)] px-5 py-5 sm:px-7">
+      <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-5 sm:px-7">
         <div>
           <h2 className="text-xl font-semibold tracking-[-0.025em]" id={titleId}>{creating ? "Nuevo cliente" : "Seleccionar cliente"}</h2>
-          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{creating ? "Guardá la ficha para continuar con el turno." : "Buscá por nombre, email o teléfono."}</p>
+          <p className="mt-1 text-sm text-ink-soft">{creating ? "Guardá la ficha para continuar con el turno." : "Buscá por nombre, email o teléfono."}</p>
         </div>
-        <button aria-label="Cerrar selector de clientes" className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-[var(--color-line)]" disabled={pending} onClick={close} type="button"><X aria-hidden="true" size={19} /></button>
+        <button aria-label="Cerrar selector de clientes" className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-line" disabled={pending} onClick={close} type="button"><X aria-hidden="true" size={19} /></button>
       </div>
       {creating ? (
         <form method="post" className="grid gap-5 px-5 py-6 sm:px-7" onSubmit={addClient}>
@@ -273,29 +273,29 @@ function ClientPickerDialog({ onClose, onClosed, onSelect, open }: { onClose: ()
           <Field autoComplete="email" label="Email" name="client_email" placeholder="cliente@ejemplo.com" required={false} type="email" />
           <Field autoComplete="tel" label="Teléfono" name="client_phone" placeholder="11 2345 6789" required={false} />
           {message ? <FormMessage type="error">{message}</FormMessage> : null}
-          <div className="flex flex-col-reverse gap-3 border-t border-[var(--color-line)] pt-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:justify-end">
             <button className="button-secondary" disabled={pending} onClick={() => { setCreating(false); setMessage(null); }} type="button">Volver a la lista</button>
             <div className="sm:w-48"><SubmitButton pending={pending}>Guardar cliente</SubmitButton></div>
           </div>
         </form>
       ) : (
         <div className="grid gap-5 px-5 py-6 sm:px-7">
-          <label className="flex min-h-12 items-center gap-3 rounded-md border border-[var(--color-line)] px-4 focus-within:border-[var(--color-primary)] focus-within:shadow-[0_0_0_3px_rgba(9,87,217,0.1)]">
+          <label className="flex min-h-12 items-center gap-3 rounded-md border border-line px-4 focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(9,87,217,0.1)]">
             <span className="sr-only">Buscar clientes</span>
-            <Search aria-hidden="true" className="shrink-0 text-[var(--color-ink-muted)]" size={18} />
-            <input className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-[var(--color-ink-muted)] focus-visible:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, email o teléfono" ref={searchRef} type="search" value={query} />
+            <Search aria-hidden="true" className="shrink-0 text-ink-muted" size={18} />
+            <input className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-ink-muted focus-visible:outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, email o teléfono" ref={searchRef} type="search" value={query} />
           </label>
           {filteredClients.length > 0 ? (
-            <div className="max-h-[48dvh] overflow-auto border border-[var(--color-line)]">
+            <div className="max-h-[48dvh] overflow-auto border border-line">
               <table className="w-full min-w-[600px] border-collapse text-left text-sm">
-                <thead className="sticky top-0 bg-[var(--color-surface-subtle)] text-xs font-semibold text-[var(--color-ink-soft)]"><tr><th className="px-4 py-3" scope="col">Nombre y apellido</th><th className="px-4 py-3" scope="col">Email</th><th className="px-4 py-3" scope="col">Teléfono</th></tr></thead>
-                <tbody className="divide-y divide-[var(--color-line)]">
-                  {filteredClients.map((client) => <tr className="cursor-pointer hover:bg-[var(--color-primary-soft)]" key={client.id} onClick={() => select(client)}><td className="px-4 py-3"><button className="font-semibold text-[var(--color-primary)] underline-offset-2 hover:underline" type="button">{client.name}</button></td><td className="px-4 py-3 text-[var(--color-ink-soft)]">{client.email || "Sin email"}</td><td className="px-4 py-3 text-[var(--color-ink-soft)]">{client.phone || "Sin teléfono"}</td></tr>)}
+                <thead className="sticky top-0 bg-surface-subtle text-xs font-semibold text-ink-soft"><tr><th className="px-4 py-3" scope="col">Nombre y apellido</th><th className="px-4 py-3" scope="col">Email</th><th className="px-4 py-3" scope="col">Teléfono</th></tr></thead>
+                <tbody className="divide-y divide-line">
+                  {filteredClients.map((client) => <tr className="cursor-pointer hover:bg-primary-soft" key={client.id} onClick={() => select(client)}><td className="px-4 py-3"><button className="font-semibold text-primary underline-offset-2 hover:underline" type="button">{client.name}</button></td><td className="px-4 py-3 text-ink-soft">{client.email || "Sin email"}</td><td className="px-4 py-3 text-ink-soft">{client.phone || "Sin teléfono"}</td></tr>)}
                 </tbody>
               </table>
             </div>
-          ) : <div className="border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] px-5 py-8 text-center"><p className="font-semibold">{query ? "No encontramos coincidencias" : "Todavía no hay clientes"}</p><p className="mt-2 text-sm text-[var(--color-ink-soft)]">{query ? "Probá con otra búsqueda o creá un cliente." : "Creá el primer cliente para asignarle un turno."}</p></div>}
-          {filteredClients.length > 0 ? <p className="text-xs text-[var(--color-ink-muted)] sm:hidden">Deslizá la tabla para ver todos los datos de contacto.</p> : null}
+          ) : <div className="border border-dashed border-line-strong bg-surface-subtle px-5 py-8 text-center"><p className="font-semibold">{query ? "No encontramos coincidencias" : "Todavía no hay clientes"}</p><p className="mt-2 text-sm text-ink-soft">{query ? "Probá con otra búsqueda o creá un cliente." : "Creá el primer cliente para asignarle un turno."}</p></div>}
+          {filteredClients.length > 0 ? <p className="text-xs text-ink-muted sm:hidden">Deslizá la tabla para ver todos los datos de contacto.</p> : null}
           {searchError ? <FormMessage type="error">{searchError}</FormMessage> : null}
           {hasMore ? <button className="button-secondary w-full sm:w-fit" disabled={searching} onClick={() => void loadMore()} type="button">{searching ? "Cargando…" : "Cargar más clientes"}</button> : null}
           <button className="button-secondary w-full sm:w-fit" disabled={!access.hasDashboardAccess} onClick={() => { setCreating(true); setMessage(null); }} title={access.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Plus aria-hidden="true" size={18} />Crear nuevo cliente</button>
@@ -367,35 +367,35 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
     <Drawer description={appointment ? formatAppointmentTime(appointment.starts_at, business.timezone) : undefined} onClose={onClose} open={Boolean(appointment)} title="Detalle del turno" width="medium">
       {appointment ? (
         <div className="grid gap-7">
-          <div className="flex items-center justify-between gap-4 border-b border-[var(--color-line)] pb-5">
+          <div className="flex items-center justify-between gap-4 border-b border-line pb-5">
             <StatusBadge status={appointment.status} />
-            <span className="font-mono text-sm text-[var(--color-ink-soft)]">#{appointment.id.slice(0, 8).toUpperCase()}</span>
+            <span className="font-mono text-sm text-ink-soft">#{appointment.id.slice(0, 8).toUpperCase()}</span>
           </div>
 
           <dl className="grid gap-5 text-sm">
             <div className="grid grid-cols-[24px_1fr] gap-3">
-              <UserRound aria-hidden="true" className="text-[var(--color-primary)]" size={19} />
-              <div><dt className="text-[var(--color-ink-muted)]">Cliente</dt><dd className="mt-1 font-semibold">{appointment.clients?.name ?? "Cliente"}</dd><dd className="mt-1 text-[var(--color-ink-soft)]">{appointment.clients?.phone || appointment.clients?.email || "Sin contacto"}</dd></div>
+              <UserRound aria-hidden="true" className="text-primary" size={19} />
+              <div><dt className="text-ink-muted">Cliente</dt><dd className="mt-1 font-semibold">{appointment.clients?.name ?? "Cliente"}</dd><dd className="mt-1 text-ink-soft">{appointment.clients?.phone || appointment.clients?.email || "Sin contacto"}</dd></div>
             </div>
             <div className="grid grid-cols-[24px_1fr] gap-3">
-              <CalendarClock aria-hidden="true" className="text-[var(--color-primary)]" size={19} />
-              <div><dt className="text-[var(--color-ink-muted)]">Fecha y hora</dt><dd className="mt-1 font-semibold">{formatAppointmentTime(appointment.starts_at, business.timezone)}</dd></div>
+              <CalendarClock aria-hidden="true" className="text-primary" size={19} />
+              <div><dt className="text-ink-muted">Fecha y hora</dt><dd className="mt-1 font-semibold">{formatAppointmentTime(appointment.starts_at, business.timezone)}</dd></div>
             </div>
             <div className="grid grid-cols-[24px_1fr] gap-3">
-              <Clock3 aria-hidden="true" className="text-[var(--color-primary)]" size={19} />
-              <div><dt className="text-[var(--color-ink-muted)]">Servicio</dt><dd className="mt-1 font-semibold">{appointment.services?.name ?? "Servicio"}</dd><dd className="mt-1 text-[var(--color-ink-soft)]">{appointment.services?.duration_minutes ?? 30} minutos</dd></div>
+              <Clock3 aria-hidden="true" className="text-primary" size={19} />
+              <div><dt className="text-ink-muted">Servicio</dt><dd className="mt-1 font-semibold">{appointment.services?.name ?? "Servicio"}</dd><dd className="mt-1 text-ink-soft">{appointment.services?.duration_minutes ?? 30} minutos</dd></div>
             </div>
             <div className="grid grid-cols-[24px_1fr] gap-3">
-              <CreditCard aria-hidden="true" className="text-[var(--color-primary)]" size={19} />
-              <div><dt className="text-[var(--color-ink-muted)]">Seña</dt><dd className="mt-1 font-semibold">{appointment.deposit_amount_cents > 0 ? formatCurrency(appointment.deposit_amount_cents, business.currency) : "No requerida"}</dd></div>
+              <CreditCard aria-hidden="true" className="text-primary" size={19} />
+              <div><dt className="text-ink-muted">Seña</dt><dd className="mt-1 font-semibold">{appointment.deposit_amount_cents > 0 ? formatCurrency(appointment.deposit_amount_cents, business.currency) : "No requerida"}</dd></div>
             </div>
             <div className="grid grid-cols-[24px_1fr] gap-3">
-              <MessageSquare aria-hidden="true" className="text-[var(--color-primary)]" size={19} />
+              <MessageSquare aria-hidden="true" className="text-primary" size={19} />
               <div>
-                <dt className="text-[var(--color-ink-muted)]">Origen</dt>
+                <dt className="text-ink-muted">Origen</dt>
                 <dd className="mt-1 font-semibold">{APPOINTMENT_SOURCE_LABELS[appointment.source] ?? "Desconocido"}</dd>
-                <dt className="mt-3 text-[var(--color-ink-muted)]">Mensaje del cliente</dt>
-                <dd className="mt-1 whitespace-pre-line text-[var(--color-ink-soft)]">{appointment.client_message?.trim() || "Sin mensaje."}</dd>
+                <dt className="mt-3 text-ink-muted">Mensaje del cliente</dt>
+                <dd className="mt-1 whitespace-pre-line text-ink-soft">{appointment.client_message?.trim() || "Sin mensaje."}</dd>
               </div>
             </div>
           </dl>
@@ -408,13 +408,13 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
           </label>
 
           {appointment.status === "cancelled" && appointment.cancellation_reason ? (
-            <p className="text-sm text-[var(--color-ink-soft)]"><strong className="text-[var(--color-ink)]">Motivo de la cancelación:</strong> {appointment.cancellation_reason}</p>
+            <p className="text-sm text-ink-soft"><strong className="text-ink">Motivo de la cancelación:</strong> {appointment.cancellation_reason}</p>
           ) : null}
 
           {pendingStatus ? (
-            <div className="grid gap-4 border border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] p-4" role="group" aria-label="Confirmar cambio de estado">
+            <div className="grid gap-4 border border-danger-line bg-danger-soft p-4" role="group" aria-label="Confirmar cambio de estado">
               <p className="font-semibold">{pendingStatus === "cancelled" ? "¿Cancelar este turno?" : "¿Marcar que el cliente no asistió?"}</p>
-              <p className="text-sm text-[var(--color-ink-soft)]">
+              <p className="text-sm text-ink-soft">
                 {pendingStatus === "cancelled"
                   ? "El horario se libera y el cliente recibe un email de cancelación."
                   : "Quedará registrado como inasistencia en el historial del cliente."}
@@ -435,7 +435,7 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
           {appointment.status === "pending_payment" && appointment.deposit_amount_cents > 0 ? (
             <button className="button-primary" disabled={pending || readOnly} onClick={confirmDeposit} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><CheckCircle2 aria-hidden="true" size={18} />Confirmar seña recibida</button>
           ) : null}
-          {readOnly ? <p className="text-sm text-[var(--color-ink-soft)]">{READ_ONLY_HINT}</p> : null}
+          {readOnly ? <p className="text-sm text-ink-soft">{READ_ONLY_HINT}</p> : null}
           {message ? <FormMessage type="error">{message}</FormMessage> : null}
         </div>
       ) : null}

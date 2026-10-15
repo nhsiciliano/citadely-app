@@ -17,7 +17,7 @@ export default function LoginPage() {
       subtitle="Ingresá con email y contraseña o continuá con Google para administrar tu negocio."
       aside={<AuthAside />}
     >
-      <Suspense fallback={<p className="text-sm text-[var(--ink-soft)]">Cargando formulario...</p>}>
+      <Suspense fallback={<p className="text-sm text-ink-soft">Cargando formulario...</p>}>
         <LoginForm />
       </Suspense>
     </AuthShell>

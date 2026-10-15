@@ -89,25 +89,25 @@ function DemoTimeline() {
   return (
     <figure className="mx-auto w-full max-w-[610px]">
       <div className="relative pl-11 sm:pl-16">
-        <span aria-hidden="true" className="absolute bottom-7 left-[18px] top-4 w-px bg-[var(--color-primary)] sm:left-[30px]" />
-        <span className="absolute left-0 top-0 grid h-9 min-w-9 place-items-center rounded-full bg-[var(--color-primary)] px-2 font-mono text-[10px] font-bold text-white sm:left-3">HOY</span>
+        <span aria-hidden="true" className="absolute bottom-7 left-[18px] top-4 w-px bg-primary sm:left-[30px]" />
+        <span className="absolute left-0 top-0 grid h-9 min-w-9 place-items-center rounded-full bg-primary px-2 font-mono text-[10px] font-bold text-white sm:left-3">HOY</span>
         <div className="grid gap-3">
           {TIMELINE.map((item, index) => (
             <div className="relative grid grid-cols-[54px_minmax(0,1fr)] items-start gap-3" key={`${item.time}-${item.service}`}>
-              <span aria-hidden="true" className={`absolute -left-[34px] top-6 h-3 w-3 rounded-full border-[3px] border-white ring-2 sm:-left-[40px] ${index === TIMELINE.length - 1 ? "bg-[var(--color-primary)] ring-[var(--color-primary)]" : "bg-white ring-[var(--color-primary)]"}`} />
-              <time className="pt-4 font-mono text-xs font-semibold text-[var(--color-ink-soft)]">{item.time}</time>
-              <div className="border border-[var(--color-line)] bg-white p-4 shadow-[var(--shadow-surface)]">
+              <span aria-hidden="true" className={`absolute -left-[34px] top-6 h-3 w-3 rounded-full border-[3px] border-white ring-2 sm:-left-[40px] ${index === TIMELINE.length - 1 ? "bg-primary ring-primary" : "bg-white ring-primary"}`} />
+              <time className="pt-4 font-mono text-xs font-semibold text-ink-soft">{item.time}</time>
+              <div className="border border-line bg-white p-4 shadow-surface">
                 <div className="flex items-start justify-between gap-3">
-                  <div><p className="text-sm font-semibold">{item.service}</p><p className="mt-1 text-xs text-[var(--color-ink-soft)]">{item.client}</p></div>
-                  <span className={`status-badge ${item.tone === "success" ? "status-confirmed" : item.tone === "warning" ? "status-pending_payment" : "bg-[var(--color-primary-soft)] text-[var(--color-primary)]"}`}>{item.state}</span>
+                  <div><p className="text-sm font-semibold">{item.service}</p><p className="mt-1 text-xs text-ink-soft">{item.client}</p></div>
+                  <span className={`status-badge ${item.tone === "success" ? "status-confirmed" : item.tone === "warning" ? "status-pending_payment" : "bg-primary-soft text-primary"}`}>{item.state}</span>
                 </div>
-                {item.tone === "warning" ? <div className="mt-3 flex items-center justify-between border-t border-[var(--color-line)] pt-3 text-xs"><span className="text-[var(--color-warning)]">Seña $8.000</span><span className="font-semibold text-[var(--color-primary)]">Revisar reserva</span></div> : null}
+                {item.tone === "warning" ? <div className="mt-3 flex items-center justify-between border-t border-line pt-3 text-xs"><span className="text-warning">Seña $8.000</span><span className="font-semibold text-primary">Revisar reserva</span></div> : null}
               </div>
             </div>
           ))}
         </div>
       </div>
-      <figcaption className="mt-5 text-right text-xs text-[var(--color-ink-muted)]">Ejemplo de jornada · datos ficticios</figcaption>
+      <figcaption className="mt-5 text-right text-xs text-ink-muted">Ejemplo de jornada · datos ficticios</figcaption>
     </figure>
   );
 }
@@ -172,28 +172,28 @@ export default async function Home() {
       <MarketingHeader />
 
       <div id="contenido">
-        <section className="relative border-b border-[var(--color-line)] bg-[var(--color-surface-subtle)]">
-          <div aria-hidden="true" className="absolute inset-y-0 left-1/2 hidden w-px bg-[var(--color-line)] lg:block" />
+        <section className="relative border-b border-line bg-surface-subtle">
+          <div aria-hidden="true" className="absolute inset-y-0 left-1/2 hidden w-px bg-line lg:block" />
           <div className="mx-auto grid min-h-[700px] max-w-[1440px] lg:grid-cols-2">
             <div className="flex items-center px-5 py-16 sm:px-8 lg:px-12 lg:py-20">
               <div className="max-w-[620px]">
-                <h1 className="font-display text-[clamp(3rem,5vw,3.4rem)] font-semibold leading-[0.96] tracking-[-0.04em] text-[var(--color-navy)]">Tomá el control de cada jornada.</h1>
-                <p className="mt-7 max-w-[460px] text-lg leading-8 text-[var(--color-ink-soft)]">Citadely es tu central de turnos: reúne agenda, servicios, clientes, reservas públicas y estados de seña. Menos idas y vueltas; más precisión para operar tu negocio.</p>
+                <h1 className="font-display text-[clamp(3rem,5vw,3.4rem)] font-semibold leading-[0.96] tracking-[-0.04em] text-navy">Tomá el control de cada jornada.</h1>
+                <p className="mt-7 max-w-[460px] text-lg leading-8 text-ink-soft">Citadely es tu central de turnos: reúne agenda, servicios, clientes, reservas públicas y estados de seña. Menos idas y vueltas; más precisión para operar tu negocio.</p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row"><PrimaryLink href="/registro">Crear mi cuenta</PrimaryLink><a className="button-secondary" href="#como-funciona">Ver cómo funciona<ArrowRight aria-hidden="true" size={16} /></a></div>
-                <p className="mt-5 flex items-center gap-2 text-sm text-[var(--color-ink-soft)]"><ShieldCheck aria-hidden="true" className="text-[var(--color-success)]" size={17} />Probá gratis durante 7 días.</p>
+                <p className="mt-5 flex items-center gap-2 text-sm text-ink-soft"><ShieldCheck aria-hidden="true" className="text-success" size={17} />Probá gratis durante 7 días.</p>
               </div>
             </div>
             <div className="flex items-center bg-white px-5 py-12 sm:px-8 lg:px-12 lg:py-16"><DemoTimeline /></div>
           </div>
         </section>
 
-        <section className="border-b border-[var(--color-line)] bg-white" id="como-funciona">
+        <section className="border-b border-line bg-white" id="como-funciona">
           <div className="mx-auto max-w-[1440px] px-5 pb-8 pt-4 sm:px-8 lg:px-12">
             <div className="text-center">
-              <h2 className="font-display text-2xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-3xl">De la reserva al horario confirmado.</h2>
-              <p className="mx-auto mt-3 max-w-2xl leading-7 text-[var(--color-ink-soft)]">El mismo flujo conecta lo que hace el cliente con lo que necesita resolver el responsable del negocio.</p>
+              <h2 className="font-display text-2xl font-semibold tracking-[-0.035em] text-navy sm:text-3xl">De la reserva al horario confirmado.</h2>
+              <p className="mx-auto mt-3 max-w-2xl leading-7 text-ink-soft">El mismo flujo conecta lo que hace el cliente con lo que necesita resolver el responsable del negocio.</p>
             </div>
-            <ol className="mt-6 grid border-l border-t border-[var(--color-line)] sm:grid-cols-2 lg:grid-cols-4">
+            <ol className="mt-6 grid border-l border-t border-line sm:grid-cols-2 lg:grid-cols-4">
                 {[
                   [MousePointerClick, "Elegí servicio", "El cliente encuentra la opción correcta en la página pública."],
                   [Clock3, "Seleccioná fecha y hora", "La disponibilidad publicada evita intercambios manuales."],
@@ -201,7 +201,7 @@ export default async function Home() {
                   [CalendarCheck, "Operá la jornada", "El turno aparece en agenda con toda la información necesaria."],
                 ].map(([Icon, title, text]) => {
                   const StepIcon = Icon as typeof MousePointerClick;
-                  return <li className="border-b border-r border-[var(--color-line)] p-6" key={String(title)}><StepIcon aria-hidden="true" className="text-[var(--color-primary)]" size={24} /><h3 className="mt-6 font-semibold text-[var(--color-ink)]">{String(title)}</h3><p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">{String(text)}</p></li>;
+                  return <li className="border-b border-r border-line p-6" key={String(title)}><StepIcon aria-hidden="true" className="text-primary" size={24} /><h3 className="mt-6 font-semibold text-ink">{String(title)}</h3><p className="mt-2 text-sm leading-6 text-ink-soft">{String(text)}</p></li>;
                 })}
               </ol>
           </div>
@@ -209,26 +209,26 @@ export default async function Home() {
 
         <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="funciones">
           <div className="grid gap-12 lg:grid-cols-[.72fr_1.28fr]">
-            <div><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Todo lo necesario para mantener el ritmo.</h2><p className="mt-5 max-w-md leading-7 text-[var(--color-ink-soft)]">Cada módulo responde una pregunta concreta de la operación, sin sumar complejidad innecesaria.</p></div>
-            <div className="border-t border-[var(--color-line)]">
-              {CAPABILITIES.map(({ icon: Icon, title, text }) => <article className="grid gap-4 border-b border-[var(--color-line)] py-6 sm:grid-cols-[40px_190px_1fr] sm:items-start" key={title}><span className="grid h-9 w-9 place-items-center rounded-md bg-[var(--color-primary-soft)] text-[var(--color-primary)]"><Icon aria-hidden="true" size={19} /></span><h3 className="font-semibold">{title}</h3><p className="text-sm leading-6 text-[var(--color-ink-soft)]">{text}</p></article>)}
+            <div><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-navy sm:text-5xl">Todo lo necesario para mantener el ritmo.</h2><p className="mt-5 max-w-md leading-7 text-ink-soft">Cada módulo responde una pregunta concreta de la operación, sin sumar complejidad innecesaria.</p></div>
+            <div className="border-t border-line">
+              {CAPABILITIES.map(({ icon: Icon, title, text }) => <article className="grid gap-4 border-b border-line py-6 sm:grid-cols-[40px_190px_1fr] sm:items-start" key={title}><span className="grid h-9 w-9 place-items-center rounded-md bg-primary-soft text-primary"><Icon aria-hidden="true" size={19} /></span><h3 className="font-semibold">{title}</h3><p className="text-sm leading-6 text-ink-soft">{text}</p></article>)}
             </div>
           </div>
         </section>
 
-        <section aria-labelledby="rubros-title" className="border-y border-[var(--color-line)] bg-[var(--color-canvas)]" id="rubros">
+        <section aria-labelledby="rubros-title" className="border-y border-line bg-canvas" id="rubros">
           <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="font-display text-balance text-3xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl" id="rubros-title">Una central para distintos tipos de turnos.</h2>
-              <p className="mx-auto mt-5 max-w-2xl text-pretty leading-7 text-[var(--color-ink-soft)]">Configuralo según los servicios, precios, señas y horarios de tu negocio. La estructura operativa se mantiene clara en cualquier rubro.</p>
+              <h2 className="font-display text-balance text-3xl font-semibold tracking-[-0.035em] text-navy sm:text-5xl" id="rubros-title">Una central para distintos tipos de turnos.</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-pretty leading-7 text-ink-soft">Configuralo según los servicios, precios, señas y horarios de tu negocio. La estructura operativa se mantiene clara en cualquier rubro.</p>
             </div>
             <ul className="mx-auto mt-12 grid max-w-5xl grid-cols-2 gap-x-5 gap-y-10 sm:mt-16 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-4">
               {INDUSTRIES.map(({ name, icon: Icon }) => (
                 <li className="flex min-w-0 flex-col items-center gap-4 text-center" key={name}>
-                  <span className="grid h-16 w-16 shrink-0 place-items-center rounded-md bg-white text-[var(--color-primary)]">
+                  <span className="grid h-16 w-16 shrink-0 place-items-center rounded-md bg-white text-primary">
                     <Icon aria-hidden="true" size={32} strokeWidth={1.75} />
                   </span>
-                  <span className="min-h-12 max-w-44 text-balance text-sm font-semibold leading-6 text-[var(--color-navy)] sm:text-base">{name}</span>
+                  <span className="min-h-12 max-w-44 text-balance text-sm font-semibold leading-6 text-navy sm:text-base">{name}</span>
                 </li>
               ))}
             </ul>
@@ -236,27 +236,27 @@ export default async function Home() {
         </section>
 
         <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
-          <div className="grid overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-raised)] lg:grid-cols-[.9fr_1.1fr]">
-            <div className="bg-[var(--color-navy)] p-7 text-white sm:p-10"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em]">Una página de reservas con la identidad de tu negocio.</h2><p className="mt-5 max-w-md leading-7 text-white/68">Logo, portada, descripción y color propio. Citadely queda en segundo plano para que tu marca lidere.</p><div className="mt-9 space-y-4">{["Servicio", "Fecha y hora", "Datos", "Confirmación"].map((step, index) => <div className="flex items-center gap-4" key={step}><span className="grid h-8 w-8 place-items-center rounded-full border border-white/25 font-mono text-xs">{index + 1}</span><span className="font-semibold">{step}</span></div>)}</div></div>
-            <div className="bg-[var(--color-surface-subtle)] p-6 sm:p-10"><div className="border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)]"><div className="flex items-center justify-between border-b border-[var(--color-line)] pb-4"><div><p className="text-lg font-semibold">Estudio Norte</p><p className="mt-1 text-xs text-[var(--color-ink-soft)]">Reservá tu próximo turno</p></div><span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--color-primary)] font-semibold text-white">E</span></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><button className="border border-[var(--color-primary)] bg-[var(--color-primary-soft)] p-4 text-left" type="button"><strong className="text-sm">Consulta inicial</strong><span className="mt-1 block text-xs text-[var(--color-ink-soft)]">45 min · $20.000</span></button><button className="border border-[var(--color-line)] p-4 text-left" type="button"><strong className="text-sm">Seguimiento</strong><span className="mt-1 block text-xs text-[var(--color-ink-soft)]">30 min · $15.000</span></button></div><div className="mt-5 grid grid-cols-4 gap-2">{["10:00", "11:30", "14:00", "16:30"].map((time) => <button className="rounded-md border border-[var(--color-line)] px-2 py-3 font-mono text-xs font-semibold hover:border-[var(--color-primary)]" key={time} type="button">{time}</button>)}</div><button className="button-primary mt-5 w-full" type="button">Continuar<ArrowRight aria-hidden="true" size={16} /></button></div></div>
+          <div className="grid overflow-hidden border border-line bg-white shadow-raised lg:grid-cols-[.9fr_1.1fr]">
+            <div className="bg-navy p-7 text-white sm:p-10"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em]">Una página de reservas con la identidad de tu negocio.</h2><p className="mt-5 max-w-md leading-7 text-white/68">Logo, portada, descripción y color propio. Citadely queda en segundo plano para que tu marca lidere.</p><div className="mt-9 space-y-4">{["Servicio", "Fecha y hora", "Datos", "Confirmación"].map((step, index) => <div className="flex items-center gap-4" key={step}><span className="grid h-8 w-8 place-items-center rounded-full border border-white/25 font-mono text-xs">{index + 1}</span><span className="font-semibold">{step}</span></div>)}</div></div>
+            <div className="bg-surface-subtle p-6 sm:p-10"><div className="border border-line bg-white p-5 shadow-surface"><div className="flex items-center justify-between border-b border-line pb-4"><div><p className="text-lg font-semibold">Estudio Norte</p><p className="mt-1 text-xs text-ink-soft">Reservá tu próximo turno</p></div><span className="grid h-10 w-10 place-items-center rounded-md bg-primary font-semibold text-white">E</span></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><button className="border border-primary bg-primary-soft p-4 text-left" type="button"><strong className="text-sm">Consulta inicial</strong><span className="mt-1 block text-xs text-ink-soft">45 min · $20.000</span></button><button className="border border-line p-4 text-left" type="button"><strong className="text-sm">Seguimiento</strong><span className="mt-1 block text-xs text-ink-soft">30 min · $15.000</span></button></div><div className="mt-5 grid grid-cols-4 gap-2">{["10:00", "11:30", "14:00", "16:30"].map((time) => <button className="rounded-md border border-line px-2 py-3 font-mono text-xs font-semibold hover:border-primary" key={time} type="button">{time}</button>)}</div><button className="button-primary mt-5 w-full" type="button">Continuar<ArrowRight aria-hidden="true" size={16} /></button></div></div>
           </div>
         </section>
 
-        <section className="border-y border-[var(--color-line)] bg-[var(--color-surface-subtle)]" id="preguntas">
+        <section className="border-y border-line bg-surface-subtle" id="preguntas">
           <div className="mx-auto grid max-w-[1440px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.7fr_1.3fr] lg:px-12">
-            <div><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)]">Preguntas frecuentes</h2><p className="mt-4 leading-7 text-[var(--color-ink-soft)]">Lo esencial antes de empezar a organizar tus turnos.</p></div>
-            <div className="border-t border-[var(--color-line)]">{faqs.map(([question, answer]) => <details className="group border-b border-[var(--color-line)]" key={question}><summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 font-semibold">{question}<span aria-hidden="true" className="text-[var(--color-primary)] group-open:rotate-45">+</span></summary><p className="max-w-2xl pb-6 text-sm leading-6 text-[var(--color-ink-soft)]">{answer}</p></details>)}</div>
+            <div><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-navy">Preguntas frecuentes</h2><p className="mt-4 leading-7 text-ink-soft">Lo esencial antes de empezar a organizar tus turnos.</p></div>
+            <div className="border-t border-line">{faqs.map(([question, answer]) => <details className="group border-b border-line" key={question}><summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 font-semibold">{question}<span aria-hidden="true" className="text-primary group-open:rotate-45">+</span></summary><p className="max-w-2xl pb-6 text-sm leading-6 text-ink-soft">{answer}</p></details>)}</div>
           </div>
         </section>
 
         <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="precio">
-          <div className="mb-10 max-w-3xl"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Dos planes para administrar y crecer.</h2><p className="mt-4 max-w-2xl leading-7 text-[var(--color-ink-soft)]">Empezá con 7 días de Pro. Después elegí si necesitás el dashboard o también una página pública que reciba reservas.</p></div>
-          <div className="grid border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)] lg:grid-cols-2">
-            {Object.values(SUBSCRIPTION_PLAN_DETAILS).map((plan) => <article className={`p-7 sm:p-10 ${plan.id === "pro" ? "border-t border-[var(--color-line)] bg-[var(--color-navy)] text-white lg:border-l lg:border-t-0" : ""}`} key={plan.id}><div className="flex items-center justify-between gap-4"><h3 className="font-display text-3xl font-semibold">{plan.name}</h3>{plan.id === "pro" ? <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">Reservas online</span> : null}</div><p className={`mt-3 min-h-12 text-sm leading-6 ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-soft)]"}`}>{plan.description}</p><p className="mt-7 font-mono text-4xl font-semibold tracking-[-0.04em]">{plans ? formatPlanPrice(plans[plan.id].priceCents) : "Consultar"}</p><p className={`mt-1 text-sm ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-muted)]"}`}>{plans ? "ARS por mes" : "precio vigente al registrarte"}</p><ul className="mt-7 grid gap-3">{plan.features.map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className={plan.id === "pro" ? "text-white" : "text-[var(--color-success)]"} size={17} />{item}</li>)}</ul><Link className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold ${plan.id === "pro" ? "bg-white text-[var(--color-navy)] hover:bg-[var(--color-surface-subtle)]" : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-strong)]"}`} href="/registro">Probar Pro durante 7 días<ArrowRight aria-hidden="true" size={17} /></Link></article>)}
+          <div className="mb-10 max-w-3xl"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-navy sm:text-5xl">Dos planes para administrar y crecer.</h2><p className="mt-4 max-w-2xl leading-7 text-ink-soft">Empezá con 7 días de Pro. Después elegí si necesitás el dashboard o también una página pública que reciba reservas.</p></div>
+          <div className="grid border border-line bg-white shadow-surface lg:grid-cols-2">
+            {Object.values(SUBSCRIPTION_PLAN_DETAILS).map((plan) => <article className={`p-7 sm:p-10 ${plan.id === "pro" ? "border-t border-line bg-navy text-white lg:border-l lg:border-t-0" : ""}`} key={plan.id}><div className="flex items-center justify-between gap-4"><h3 className="font-display text-3xl font-semibold">{plan.name}</h3>{plan.id === "pro" ? <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">Reservas online</span> : null}</div><p className={`mt-3 min-h-12 text-sm leading-6 ${plan.id === "pro" ? "text-white/70" : "text-ink-soft"}`}>{plan.description}</p><p className="mt-7 font-mono text-4xl font-semibold tracking-[-0.04em]">{plans ? formatPlanPrice(plans[plan.id].priceCents) : "Consultar"}</p><p className={`mt-1 text-sm ${plan.id === "pro" ? "text-white/70" : "text-ink-muted"}`}>{plans ? "ARS por mes" : "precio vigente al registrarte"}</p><ul className="mt-7 grid gap-3">{plan.features.map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className={plan.id === "pro" ? "text-white" : "text-success"} size={17} />{item}</li>)}</ul><Link className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold ${plan.id === "pro" ? "bg-white text-navy hover:bg-surface-subtle" : "bg-primary text-white hover:bg-primary-strong"}`} href="/registro">Probar Pro durante 7 días<ArrowRight aria-hidden="true" size={17} /></Link></article>)}
           </div>
         </section>
 
-        <section className="bg-[var(--color-navy)] text-white">
+        <section className="bg-navy text-white">
           <div className="mx-auto flex max-w-[1440px] flex-col gap-7 px-5 py-18 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12">
             <div>
               <h2 className="font-display max-w-3xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Tu próxima jornada puede empezar más ordenada.</h2>

@@ -76,9 +76,9 @@ export function PublicBookingCalendar({
         <Heading className="font-display text-2xl font-semibold tracking-[-0.03em] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--booking-brand)]" id={headingId} ref={headingRef} tabIndex={-1}>Elegí día y horario</Heading>
       </div>
       {!serviceSelected ? (
-        <p className="mt-6 border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] p-5 text-sm leading-6 text-[var(--color-ink-soft)]">Elegí un servicio para ver días y horarios disponibles.</p>
+        <p className="mt-6 border border-dashed border-line-strong bg-surface-subtle p-5 text-sm leading-6 text-ink-soft">Elegí un servicio para ver días y horarios disponibles.</p>
       ) : slots.length === 0 ? (
-        <p className="mt-6 border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] p-5 text-sm leading-6 text-[var(--color-ink-soft)]">Este servicio no tiene horarios disponibles ahora. Probá otro servicio o volvé cuando el negocio publique nueva agenda.</p>
+        <p className="mt-6 border border-dashed border-line-strong bg-surface-subtle p-5 text-sm leading-6 text-ink-soft">Este servicio no tiene horarios disponibles ahora. Probá otro servicio o volvé cuando el negocio publique nueva agenda.</p>
       ) : (
         <div className="public-booking-calendar-layout">
           <div className="public-booking-month">
@@ -119,7 +119,7 @@ export function PublicBookingCalendar({
           </div>
           <div className="public-booking-times">
             <Subheading className="font-display text-lg font-semibold tracking-[-0.02em]">Horarios disponibles</Subheading>
-            <p aria-live="polite" className="mt-1 text-sm text-[var(--color-ink-soft)]">{activeDateKey ? dayLabel(activeDateKey) : "Elegí un día"}</p>
+            <p aria-live="polite" className="mt-1 text-sm text-ink-soft">{activeDateKey ? dayLabel(activeDateKey) : "Elegí un día"}</p>
             <div className="public-booking-time-grid">
               {selectedDaySlots.map((slot) => {
                 const selected = slot.startsAt === selectedSlot;

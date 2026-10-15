@@ -18,7 +18,7 @@ import {
 } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
 import { formatWhatsAppPhone, getPublicAvailabilitySummary, getWhatsAppUrl } from "@/lib/public-profile";
-import { normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
+import { DEFAULT_BRAND_COLOR, normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
 import { getPublicBookingWindow, PUBLIC_SLOT_LIMIT } from "@/lib/booking-window";
 import { INDEX_ROBOTS, NO_INDEX_ROBOTS, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
 import { getBusinessPublicUrl } from "@/lib/urls";
@@ -163,7 +163,7 @@ export default async function PublicBookingPage({ params, searchParams }: Public
   });
   const galleryImages = (galleryRows ?? []) as BusinessGalleryImage[];
   const faqs = (faqRows ?? []) as BusinessFaq[];
-  const brandColor = business.brand_color || "#0957d9";
+  const brandColor = business.brand_color || DEFAULT_BRAND_COLOR;
   const publicTheme = normalizePublicTheme(business.public_theme);
   const headerStyle = sectionThemeStyle("header", publicTheme, brandColor);
   const headerColors = resolveSectionColors("header", publicTheme, brandColor);
@@ -217,11 +217,11 @@ export default async function PublicBookingPage({ params, searchParams }: Public
     : null;
 
   return (
-    <main className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-ink)]" style={{ "--booking-brand": brandColor } as CSSProperties}>
+    <main className="min-h-screen bg-canvas text-ink" style={{ "--booking-brand": brandColor } as CSSProperties}>
       <script dangerouslySetInnerHTML={{ __html: serializeJsonLd(businessStructuredData) }} type="application/ld+json" />
       {faqStructuredData ? <script dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqStructuredData) }} type="application/ld+json" /> : null}
       <a className="skip-link" href="#reservar">Ir a reservar</a>
-      <header className={`bg-[var(--color-navy)] text-white ${headerStyle ? "public-theme-active public-theme-header" : ""}`} style={headerStyle}>
+      <header className={`bg-navy text-white ${headerStyle ? "public-theme-active public-theme-header" : ""}`} style={headerStyle}>
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-3 sm:flex-nowrap sm:px-8 sm:py-4 lg:px-10">
           <div className="flex min-w-0 basis-full items-center gap-3 sm:basis-auto sm:flex-1">
             <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-md border border-white/20 bg-white">
@@ -235,7 +235,7 @@ export default async function PublicBookingPage({ params, searchParams }: Public
           </div>
           <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
             <a className="inline-flex min-h-11 items-center justify-center rounded-md px-3 text-sm font-bold text-white sm:px-5" href="#reservar" style={{ backgroundColor: headerColors.accent, color: headerStyle ? headerColors.accentInk : undefined }}>Reservar turno</a>
-            {whatsappUrl ? <a aria-label={`Contactar a ${business.name} por WhatsApp`} className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-[#148b45] text-white hover:bg-[#0e7438]" href={whatsappUrl} rel="noreferrer" target="_blank"><WhatsAppIcon /></a> : null}
+            {whatsappUrl ? <a aria-label={`Contactar a ${business.name} por WhatsApp`} className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-whatsapp text-white hover:bg-whatsapp-strong" href={whatsappUrl} rel="noreferrer" target="_blank"><WhatsAppIcon /></a> : null}
           </div>
         </div>
       </header>
@@ -254,7 +254,7 @@ export default async function PublicBookingPage({ params, searchParams }: Public
 
       <section className="bg-white"><div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:px-10 lg:py-14">
           {pago ? (
-            <div className="mb-6 border border-[var(--color-line)] bg-white p-4 text-sm font-semibold text-[var(--color-ink-soft)]">
+            <div className="mb-6 border border-line bg-white p-4 text-sm font-semibold text-ink-soft">
               {pago === "aprobado"
                 ? "Pago aprobado. Tu turno quedó confirmado."
                 : pago === "fallido"
@@ -276,10 +276,10 @@ export default async function PublicBookingPage({ params, searchParams }: Public
       <PublicBusinessInfo address={business.public_address} businessName={business.name} dateCount={availability.dateCount} schedule={availability.schedule} serviceMode={business.service_mode} themeStyle={sectionThemeStyle("info", publicTheme, brandColor)} virtualPlatforms={business.virtual_platforms} whatsappPhone={business.whatsapp_phone} />
       <PublicFaqs contactUrl={whatsappUrl} faqs={faqs} themeStyle={sectionThemeStyle("faq", publicTheme, brandColor)} />
 
-      <footer className="border-t border-[var(--color-line)] bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-sm text-[var(--color-ink-soft)] sm:px-8 lg:px-10">
+      <footer className="border-t border-line bg-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-sm text-ink-soft sm:px-8 lg:px-10">
           <p>{business.name}</p>
-          <Link className="origin-right scale-90 font-semibold hover:text-[var(--color-primary)]" href={SITE_ORIGIN} aria-label="Gestionado con Citadely"><LogoMark linked={false} /></Link>
+          <Link className="origin-right scale-90 font-semibold hover:text-primary" href={SITE_ORIGIN} aria-label="Gestionado con Citadely"><LogoMark linked={false} /></Link>
         </div>
       </footer>
     </main>
@@ -292,7 +292,7 @@ function BookingUnavailable({ businessName, whatsappUrl }: { businessName: strin
       <h2 id="reservas-no-disponibles" className="font-display text-3xl font-semibold tracking-[-0.04em]">
         Reservas no disponibles
       </h2>
-      <p className="text-[var(--color-ink-soft)]">
+      <p className="text-ink-soft">
         {businessName} no está recibiendo reservas online por el momento.
       </p>
       {whatsappUrl ? (

@@ -13,7 +13,7 @@ import {
 } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
 import { getWhatsAppUrl } from "@/lib/public-profile";
-import { normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
+import { DEFAULT_BRAND_COLOR, normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
 import { formatInTimeZone } from "@/lib/time";
 import { WhatsAppIcon } from "@/components/public-business-info";
 import { TurnstileWidget } from "@/components/turnstile-widget";
@@ -67,7 +67,7 @@ export function PublicBookingForm({
     business.whatsapp_phone,
     `Hola ${business.name}, quiero enviar el comprobante de seña para ${selectedService?.name ?? "mi reserva"}${selectedSlotData ? ` del ${selectedSlotData.label}` : ""}.`,
   );
-  const brandColor = business.brand_color || "#0957d9";
+  const brandColor = business.brand_color || DEFAULT_BRAND_COLOR;
   const publicTheme = normalizePublicTheme(business.public_theme);
   const bookingStyle = sectionThemeStyle("booking", publicTheme, brandColor);
   const servicesStyle = sectionThemeStyle("services", publicTheme, brandColor);
@@ -143,10 +143,10 @@ export function PublicBookingForm({
 
   if (services.length === 0) {
     return (
-      <div className="border border-dashed border-[var(--color-line-strong)] bg-white p-6 shadow-[var(--shadow-surface)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-violet)]">Sin servicios publicados</p>
+      <div className="border border-dashed border-line-strong bg-white p-6 shadow-surface">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-violet">Sin servicios publicados</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">Reservas online aún no disponibles</h2>
-        <p className="mt-3 text-[var(--color-ink-soft)]">
+        <p className="mt-3 text-ink-soft">
           El negocio todavía está preparando su agenda pública. Volvé pronto para elegir servicio, día y horario.
         </p>
       </div>
@@ -164,21 +164,21 @@ export function PublicBookingForm({
       </div> : null}
 
       {confirmation ? (
-        <section aria-labelledby="reserva-confirmada" className="public-theme-card border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)] sm:p-6 lg:col-span-2" ref={confirmationRef} tabIndex={-1}>
+        <section aria-labelledby="reserva-confirmada" className="public-theme-card border border-line bg-white p-5 shadow-surface sm:p-6 lg:col-span-2" ref={confirmationRef} tabIndex={-1}>
           <h2 className="font-display text-2xl font-semibold tracking-[-0.03em]" id="reserva-confirmada">
             {confirmation.amountCents > 0 ? "Pre-reserva creada" : "Reserva confirmada"}
           </h2>
           <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
-            <div><dt className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Servicio</dt><dd className="mt-1 font-semibold">{confirmation.serviceName}</dd></div>
-            <div><dt className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Horario</dt><dd className="mt-1 font-semibold">{confirmation.slotLabel || "Según tu selección"}</dd></div>
+            <div><dt className="text-xs uppercase tracking-[0.12em] text-ink-muted">Servicio</dt><dd className="mt-1 font-semibold">{confirmation.serviceName}</dd></div>
+            <div><dt className="text-xs uppercase tracking-[0.12em] text-ink-muted">Horario</dt><dd className="mt-1 font-semibold">{confirmation.slotLabel || "Según tu selección"}</dd></div>
             {confirmation.amountCents > 0 ? (
               <>
-                <div><dt className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Seña a transferir</dt><dd className="mt-1 font-semibold">{formatCurrency(confirmation.amountCents, business.currency)}</dd></div>
-                <div><dt className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Vence</dt><dd className="mt-1 font-semibold">{confirmation.depositDeadline ?? "En un máximo de 2 horas"}</dd></div>
+                <div><dt className="text-xs uppercase tracking-[0.12em] text-ink-muted">Seña a transferir</dt><dd className="mt-1 font-semibold">{formatCurrency(confirmation.amountCents, business.currency)}</dd></div>
+                <div><dt className="text-xs uppercase tracking-[0.12em] text-ink-muted">Vence</dt><dd className="mt-1 font-semibold">{confirmation.depositDeadline ?? "En un máximo de 2 horas"}</dd></div>
               </>
             ) : null}
           </dl>
-          <p className="mt-5 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <p className="mt-5 text-sm leading-6 text-ink-soft">
             {confirmation.amountCents > 0
               ? "Transferí la seña antes del vencimiento. El negocio confirmará tu turno cuando la reciba."
               : "Te enviamos los datos del turno por email y el negocio ya puede verlo en su agenda."}
@@ -190,7 +190,7 @@ export function PublicBookingForm({
         <div className="public-catalog-heading">
           <div>
             <div className="flex items-center gap-3"><span aria-hidden="true" className="public-booking-step">01</span><h2 className="font-display text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Servicios</h2></div>
-            <p className="mt-3 text-sm text-[var(--color-ink-soft)]">Abrí el detalle para elegir el servicio que querés reservar.</p>
+            <p className="mt-3 text-sm text-ink-soft">Abrí el detalle para elegir el servicio que querés reservar.</p>
           </div>
         </div>
           <div className="mt-6">
@@ -223,36 +223,36 @@ export function PublicBookingForm({
         timeZone={business.timezone}
       />
 
-      <section className="public-theme-card public-booking-summary h-fit border border-[var(--color-line)] bg-white p-5 sm:p-6 lg:sticky lg:top-6">
+      <section className="public-theme-card public-booking-summary h-fit border border-line bg-white p-5 sm:p-6 lg:sticky lg:top-6">
         <div className="flex items-center gap-3"><span aria-hidden="true" className="public-booking-step">03</span><h2 className="font-display text-2xl font-semibold tracking-[-0.03em]">Confirmá la reserva</h2></div>
-        <div className="mt-5 rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-4">
-          <p className="text-sm font-semibold text-[var(--color-ink-soft)]">Tu turno</p>
+        <div className="mt-5 rounded-md border border-line bg-surface-subtle p-4">
+          <p className="text-sm font-semibold text-ink-soft">Tu turno</p>
           <p className="mt-2 text-xl font-semibold tracking-[-0.04em]">
             {selectedService?.name ?? "Seleccioná un servicio"}
           </p>
-          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+          <p className="mt-1 text-sm text-ink-soft">
             {selectedSlotData ? `${selectedSlotData.label} · ${selectedService?.duration_minutes ?? 0} min` : "Elegí día y horario en el calendario"}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
             <span className="rounded-md bg-white p-3 font-semibold">
-              <span className="block text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Precio</span>
+              <span className="block text-xs uppercase tracking-[0.12em] text-ink-muted">Precio</span>
               {selectedService ? formatCurrency(selectedService.price_cents, business.currency) : "-"}
             </span>
             <span className="rounded-md bg-white p-3 font-semibold">
-              <span className="block text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Al reservar</span>
+              <span className="block text-xs uppercase tracking-[0.12em] text-ink-muted">Al reservar</span>
               {selectedService ? selectedAmountCents > 0 ? formatCurrency(selectedAmountCents, business.currency) : "Sin seña" : "-"}
             </span>
           </div>
         </div>
         {selectedService && selectedAmountCents > 0 ? (
-          <div className="mt-5 rounded-md border border-[var(--color-warning)] bg-[var(--color-warning-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
-            <p className="font-semibold text-[var(--color-ink)]">Datos para transferir la seña</p>
+          <div className="mt-5 rounded-md border border-warning bg-warning-soft p-4 text-sm leading-6 text-ink-soft">
+            <p className="font-semibold text-ink">Datos para transferir la seña</p>
             {business.payment_alias ? <p className="mt-2">Alias: <strong>{business.payment_alias}</strong></p> : null}
             {business.payment_cbu ? <p>CBU/CVU: <strong>{business.payment_cbu}</strong></p> : null}
             {business.payment_instructions ? <p className="mt-2">{business.payment_instructions}</p> : null}
             {!business.payment_alias && !business.payment_cbu ? <p className="mt-2">El negocio todavía no cargó alias o CBU/CVU. Reservá y coordiná el pago directamente con el negocio.</p> : null}
             <p className="mt-2">La pre-reserva vence en un máximo de 2 horas, o al comenzar el turno si ocurre antes.</p>
-            {whatsAppUrl ? <a className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-md bg-[#148b45] px-4 text-sm font-bold text-white hover:bg-[#0e7438]" href={whatsAppUrl} rel="noreferrer" target="_blank"><WhatsAppIcon />Enviar comprobante por WhatsApp</a> : null}
+            {whatsAppUrl ? <a className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-md bg-whatsapp px-4 text-sm font-bold text-white hover:bg-whatsapp-strong" href={whatsAppUrl} rel="noreferrer" target="_blank"><WhatsAppIcon />Enviar comprobante por WhatsApp</a> : null}
           </div>
         ) : null}
         <div className="mt-5 grid gap-4">
@@ -262,7 +262,7 @@ export function PublicBookingForm({
           <Field label="Nota para el negocio" name="message" placeholder="Opcional" required={false} />
         </div>
         <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileReset} />
-        <p className="mt-4 rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-3 text-xs font-medium leading-5 text-[var(--color-ink-muted)]">
+        <p className="mt-4 rounded-md border border-line bg-surface-subtle px-4 py-3 text-xs font-medium leading-5 text-ink-muted">
           Revisá que el email esté bien escrito. Ahí llega la confirmación del turno.
         </p>
         <div className="mt-6">

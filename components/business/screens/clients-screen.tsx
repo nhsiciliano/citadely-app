@@ -88,21 +88,21 @@ export function ClientsScreen() {
     <>
       <PageHeader actions={<button className="button-primary" disabled={readOnly} onClick={() => setCreateOpen(true)} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><Plus aria-hidden="true" size={18} />Nuevo cliente</button>} description="Encontrá una ficha por nombre, email o teléfono y consultá sus datos de contacto." title="Clientes" />
       <div className="grid gap-5 px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
-        <label className="flex min-h-12 max-w-xl items-center gap-3 rounded-md border border-[var(--color-line)] bg-white px-4 transition-[border-color,box-shadow] hover:border-[var(--color-line-strong)] focus-within:border-[var(--color-primary)] focus-within:shadow-[0_0_0_3px_rgba(9,87,217,0.1)]">
+        <label className="flex min-h-12 max-w-xl items-center gap-3 rounded-md border border-line bg-white px-4 transition-[border-color,box-shadow] hover:border-line-strong focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(9,87,217,0.1)]">
           <span className="sr-only">Buscar clientes</span>
-          <Search aria-hidden="true" className="shrink-0 text-[var(--color-ink-muted)]" size={18} />
-          <input className="min-w-0 flex-1 bg-transparent font-medium text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-muted)]" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, email o teléfono" type="search" value={query} />
+          <Search aria-hidden="true" className="shrink-0 text-ink-muted" size={18} />
+          <input className="min-w-0 flex-1 bg-transparent font-medium text-ink outline-none placeholder:text-ink-muted" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, email o teléfono" type="search" value={query} />
         </label>
 
-        <section className="overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)]">
+        <section className="overflow-hidden border border-line bg-white shadow-surface">
           {filteredClients.length === 0 ? <div className="p-6"><EmptyState action={!query ? <button className="button-primary" disabled={readOnly} onClick={() => setCreateOpen(true)} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><Plus aria-hidden="true" size={17} />Agregar cliente</button> : undefined} text={query ? "Probá con otro nombre, email o teléfono." : "Las reservas públicas también crean fichas automáticamente."} title={query ? "No encontramos coincidencias" : "Todavía no hay clientes"} /></div> : (
-            <div className="divide-y divide-[var(--color-line)]">
+            <div className="divide-y divide-line">
               {filteredClients.map((client) => (
                 <button className="client-row" key={client.id} onClick={() => setSelected(client)} type="button">
-                  <span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--color-primary-soft)] font-semibold text-[var(--color-primary)]">{client.name.slice(0, 1).toUpperCase()}</span>
+                  <span className="grid h-10 w-10 place-items-center rounded-md bg-primary-soft font-semibold text-primary">{client.name.slice(0, 1).toUpperCase()}</span>
                   <span className="min-w-0"><strong>{client.name}</strong><small>{client.email || "Sin email"}</small></span>
-                  <span className="hidden text-sm text-[var(--color-ink-soft)] sm:block">{client.phone || "Sin teléfono"}</span>
-                  <span className="text-sm font-semibold text-[var(--color-primary)]">Ver ficha</span>
+                  <span className="hidden text-sm text-ink-soft sm:block">{client.phone || "Sin teléfono"}</span>
+                  <span className="text-sm font-semibold text-primary">Ver ficha</span>
                 </button>
               ))}
             </div>
@@ -110,7 +110,7 @@ export function ClientsScreen() {
         </section>
         {searchError ? <FormMessage type="error">{searchError}</FormMessage> : null}
         {filteredClients.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--color-ink-soft)]">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-ink-soft">
             <span>{total !== null ? `Mostrando ${filteredClients.length} de ${total}` : `Mostrando ${filteredClients.length}`}</span>
             {hasMore ? <button className="button-secondary" disabled={loading} onClick={() => void loadMore()} type="button">{loading ? "Cargando…" : "Cargar más"}</button> : null}
           </div>
@@ -119,57 +119,57 @@ export function ClientsScreen() {
 
       <Drawer description="Datos de contacto e historial de turnos del cliente." onClose={() => setSelected(null)} open={Boolean(selected)} title="Ficha del cliente" width="medium">
         {selected ? <div className="grid gap-6">
-          <div className="grid h-16 w-16 place-items-center rounded-md bg-[var(--color-primary)] text-2xl font-semibold text-white">{selected.name.slice(0, 1).toUpperCase()}</div>
-          <div><p className="text-xl font-semibold">{selected.name}</p><p className="mt-1 font-mono text-xs text-[var(--color-ink-muted)]">#{selected.id.slice(0, 8).toUpperCase()}</p></div>
-          <dl className="divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]">
-            <div className="grid grid-cols-[24px_1fr] gap-3 py-4"><Mail aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><div><dt className="text-xs text-[var(--color-ink-muted)]">Email</dt><dd className="mt-1 text-sm font-semibold">{selected.email || "Sin email"}</dd></div></div>
-            <div className="grid grid-cols-[24px_1fr] gap-3 py-4"><Phone aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><div><dt className="text-xs text-[var(--color-ink-muted)]">Teléfono</dt><dd className="mt-1 text-sm font-semibold">{selected.phone || "Sin teléfono"}</dd></div></div>
+          <div className="grid h-16 w-16 place-items-center rounded-md bg-primary text-2xl font-semibold text-white">{selected.name.slice(0, 1).toUpperCase()}</div>
+          <div><p className="text-xl font-semibold">{selected.name}</p><p className="mt-1 font-mono text-xs text-ink-muted">#{selected.id.slice(0, 8).toUpperCase()}</p></div>
+          <dl className="divide-y divide-line border-y border-line">
+            <div className="grid grid-cols-[24px_1fr] gap-3 py-4"><Mail aria-hidden="true" className="text-primary" size={18} /><div><dt className="text-xs text-ink-muted">Email</dt><dd className="mt-1 text-sm font-semibold">{selected.email || "Sin email"}</dd></div></div>
+            <div className="grid grid-cols-[24px_1fr] gap-3 py-4"><Phone aria-hidden="true" className="text-primary" size={18} /><div><dt className="text-xs text-ink-muted">Teléfono</dt><dd className="mt-1 text-sm font-semibold">{selected.phone || "Sin teléfono"}</dd></div></div>
           </dl>
 
           <section aria-labelledby="proximo-turno-cliente" className="grid gap-3">
             <h3 className="text-sm font-semibold" id="proximo-turno-cliente">Próximo turno</h3>
             {clientHistory.upcoming ? (
-              <div className="flex items-center justify-between gap-3 border border-[var(--color-line)] p-4 text-sm">
+              <div className="flex items-center justify-between gap-3 border border-line p-4 text-sm">
                 <span className="flex min-w-0 items-center gap-2">
-                  <CalendarClock aria-hidden="true" className="shrink-0 text-[var(--color-primary)]" size={17} />
+                  <CalendarClock aria-hidden="true" className="shrink-0 text-primary" size={17} />
                   <span className="min-w-0">
                     <strong className="block">{formatAppointmentTime(clientHistory.upcoming.starts_at, business.timezone)}</strong>
-                    <small className="text-[var(--color-ink-soft)]">{clientHistory.upcoming.services?.name ?? "Servicio"}</small>
+                    <small className="text-ink-soft">{clientHistory.upcoming.services?.name ?? "Servicio"}</small>
                   </span>
                 </span>
                 <StatusBadge status={clientHistory.upcoming.status} />
               </div>
-            ) : <p className="text-sm text-[var(--color-ink-soft)]">{historyLoading ? "Cargando…" : "Sin turnos próximos."}</p>}
+            ) : <p className="text-sm text-ink-soft">{historyLoading ? "Cargando…" : "Sin turnos próximos."}</p>}
           </section>
 
           <section aria-labelledby="historial-cliente" className="grid gap-3">
             <h3 className="text-sm font-semibold" id="historial-cliente">Historial</h3>
             {clientHistory.past.length > 0 ? (
-              <ul className="divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]">
+              <ul className="divide-y divide-line border-y border-line">
                 {clientHistory.past.map((appointment) => (
                   <li className="flex items-center justify-between gap-3 py-3 text-sm" key={appointment.id}>
                     <span className="min-w-0">
                       <strong className="block truncate">{appointment.services?.name ?? "Servicio"}</strong>
-                      <small className="text-[var(--color-ink-soft)]">{formatAppointmentTime(appointment.starts_at, business.timezone)}</small>
+                      <small className="text-ink-soft">{formatAppointmentTime(appointment.starts_at, business.timezone)}</small>
                     </span>
                     <StatusBadge status={appointment.status} />
                   </li>
                 ))}
               </ul>
-            ) : <p className="text-sm text-[var(--color-ink-soft)]">{historyLoading ? "Cargando…" : "Todavía no tiene turnos pasados."}</p>}
+            ) : <p className="text-sm text-ink-soft">{historyLoading ? "Cargando…" : "Todavía no tiene turnos pasados."}</p>}
           </section>
         </div> : null}
       </Drawer>
 
       <Drawer description="Creá una ficha básica para poder asignarle turnos manuales." onClose={() => setCreateOpen(false)} open={createOpen} title="Nuevo cliente" width="medium">
         <form method="post" className="grid gap-5" onSubmit={addClient}>
-          <div className="grid h-12 w-12 place-items-center rounded-md bg-[var(--color-primary-soft)] text-[var(--color-primary)]"><UserRound aria-hidden="true" size={22} /></div>
+          <div className="grid h-12 w-12 place-items-center rounded-md bg-primary-soft text-primary"><UserRound aria-hidden="true" size={22} /></div>
           <Field label="Nombre" name="client_name" placeholder="Nombre y apellido" />
           <Field autoComplete="email" label="Email" name="client_email" placeholder="cliente@ejemplo.com" required={false} type="email" />
           <Field autoComplete="tel" label="Teléfono" name="client_phone" placeholder="11 2345 6789" required={false} />
           {readOnly ? <FormMessage type="error">{READ_ONLY_HINT}</FormMessage> : null}
           {message ? <FormMessage type="error">{message}</FormMessage> : null}
-          <div className="sticky bottom-0 -mx-5 border-t border-[var(--color-line)] bg-white px-5 pt-5 sm:-mx-7 sm:px-7"><SubmitButton disabled={readOnly} pending={pending}>Guardar cliente</SubmitButton></div>
+          <div className="sticky bottom-0 -mx-5 border-t border-line bg-white px-5 pt-5 sm:-mx-7 sm:px-7"><SubmitButton disabled={readOnly} pending={pending}>Guardar cliente</SubmitButton></div>
         </form>
       </Drawer>
     </>

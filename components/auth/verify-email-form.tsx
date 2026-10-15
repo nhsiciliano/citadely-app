@@ -81,7 +81,7 @@ export function VerifyEmailForm() {
         <SubmitButton pending={pending}>Verificar email</SubmitButton>
       </form>
       <button
-        className="text-left text-sm font-semibold text-[var(--reception)] disabled:opacity-60"
+        className="text-left text-sm font-semibold text-primary disabled:opacity-60"
         disabled={pending || !defaultEmail}
         onClick={resendCode}
         type="button"

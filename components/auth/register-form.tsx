@@ -80,12 +80,12 @@ export function RegisterForm() {
         />
         <SubmitButton pending={pending}>Crear cuenta</SubmitButton>
       </form>
-      <p className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-3 text-xs font-medium leading-5 text-[var(--color-ink-muted)]">
+      <p className="border border-line bg-surface-subtle px-4 py-3 text-xs font-medium leading-5 text-ink-muted">
         Tu cuenta queda preparada para agenda, reservas públicas y comunicaciones por email.
       </p>
-      <p className="text-sm text-[var(--ink-soft)]">
+      <p className="text-sm text-ink-soft">
         ¿Ya tenés cuenta?{" "}
-        <Link className="font-semibold text-[var(--reception)]" href="/login">
+        <Link className="font-semibold text-primary" href="/login">
           Ingresar
         </Link>
       </p>

@@ -12,20 +12,20 @@ const NAV_ITEMS = [
 
 export function MarketingHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--color-line)] bg-white">
+    <header className="sticky top-0 z-50 border-b border-line bg-white">
       <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-12">
         <LogoMark />
-        <nav aria-label="Navegación principal" className="hidden items-center gap-7 text-sm font-medium text-[var(--color-ink-soft)] lg:flex">
-          {NAV_ITEMS.map(({ href, label }) => <Link className="hover:text-[var(--color-primary)]" href={href} key={href}>{label}</Link>)}
+        <nav aria-label="Navegación principal" className="hidden items-center gap-7 text-sm font-medium text-ink-soft lg:flex">
+          {NAV_ITEMS.map(({ href, label }) => <Link className="hover:text-primary" href={href} key={href}>{label}</Link>)}
         </nav>
         <div className="hidden items-center gap-2 sm:flex"><SecondaryLink href="/login">Ingresar</SecondaryLink><PrimaryLink href="/registro">Crear mi cuenta</PrimaryLink></div>
         <details className="group relative ml-auto lg:hidden">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md border border-[var(--color-line)] px-4 text-sm font-semibold text-[var(--color-navy)] marker:hidden">Menú</summary>
-          <nav aria-label="Menú móvil" className="absolute right-0 top-12 z-50 w-64 border border-[var(--color-line)] bg-white p-2 shadow-[var(--shadow-raised)]">
-            {NAV_ITEMS.map(({ href, label }) => <Link className="block rounded-md px-3 py-3 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-primary-soft)]" href={href} key={href}>{label}</Link>)}
-            <div className="mt-2 border-t border-[var(--color-line)] pt-2 sm:hidden">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md border border-line px-4 text-sm font-semibold text-navy marker:hidden">Menú</summary>
+          <nav aria-label="Menú móvil" className="absolute right-0 top-12 z-50 w-64 border border-line bg-white p-2 shadow-raised">
+            {NAV_ITEMS.map(({ href, label }) => <Link className="block rounded-md px-3 py-3 text-sm font-medium text-ink hover:bg-primary-soft" href={href} key={href}>{label}</Link>)}
+            <div className="mt-2 border-t border-line pt-2 sm:hidden">
               <Link className="block rounded-md px-3 py-3 text-sm font-semibold" href="/login">Ingresar</Link>
-              <Link className="block rounded-md px-3 py-3 text-sm font-semibold text-[var(--color-primary)]" href="/registro">Crear mi cuenta</Link>
+              <Link className="block rounded-md px-3 py-3 text-sm font-semibold text-primary" href="/registro">Crear mi cuenta</Link>
             </div>
           </nav>
         </details>
@@ -36,7 +36,7 @@ export function MarketingHeader() {
 
 export function MarketingFooter() {
   return (
-    <footer className="border-t border-white/10 bg-[var(--color-navy)] text-white">
+    <footer className="border-t border-white/10 bg-navy text-white">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-5 px-5 py-8 text-sm sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12">
         <span className="font-semibold">Citadely</span>
         <p className="text-white/65">Central de turnos para negocios de servicios.</p>

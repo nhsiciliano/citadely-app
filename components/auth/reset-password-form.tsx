@@ -120,7 +120,7 @@ export function ResetPasswordForm() {
           <SubmitButton pending={pending}>Validar código</SubmitButton>
         </form>
       )}
-      <Link className="text-sm font-semibold text-[var(--reception)]" href="/login">
+      <Link className="text-sm font-semibold text-primary" href="/login">
         Volver a ingresar
       </Link>
     </div>

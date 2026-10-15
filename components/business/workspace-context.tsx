@@ -215,9 +215,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[var(--color-canvas)] px-6">
-        <div className="flex items-center gap-3 text-sm font-semibold text-[var(--color-ink-soft)]" role="status">
-          <LoaderCircle aria-hidden="true" className="animate-spin text-[var(--color-primary)]" size={20} />
+      <main className="grid min-h-screen place-items-center bg-canvas px-6">
+        <div className="flex items-center gap-3 text-sm font-semibold text-ink-soft" role="status">
+          <LoaderCircle aria-hidden="true" className="animate-spin text-primary" size={20} />
           Preparando tu central de turnos…
         </div>
       </main>
@@ -226,11 +226,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   if (!value) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[var(--color-canvas)] px-6">
-        <div className="max-w-md border border-[var(--color-danger-line)] bg-white p-6 text-center shadow-[var(--shadow-raised)]">
-          <AlertCircle aria-hidden="true" className="mx-auto text-[var(--color-danger)]" size={28} />
+      <main className="grid min-h-screen place-items-center bg-canvas px-6">
+        <div className="max-w-md border border-danger-line bg-white p-6 text-center shadow-raised">
+          <AlertCircle aria-hidden="true" className="mx-auto text-danger" size={28} />
           <h1 className="mt-4 text-xl font-semibold">No pudimos cargar tu espacio</h1>
-          <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">{error ?? "Volvé a iniciar sesión para continuar."}</p>
+          <p className="mt-2 text-sm leading-6 text-ink-soft">{error ?? "Volvé a iniciar sesión para continuar."}</p>
         </div>
       </main>
     );

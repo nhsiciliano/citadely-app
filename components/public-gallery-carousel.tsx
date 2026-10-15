@@ -113,10 +113,10 @@ export function PublicGalleryCarousel({ businessName, compact = false, images, t
   if (!activeImage) return null;
 
   return (
-    <section aria-labelledby={titleId} className={`public-gallery-section border-b border-[var(--color-line)] bg-white ${compact ? "public-gallery-compact px-6 py-8 sm:px-9" : "py-10 sm:py-14"} ${themeStyle ? "public-theme-active public-theme-gallery" : ""}`} style={themeStyle}>
+    <section aria-labelledby={titleId} className={`public-gallery-section border-b border-line bg-white ${compact ? "public-gallery-compact px-6 py-8 sm:px-9" : "py-10 sm:py-14"} ${themeStyle ? "public-theme-active public-theme-gallery" : ""}`} style={themeStyle}>
       <div className={compact ? "" : "mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"}>
         <Heading className={`font-display font-semibold tracking-[-0.035em] ${compact ? "text-2xl" : "text-3xl sm:text-4xl"}`} id={titleId}>Galería</Heading>
-        {!compact ? <p className="mt-2 text-sm text-[var(--color-ink-soft)]">Conocé nuestro espacio y trabajo.</p> : null}
+        {!compact ? <p className="mt-2 text-sm text-ink-soft">Conocé nuestro espacio y trabajo.</p> : null}
 
         <div
           aria-label={`Galería de ${businessName}`}
@@ -175,7 +175,7 @@ export function PublicGalleryCarousel({ businessName, compact = false, images, t
           ) : null}
         </div>
 
-        <p aria-live="polite" className={loadError ? "mt-3 text-sm text-[var(--color-danger)]" : "sr-only"}>{loadError || `Imagen ${displayedIndex + 1} de ${images.length}`}</p>
+        <p aria-live="polite" className={loadError ? "mt-3 text-sm text-danger" : "sr-only"}>{loadError || `Imagen ${displayedIndex + 1} de ${images.length}`}</p>
 
         <dialog
           aria-labelledby={dialogTitleId}
