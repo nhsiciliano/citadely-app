@@ -119,9 +119,10 @@ export async function getMercadoPagoAuthorizedPayment(authorizedPaymentId: strin
   return mercadoPagoRequest<MercadoPagoAuthorizedPaymentResponse>(`/authorized_payments/${encodeURIComponent(authorizedPaymentId)}`);
 }
 
-// Ventana para aceptar una firma. Una notificación reintentada después de esto se rechaza con 401
-// y Mercado Pago la vuelve a enviar; si la ventana es muy corta, eventos legítimos pueden perderse.
-const MERCADOPAGO_SIGNATURE_MAX_AGE_MS = 10 * 60 * 1000;
+// Ventana para aceptar una firma. El webhook es idempotente (claim por evento y re-fetch del recurso
+// en Mercado Pago), así que un replay no causa daño. Rechazar un reintento legítimo sí: el pago no se
+// refleja hasta la reconciliación. Por eso la ventana es amplia.
+const MERCADOPAGO_SIGNATURE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 // ts llega como Unix en segundos (lo que usa el E2E) o en milisegundos; se normaliza antes de comparar.
 function isFreshSignatureTimestamp(timestamp: string, now = Date.now()) {
