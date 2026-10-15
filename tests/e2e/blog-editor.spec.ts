@@ -84,7 +84,7 @@ test("Blog y panel editorial: borrador, portada, publicación, edición, retirad
   await page.goto(`/blog/${originalSlug}`);
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
   await expect(page.getByText("Una mejora creada para simplificar la jornada.")).toBeVisible();
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://citadely.com.ar/blog/${originalSlug}`);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://www.citadely.com.ar/blog/${originalSlug}`);
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.ok()).toBeTruthy();
   expect(await sitemap.text()).toContain(`/blog/${originalSlug}`);
