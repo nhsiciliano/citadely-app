@@ -63,9 +63,9 @@ export function PublicPagePreview({
   const [selectedSlot, setSelectedSlot] = useState("");
   const calendarHeadingRef = useRef<HTMLHeadingElement>(null);
   const selectedService = publishedServices.find((service) => service.id === selectedServiceId) ?? null;
-  const bookingSlots = buildBookingSlots(appointments, selectedService, availabilitySlots);
+  const bookingSlots = buildBookingSlots(appointments, selectedService, availabilitySlots, business.timezone);
   const selectedSlotData = bookingSlots.find((slot) => slot.startsAt === selectedSlot);
-  const availability = getPublicAvailabilitySummary(availabilitySlots, appointments);
+  const availability = getPublicAvailabilitySummary(availabilitySlots, appointments, business.timezone);
   const hasWhatsapp = Boolean(normalizeWhatsAppPhone(whatsappPhone));
   const whatsappUrl = getWhatsAppUrl(whatsappPhone, `Hola ${business.name}, quisiera hacer una consulta.`);
   const headerStyle = sectionThemeStyle("header", publicTheme, brandColor);
@@ -149,6 +149,7 @@ export function PublicPagePreview({
               selectedSlot={selectedSlot}
               serviceSelected={Boolean(selectedService)}
               slots={bookingSlots}
+              timeZone={business.timezone}
             />
 
             <aside className="public-theme-card h-fit border border-[var(--color-line)] bg-white p-5">
