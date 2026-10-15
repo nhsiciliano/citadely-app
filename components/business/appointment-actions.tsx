@@ -13,6 +13,7 @@ import { Drawer, StatusBadge } from "./workspace-ui";
 import { APPOINTMENT_STATUS_LABELS, CANCELLATION_REASON_MAX, getStatusOptions, requiresStatusConfirmation, type AppointmentStatus } from "@/lib/appointment-status";
 import { useClientSearch } from "./use-client-search";
 import { useWorkspace } from "./workspace-context";
+import { revalidatePublicPage } from "@/lib/revalidate-public-page";
 
 export type SelectedAgendaSlot = { startsAt: string; serviceId?: string };
 
@@ -122,6 +123,7 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
     setStartsAtValue("");
     setServiceId("");
     setSelectedClient(null);
+    void revalidatePublicPage();
     await refresh();
     onClose();
   }
@@ -340,6 +342,7 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
     }
     setPendingChange(null);
     setReason("");
+    void revalidatePublicPage();
     await refresh();
   }
 
@@ -360,7 +363,10 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
     const { error } = await insforge.database.rpc("confirm_appointment_deposit", { p_appointment_id: appointment.id });
     setPending(false);
     if (error) setMessage(getErrorMessage(error));
-    else await refresh();
+    else {
+      void revalidatePublicPage();
+      await refresh();
+    }
   }
 
   return (

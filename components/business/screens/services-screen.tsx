@@ -11,6 +11,7 @@ import { readServiceForm, SERVICE_LIMITS, upsertServiceWithSlots } from "@/lib/s
 import { addMonthsToMonthKey, formatDateKey, getDaysInMonth, getWeekdayOfDateKey, toDateKey, toMonthKey, toTimeKey, zonedTimeToUtc } from "@/lib/time";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader } from "../workspace-ui";
+import { revalidatePublicPage } from "@/lib/revalidate-public-page";
 
 function monthDays(value: string) {
   const leading = (getWeekdayOfDateKey(`${value}-01`) + 6) % 7;
@@ -199,6 +200,7 @@ export function ServicesScreen() {
     formElement.reset();
     setDateTimes({});
     setSelectedDate("");
+    void revalidatePublicPage();
     await refresh();
     setDrawerOpen(false);
     setEditingService(null);
@@ -210,7 +212,10 @@ export function ServicesScreen() {
     const { error } = await insforge.database.from("services").update({ is_active: !service.is_active }).eq("id", service.id);
     setPending(false);
     if (error) setMessage(getErrorMessage(error));
-    else await refresh();
+    else {
+      void revalidatePublicPage();
+      await refresh();
+    }
   }
 
   return (

@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // InsForge se reemplaza por un doble que registra las llamadas a rpc y devuelve filas fijas.
 const rpc = vi.fn();
 const maybeSingle = vi.fn();
+const revalidateTag = vi.fn();
+vi.mock("next/cache", () => ({ revalidateTag, unstable_cache: (fn: unknown) => fn }));
 vi.mock("@/lib/insforge-admin", () => {
   const chain: Record<string, unknown> = {};
   chain.select = () => chain;
@@ -38,7 +40,8 @@ async function post(body: unknown, headers: Record<string, string> = {}) {
 
 beforeEach(() => {
   rpc.mockReset();
-  maybeSingle.mockReset().mockResolvedValue({ data: { id: BUSINESS }, error: null });
+  revalidateTag.mockReset();
+  maybeSingle.mockReset().mockResolvedValue({ data: { id: BUSINESS, slug: "clinica-norte" }, error: null });
 });
 
 describe("POST /api/public-booking", () => {
@@ -82,6 +85,7 @@ describe("POST /api/public-booking", () => {
     const result = await post(valid);
     expect(result.status).toBe(200);
     expect(result.json).toMatchObject({ appointment_id: "a1", status: "pending_payment", amount_cents: 1000 });
+    expect(revalidateTag).toHaveBeenCalledWith("public-page:clinica-norte", { expire: 0 });
     expect(rpc.mock.calls[1][0]).toBe("create_public_booking");
     expect(rpc.mock.calls[1][1]).toMatchObject({ p_business_id: BUSINESS, p_service_id: BUSINESS, p_client_email: "ana@example.com" });
   });
@@ -92,6 +96,7 @@ describe("POST /api/public-booking", () => {
     const known = await post(valid);
     expect(known.status).toBe(409);
     expect(known.json.error).toBe("El horario ya no tiene cupos disponibles");
+    expect(revalidateTag).not.toHaveBeenCalled();
 
     rpc.mockResolvedValueOnce({ data: null, error: null }).mockResolvedValueOnce({ data: null, error: { message: 'relation "x" does not exist' } });
     const unknown = await post(valid);

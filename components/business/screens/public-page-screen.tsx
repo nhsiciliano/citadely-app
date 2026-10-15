@@ -16,6 +16,7 @@ import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "../workspace-ui";
 import { PublicPagePreview } from "../public-page-preview";
 import { PublicThemeEditor } from "../public-theme-editor";
+import { revalidatePublicPage } from "@/lib/revalidate-public-page";
 
 type DraftFaq = Omit<Pick<BusinessFaq, "id" | "question" | "answer" | "sort_order">, "id"> & { id?: string; localId: string };
 
@@ -186,6 +187,7 @@ export function PublicPageScreen() {
       setGalleryFileCount(0);
       setDraftFaqs(nextFaqs.map((faq) => ({ ...faq, localId: faq.id })));
       setMessage("Página pública actualizada.");
+      void revalidatePublicPage();
       formElement.reset();
       await refresh();
     } catch (saveError) {

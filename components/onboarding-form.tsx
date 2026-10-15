@@ -14,6 +14,7 @@ import { BUSINESS_SLUG_MAX_LENGTH, BUSINESS_SLUG_PATTERN, validateBusinessSlug }
 import { READ_ONLY_HINT } from "@/lib/business-access";
 import { getBusinessCategoryOptions } from "@/lib/business-categories";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
+import { revalidatePublicPage } from "@/lib/revalidate-public-page";
 
 type SlugStatus = { state: "idle" | "checking" | "available" | "taken" | "invalid"; message?: string };
 
@@ -235,6 +236,7 @@ export function OnboardingForm() {
       return;
     }
 
+    void revalidatePublicPage();
     router.push("/negocio");
   }
 

@@ -10,7 +10,9 @@ import {
   isUuid,
   verifyTurnstileToken,
 } from "@/lib/booking-protection";
+import { revalidateTag } from "next/cache";
 import { insforgeAdmin } from "@/lib/insforge-admin";
+import { publicPageTag } from "@/lib/public-page-data";
 
 export const runtime = "nodejs";
 
@@ -96,7 +98,7 @@ export async function POST(request: Request) {
   }
 
   const [businessResult, serviceResult] = await Promise.all([
-    insforgeAdmin.database.from("businesses").select("id").eq("id", businessId).maybeSingle(),
+    insforgeAdmin.database.from("businesses").select("id,slug").eq("id", businessId).maybeSingle(),
     insforgeAdmin.database.from("services").select("id").eq("id", serviceId).eq("business_id", businessId).maybeSingle(),
   ]);
 
@@ -151,6 +153,9 @@ export async function POST(request: Request) {
   if (!booking?.appointment_id) {
     return NextResponse.json({ error: "No se pudo crear la reserva." }, { status: 500 });
   }
+
+  // The booked seat must show on the cached public page right away.
+  revalidateTag(publicPageTag(business.slug), { expire: 0 });
 
   return NextResponse.json({
     appointment_id: booking.appointment_id,
