@@ -8,12 +8,12 @@ const unstableCache = vi.fn((fn: () => unknown, key: string[], options: { tags: 
 vi.mock("next/cache", () => ({ unstable_cache: unstableCache }));
 
 const maybeSingle = vi.fn();
-vi.mock("@/lib/insforge", () => {
+vi.mock("@/lib/insforge-public", () => {
   const chain: Record<string, unknown> = {};
   for (const method of ["select", "eq", "gte", "lt", "order", "limit"]) chain[method] = () => chain;
   chain.maybeSingle = maybeSingle;
   chain.then = (resolve: (value: unknown) => void) => resolve({ data: [], error: null });
-  return { insforge: { database: { from: () => chain, rpc: () => Promise.resolve({ data: true, error: null }) } } };
+  return { insforgePublic: { database: { from: () => chain, rpc: () => Promise.resolve({ data: true, error: null }) } } };
 });
 
 beforeEach(() => {
