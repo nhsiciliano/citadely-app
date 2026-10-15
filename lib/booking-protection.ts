@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHmac } from "node:crypto";
+import { isProduction } from "@/lib/env";
 
 export const BOOKING_LIMITS = {
   bodyBytes: 8_192,
@@ -27,6 +28,8 @@ export function getClientIp(request: Request) {
 /** Keyed hash so the rate-limit table never stores raw IPs. */
 export function hashIp(ip: string | undefined) {
   if (!ip) return null;
+  // E2E runs send every booking from 127.0.0.1; the per-IP bucket would throttle the suite. Never honored in production.
+  if (!isProduction && process.env.PUBLIC_BOOKING_SKIP_IP_LIMIT === "true") return null;
   const key = process.env.PUBLIC_BOOKING_HASH_SECRET ?? process.env.INSFORGE_API_KEY ?? "citadely-public-booking";
   return createHmac("sha256", key).update(ip).digest("hex");
 }

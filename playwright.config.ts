@@ -36,6 +36,8 @@ export default defineConfig({
         RESEND_SKIP_DELIVERY: "true",
         // Specs write to the database directly; the public page must not serve cached data.
         PUBLIC_PAGE_REVALIDATE_SECONDS: "0",
+        // Every spec books from 127.0.0.1: skip the per-IP bucket of the public booking limiter (email and business limits stay).
+        PUBLIC_BOOKING_SKIP_IP_LIMIT: "true",
         CRON_SECRET: E2E_CRON_SECRET,
       },
       url: "http://127.0.0.1:3002",

@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 test("RPC de turnos manuales: propiedad, inserción directa y concurrencia", async () => {
   const result = execFileSync(process.execPath, ["--input-type=module", "-e", `
     import { createClient } from "@insforge/sdk";
+    import { randomUUID } from "node:crypto";
         const makeClient = () => createClient({ baseUrl: process.env.NEXT_PUBLIC_INSFORGE_BASE_URL, anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY });
     const first = makeClient();
     const second = makeClient();

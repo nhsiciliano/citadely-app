@@ -37,6 +37,18 @@ describe("lib/booking-protection", () => {
     expect(hashIp(undefined)).toBeNull();
   });
 
+  it("el bucket por IP se puede omitir fuera de producción (E2E) pero nunca en producción", async () => {
+    vi.stubEnv("PUBLIC_BOOKING_SKIP_IP_LIMIT", "true");
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.resetModules();
+    const preview = await import("@/lib/booking-protection");
+    expect(preview.hashIp("1.1.1.1")).toBeNull();
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.resetModules();
+    const production = await import("@/lib/booking-protection");
+    expect(production.hashIp("1.1.1.1")).toMatch(/^[0-9a-f]{64}$/);
+  });
+
   it("Turnstile solo se exige con TURNSTILE_SECRET_KEY", async () => {
     vi.stubEnv("TURNSTILE_SECRET_KEY", "");
     expect(await verifyTurnstileToken("", undefined)).toBe(true);
