@@ -20,10 +20,14 @@ database-facing code.
 pnpm schema:diff            # linked backend branch (left) vs its parent (right)
 ```
 
-Needs `npx @insforge/cli login`; the script is read-only (SELECTs and `list` commands) and addresses the parent via
-`INSFORGE_PROJECT_ID`, so it never re-links the checkout. Exit code 1 means differences, 2 means a schema could not
-be read. Options: `--right <project-id>`, `--left <project-id>`, `--json`, `--save-left/--save-right <file>`,
-`--left-file/--right-file <file>` to compare saved snapshots.
+Needs `npx @insforge/cli login` and the parent credentials in `.insforge/project.parent.json` (gitignored, next to
+`project.json`). The script is read-only (catalog SELECTs and `list` commands). The CLI only talks to the project in
+`<cwd>/.insforge/project.json` (it ignores `INSFORGE_PROJECT_ID`), so the script reads any non-linked project by
+running the CLI from a temporary directory with a copy of that project's credentials; the checkout is never
+re-linked. Before comparing it asks the CLI which project it resolved on each side and aborts with exit 2 if
+the two sides are the same project. Exit code 1 means differences, 2 means an error. Options:
+`--right <project-id>`, `--left <project-id>` (any id that has a `.insforge/project*.json` file), `--json`,
+`--save-left/--save-right <file>`, `--left-file/--right-file <file>` to compare saved snapshots.
 
 How to read it (left = branch, right = parent):
 

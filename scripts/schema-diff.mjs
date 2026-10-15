@@ -12,11 +12,15 @@
 // "left" is the project you are about to promote FROM (the backend branch), "right" the one you promote TO
 // (the parent / Production). Anything "only in left" must be applied to right before deploying.
 //
-// Projects other than the linked one are addressed through INSFORGE_PROJECT_ID, which the CLI honours
-// for the logged-in user; this script never links, applies or writes anything.
+// The CLI always talks to the project in <cwd>/.insforge/project.json (it ignores INSFORGE_PROJECT_ID).
+// The linked project is read from this checkout; any other project is read by running the CLI from a temporary
+// directory holding a copy of that project's credentials, taken from a sibling file `.insforge/project*.json`
+// (e.g. project.parent.json). The checkout is never re-linked and nothing is ever applied or written.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -25,18 +29,57 @@ const flag = (name) => {
 };
 const has = (name) => args.includes(`--${name}`);
 
-const cliBin = existsSync("node_modules/.bin/insforge") ? ["node_modules/.bin/insforge"] : ["npx", "-y", "@insforge/cli"];
+const repoRoot = process.cwd();
+const cliBin = existsSync(path.join(repoRoot, "node_modules/.bin/insforge"))
+  ? [path.join(repoRoot, "node_modules/.bin/insforge")]
+  : ["npx", "-y", "@insforge/cli"];
+const tempDirs = [];
 
-function cli(commandArgs, projectId) {
-  const env = { ...process.env, NO_COLOR: "1" };
-  if (projectId) env.INSFORGE_PROJECT_ID = projectId;
-  const [bin, ...prefix] = cliBin;
-  return execFileSync(bin, [...prefix, ...commandArgs], { env, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+process.on("exit", () => {
+  for (const dir of tempDirs) rmSync(dir, { recursive: true, force: true });
+});
+
+function readJson(file) {
+  return JSON.parse(readFileSync(file, "utf8"));
 }
 
-function query(sql, projectId) {
-  const output = cli(["db", "query", sql, "--json"], projectId);
-  return JSON.parse(output).rows;
+// A "context" is a directory whose .insforge/project.json selects the project the CLI will talk to.
+function contextFor(projectId) {
+  const linked = readJson(path.join(repoRoot, ".insforge/project.json"));
+  if (!projectId || projectId === linked.project_id) return { cwd: repoRoot, projectId: linked.project_id, name: linked.project_name };
+
+  const credentialFiles = readdirSync(path.join(repoRoot, ".insforge")).filter((file) => /^project.*\.json$/.test(file));
+  for (const file of credentialFiles) {
+    const credentials = readJson(path.join(repoRoot, ".insforge", file));
+    if (credentials.project_id !== projectId) continue;
+    const cwd = mkdtempSync(path.join(tmpdir(), "schema-diff-"));
+    tempDirs.push(cwd);
+    mkdirSync(path.join(cwd, ".insforge"));
+    cpSync(path.join(repoRoot, ".insforge", file), path.join(cwd, ".insforge/project.json"));
+    return { cwd, projectId, name: credentials.project_name };
+  }
+  throw new Error(`No credentials for project ${projectId}: expected a .insforge/project*.json file with that project_id.`);
+}
+
+function cli(commandArgs, context) {
+  const [bin, ...prefix] = cliBin;
+  return execFileSync(bin, [...prefix, ...commandArgs], {
+    cwd: context.cwd,
+    env: { ...process.env, NO_COLOR: "1" },
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+function query(sql, context) {
+  return JSON.parse(cli(["db", "query", sql, "--json"], context)).rows;
+}
+
+// Guard against reading the wrong project: ask the CLI which project it resolved for this context.
+function assertResolvedProject(context) {
+  const resolved = JSON.parse(cli(["current", "--json"], context)).project?.project_id;
+  if (resolved !== context.projectId) throw new Error(`The CLI resolved project ${resolved}, expected ${context.projectId}.`);
 }
 
 const PUBLIC_TABLES = `c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')`;
@@ -104,17 +147,17 @@ const SECTIONS = [
   },
 ];
 
-function readSnapshot(label, projectId) {
-  const snapshot = { project: projectId ?? "linked", sections: {} };
+function readSnapshot(label, context) {
+  const snapshot = { project: `${context.name} (${context.projectId})`, projectId: context.projectId, sections: {} };
   for (const section of SECTIONS) {
-    snapshot.sections[section.name] = Object.fromEntries(query(section.sql, projectId).map((row) => [row.key, row.value]));
+    snapshot.sections[section.name] = Object.fromEntries(query(section.sql, context).map((row) => [row.key, row.value]));
   }
 
-  const migrations = JSON.parse(cli(["db", "migrations", "list", "--json"], projectId)).migrations ?? [];
+  const migrations = JSON.parse(cli(["db", "migrations", "list", "--json"], context)).migrations ?? [];
   snapshot.sections.migrations = Object.fromEntries(migrations.map((migration) => [migration.version, migration.name]));
 
   // Informational: a schedule that exists on one side only usually means a duplicated or missing cron.
-  const schedules = JSON.parse(cli(["schedules", "list", "--json"], projectId));
+  const schedules = JSON.parse(cli(["schedules", "list", "--json"], context));
   snapshot.sections.schedules = Object.fromEntries(
     schedules.map((schedule) => [schedule.name, `${schedule.isActive ? "active" : "inactive"} ${schedule.cronSchedule} ${schedule.httpMethod} ${schedule.functionUrl}`]),
   );
@@ -123,20 +166,22 @@ function readSnapshot(label, projectId) {
   return snapshot;
 }
 
-function loadSide(label) {
-  const file = flag(`${label}-file`);
-  if (file) return JSON.parse(readFileSync(file, "utf8"));
-
+function resolveContext(label) {
   let projectId = flag(label);
   if (!projectId && label === "right") {
-    const linked = JSON.parse(readFileSync(".insforge/project.json", "utf8"));
-    projectId = linked.branched_from?.project_id;
+    projectId = readJson(path.join(repoRoot, ".insforge/project.json")).branched_from?.project_id;
     if (!projectId) {
       console.error("The linked project is not a backend branch (no branched_from). Pass --right <project-id> or --right-file.");
       process.exit(2);
     }
   }
-  const snapshot = readSnapshot(label, projectId);
+  return contextFor(projectId);
+}
+
+function loadSide(label, file, context) {
+  if (file) return readJson(file);
+  assertResolvedProject(context);
+  const snapshot = readSnapshot(label, context);
   const saveTo = flag(`save-${label}`);
   if (saveTo) writeFileSync(saveTo, JSON.stringify(snapshot, null, 2));
   return snapshot;
@@ -180,8 +225,20 @@ function printReport(report, left, right) {
 }
 
 try {
-  const left = loadSide("left");
-  const right = loadSide("right");
+  const leftFile = flag("left-file");
+  const rightFile = flag("right-file");
+  const leftContext = leftFile ? undefined : resolveContext("left");
+  const rightContext = rightFile ? undefined : resolveContext("right");
+  if (leftContext && rightContext && leftContext.projectId === rightContext.projectId) {
+    console.error(`Both sides resolve to the same project (${leftContext.name}, ${leftContext.projectId}); nothing to compare.`);
+    process.exit(2);
+  }
+  const left = loadSide("left", leftFile, leftContext);
+  const right = loadSide("right", rightFile, rightContext);
+  if (left.projectId && left.projectId === right.projectId) {
+    console.error(`Both snapshots come from the same project (${left.project}); nothing to compare.`);
+    process.exit(2);
+  }
   const report = diff(left, right);
   if (has("json")) console.log(JSON.stringify({ left: left.project, right: right.project, report }, null, 2));
   else printReport(report, left, right);
