@@ -4,12 +4,14 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useRouter } from "next/navigation";
 import { getCitadelyProfile, getErrorMessage, getPostAuthPath, slugifyBusinessName } from "@/lib/auth";
 import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Client, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { fetchBusinessAccessState, type BusinessAccessState } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
 import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
 import { AlertCircle, LoaderCircle } from "lucide-react";
 
 export type WorkspaceContextValue = {
   business: Business;
+  access: BusinessAccessState;
   services: Service[];
   clients: Client[];
   appointments: Appointment[];
@@ -56,6 +58,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [business, setBusiness] = useState<Business | null>(null);
+  const [access, setAccess] = useState<BusinessAccessState | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -64,7 +67,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [faqs, setFaqs] = useState<BusinessFaq[]>([]);
 
   async function loadBusinessData(businessId: string) {
-    const [servicesResult, clientsResult, appointmentsResult, availabilityRows, galleryResult, faqResult] = await Promise.all([
+    const [accessState, servicesResult, clientsResult, appointmentsResult, availabilityRows, galleryResult, faqResult] = await Promise.all([
+      fetchBusinessAccessState(insforge, businessId),
       insforge.database.from("services").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
       insforge.database.from("clients").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
       insforge.database
@@ -90,6 +94,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const workspaceError = servicesResult.error ?? clientsResult.error ?? appointmentsResult.error ?? galleryResult.error ?? faqResult.error;
     if (workspaceError) throw new Error(getErrorMessage(workspaceError));
 
+    setAccess(accessState);
     setServices((servicesResult.data ?? []) as Service[]);
     setClients((clientsResult.data ?? []) as Client[]);
     setAppointments((appointmentsResult.data ?? []) as Appointment[]);
@@ -178,8 +183,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   }
 
-  const value: WorkspaceContextValue | null = business ? ({
+  const value: WorkspaceContextValue | null = business && access ? ({
     business,
+    access,
     services,
     clients,
     appointments,

@@ -12,6 +12,7 @@ import {
   Globe2,
   LayoutDashboard,
   LockKeyhole,
+  TriangleAlert,
   LogOut,
   Menu,
   Settings,
@@ -20,7 +21,6 @@ import {
   X,
 } from "lucide-react";
 import { LogoSymbol } from "@/components/ui";
-import { getSubscriptionState } from "@/lib/citadely-db";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { useWorkspace } from "./workspace-context";
 
@@ -43,10 +43,9 @@ const LEGACY_HASHES: Record<string, string> = {
 export function BusinessShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { business, signOut, userEmail } = useWorkspace();
+  const { access: subscription, business, signOut, userEmail } = useWorkspace();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const subscription = getSubscriptionState(business);
   const publicUrl = getBusinessPublicUrl(business.slug);
   const isDemoWorkspace = business.is_demo === true;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -99,7 +98,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
 
         <div className={`border-b border-white/10 px-5 py-4 ${collapsed ? "lg:px-3 lg:text-center" : ""}`}>
           <p className={`truncate text-sm font-semibold ${collapsed ? "lg:hidden" : ""}`}>{business.name}</p>
-          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : subscription.hasPromotion ? "Acceso Pro promocional" : subscription.isTrialing ? `${subscription.trialDaysLeft} días de prueba` : business.subscription_status === "active" ? "Plan activo" : "Acceso limitado"}</p>
+          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : subscription.hasPromotion ? "Acceso Pro promocional" : subscription.isTrialing ? `${subscription.trialDaysLeft} días de prueba` : subscription.hasPaidPeriod ? "Plan activo" : subscription.needsPayment ? "Solo lectura" : "Acceso limitado"}</p>
           {collapsed ? <span className="hidden text-sm font-bold lg:inline">{business.name.slice(0, 1).toUpperCase()}</span> : null}
         </div>
 
@@ -148,6 +147,15 @@ export function BusinessShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="min-w-0" id="contenido-principal" inert={mobileOpen}>
+        {subscription.needsPayment ? (
+          <div className="flex flex-col gap-3 border-b border-[var(--color-warning)] bg-[var(--color-warning-soft)] px-5 py-3 pl-20 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pl-20 lg:px-10" role="status">
+            <p className="flex items-start gap-2 text-sm font-medium text-[var(--color-ink)]">
+              <TriangleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-warning)]" size={17} />
+              <span><strong className="font-semibold">Modo solo lectura.</strong> {subscription.isPastDue ? "El último cobro no se pudo procesar." : "Tu prueba o tu plan terminó."} Podés consultar tu agenda, clientes y servicios; para crear o modificar datos, activá un plan.</span>
+            </p>
+            {pathname !== "/negocio/configuracion" ? <Link className="button-primary shrink-0" href="/negocio/configuracion">Activar plan</Link> : null}
+          </div>
+        ) : null}
         {children}
       </main>
     </div>

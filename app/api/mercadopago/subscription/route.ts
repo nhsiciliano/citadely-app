@@ -9,7 +9,7 @@ import {
 } from "@/lib/mercadopago";
 import { isSubscriptionPlanId, type SubscriptionPlanId } from "@/lib/subscription-plans";
 import { requireSubscriptionPlans } from "@/lib/subscription-plans-server";
-import { getBillingStartAt } from "@/lib/subscription-billing";
+import { fetchBusinessAccessState } from "@/lib/business-access";
 
 type SubscriptionBusiness = {
   id: string;
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
     const payerEmail = getPayerEmailOverride() ?? user.email;
     if (!payerEmail) throw new Error("La cuenta no tiene un email valido.");
 
-    const billingStartAt = getBillingStartAt(business);
+    const { billingStartAt } = await fetchBusinessAccessState(insforgeAdmin, business.id);
     const providerBody = {
       reason: `Citadely - Plan ${plan.name}`,
       external_reference: business.id,

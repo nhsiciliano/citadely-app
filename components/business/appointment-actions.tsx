@@ -7,6 +7,7 @@ import { buildBookingSlots, formatAppointmentTime, formatCurrency, type Appointm
 import { getErrorMessage } from "@/lib/auth";
 import { getClientSaveErrorMessage } from "@/lib/client-errors";
 import { createClient } from "@/lib/clients";
+import { READ_ONLY_HINT } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
 import { Drawer, StatusBadge } from "./workspace-ui";
 import { useWorkspace } from "./workspace-context";
@@ -14,7 +15,8 @@ import { useWorkspace } from "./workspace-context";
 export type SelectedAgendaSlot = { startsAt: string; serviceId?: string };
 
 export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boolean; onClose: () => void; initialSlot?: SelectedAgendaSlot | null }) {
-  const { appointments, availabilitySlots, business, clients, services, refresh } = useWorkspace();
+  const { access, appointments, availabilitySlots, business, clients, services, refresh } = useWorkspace();
+  const readOnly = !access.hasDashboardAccess;
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -175,12 +177,13 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
           ) : null}
         </fieldset>
 
+        {readOnly ? <FormMessage type="error">{READ_ONLY_HINT}</FormMessage> : null}
         {activeServices.length === 0 ? (
           <FormMessage type="error">Necesitás un servicio activo con horarios disponibles antes de crear el turno.</FormMessage>
         ) : null}
         {message ? <FormMessage type="error">{message}</FormMessage> : null}
         <div className="sticky bottom-0 -mx-5 mt-3 border-t border-[var(--color-line)] bg-white px-5 pt-5 sm:-mx-7 sm:px-7">
-          <SubmitButton disabled={!selectedClient || serviceOptions.length === 0 || !startsAtValue} pending={pending}>Guardar turno</SubmitButton>
+          <SubmitButton disabled={readOnly || !selectedClient || serviceOptions.length === 0 || !startsAtValue} pending={pending}>Guardar turno</SubmitButton>
         </div>
       </form>
     </Drawer>
@@ -190,7 +193,7 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
 }
 
 function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { clients: Client[]; onClose: () => void; onClosed: () => void; onSelect: (client: Client) => void; open: boolean }) {
-  const { business, refresh } = useWorkspace();
+  const { access, business, refresh } = useWorkspace();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
@@ -294,7 +297,7 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
             </div>
           ) : <div className="border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] px-5 py-8 text-center"><p className="font-semibold">{query ? "No encontramos coincidencias" : "Todavía no hay clientes"}</p><p className="mt-2 text-sm text-[var(--color-ink-soft)]">{query ? "Probá con otra búsqueda o creá un cliente." : "Creá el primer cliente para asignarle un turno."}</p></div>}
           {filteredClients.length > 0 ? <p className="text-xs text-[var(--color-ink-muted)] sm:hidden">Deslizá la tabla para ver todos los datos de contacto.</p> : null}
-          <button className="button-secondary w-full sm:w-fit" onClick={() => { setCreating(true); setMessage(null); }} type="button"><Plus aria-hidden="true" size={18} />Crear nuevo cliente</button>
+          <button className="button-secondary w-full sm:w-fit" disabled={!access.hasDashboardAccess} onClick={() => { setCreating(true); setMessage(null); }} title={access.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Plus aria-hidden="true" size={18} />Crear nuevo cliente</button>
         </div>
       )}
     </dialog>
@@ -308,7 +311,8 @@ const APPOINTMENT_SOURCE_LABELS: Record<Appointment["source"], string> = {
 };
 
 export function AppointmentDetailDrawer({ appointment, onClose }: { appointment: Appointment | null; onClose: () => void }) {
-  const { business, refresh } = useWorkspace();
+  const { access, business, refresh } = useWorkspace();
+  const readOnly = !access.hasDashboardAccess;
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -371,7 +375,7 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
 
           <label className="form-label">
             Estado del turno
-            <select className="form-control" disabled={pending} onChange={(event) => updateStatus(event.target.value as Appointment["status"])} value={appointment.status}>
+            <select className="form-control" disabled={pending || readOnly} onChange={(event) => updateStatus(event.target.value as Appointment["status"])} value={appointment.status}>
               <option value="pending_payment">Seña pendiente</option>
               {appointment.status === "pending_payment" && appointment.deposit_amount_cents > 0 ? null : (
                 <option value="confirmed">Confirmado</option>
@@ -383,8 +387,9 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
           </label>
 
           {appointment.status === "pending_payment" && appointment.deposit_amount_cents > 0 ? (
-            <button className="button-primary" disabled={pending} onClick={confirmDeposit} type="button"><CheckCircle2 aria-hidden="true" size={18} />Confirmar seña recibida</button>
+            <button className="button-primary" disabled={pending || readOnly} onClick={confirmDeposit} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><CheckCircle2 aria-hidden="true" size={18} />Confirmar seña recibida</button>
           ) : null}
+          {readOnly ? <p className="text-sm text-[var(--color-ink-soft)]">{READ_ONLY_HINT}</p> : null}
           {message ? <FormMessage type="error">{message}</FormMessage> : null}
         </div>
       ) : null}
