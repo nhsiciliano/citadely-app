@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { type Business, type Service } from "@/lib/citadely-db";
+import { GENERIC_BOOKING_ERROR, getPublicBookingErrorMessage } from "@/lib/booking-errors";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 
 export const runtime = "nodejs";
@@ -66,8 +66,8 @@ export async function POST(request: Request) {
   }
 
   const [businessResult, serviceResult] = await Promise.all([
-    insforgeAdmin.database.from("businesses").select("*").eq("id", businessId).maybeSingle(),
-    insforgeAdmin.database.from("services").select("*").eq("id", serviceId).eq("business_id", businessId).maybeSingle(),
+    insforgeAdmin.database.from("businesses").select("id").eq("id", businessId).maybeSingle(),
+    insforgeAdmin.database.from("services").select("id").eq("id", serviceId).eq("business_id", businessId).maybeSingle(),
   ]);
 
   if (businessResult.error || !businessResult.data) {
@@ -78,8 +78,8 @@ export async function POST(request: Request) {
     return badRequest("Servicio no disponible.");
   }
 
-  const business = businessResult.data as Business;
-  const service = serviceResult.data as Service;
+  const business = businessResult.data;
+  const service = serviceResult.data;
 
   const { data: bookingData, error: bookingError } = await insforgeAdmin.database.rpc("create_public_booking", {
     p_business_id: business.id,
@@ -92,7 +92,10 @@ export async function POST(request: Request) {
   });
 
   if (bookingError) {
-    return NextResponse.json({ error: bookingError.message }, { status: 409 });
+    const knownMessage = getPublicBookingErrorMessage(bookingError.message);
+    if (knownMessage) return NextResponse.json({ error: knownMessage }, { status: 409 });
+    console.error("public booking rpc failed", { message: bookingError.message });
+    return NextResponse.json({ error: GENERIC_BOOKING_ERROR }, { status: 500 });
   }
 
   const booking = (Array.isArray(bookingData) ? bookingData[0] : bookingData) as PublicBookingResult | undefined;

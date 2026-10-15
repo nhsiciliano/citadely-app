@@ -14,7 +14,8 @@ async function handle(request: NextRequest) {
   const { data, error } = await insforgeAdmin.database.rpc("cancel_expired_deposit_bookings");
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 400 });
+    console.error("expired deposit cancellation failed", { message: error.message });
+    return Response.json({ error: "No se pudo cancelar las reservas vencidas." }, { status: 500 });
   }
 
   return Response.json({ cancelled: data ?? 0 });

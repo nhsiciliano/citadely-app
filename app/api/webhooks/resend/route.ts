@@ -69,6 +69,9 @@ export async function POST(request: Request) {
     p_payload: JSON.parse(payload),
   });
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("resend webhook record failed", { message: error.message });
+    return Response.json({ error: "No se pudo registrar el evento." }, { status: 500 });
+  }
   return Response.json({ received: true, tracked: true, inserted: data });
 }

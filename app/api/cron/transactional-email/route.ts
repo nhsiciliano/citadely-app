@@ -41,7 +41,10 @@ async function handle(request: NextRequest) {
   }
 
   const { data, error } = await insforgeAdmin.database.rpc("claim_email_outbox", { p_limit: 20 });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("email outbox claim failed", { message: error.message });
+    return Response.json({ error: "No se pudo leer la cola de emails." }, { status: 500 });
+  }
 
   const rows = (data ?? []) as EmailOutboxRow[];
   const results = await Promise.all(rows.map(processEmail));

@@ -119,6 +119,18 @@ export async function getMercadoPagoAuthorizedPayment(authorizedPaymentId: strin
   return mercadoPagoRequest<MercadoPagoAuthorizedPaymentResponse>(`/authorized_payments/${encodeURIComponent(authorizedPaymentId)}`);
 }
 
+// Ventana para aceptar una firma. Una notificación reintentada después de esto se rechaza con 401
+// y Mercado Pago la vuelve a enviar; si la ventana es muy corta, eventos legítimos pueden perderse.
+const MERCADOPAGO_SIGNATURE_MAX_AGE_MS = 10 * 60 * 1000;
+
+// ts llega como Unix en segundos (lo que usa el E2E) o en milisegundos; se normaliza antes de comparar.
+function isFreshSignatureTimestamp(timestamp: string, now = Date.now()) {
+  const value = Number(timestamp);
+  if (!Number.isFinite(value) || value <= 0) return false;
+  const signedAtMs = value < 1e12 ? value * 1000 : value;
+  return Math.abs(now - signedAtMs) <= MERCADOPAGO_SIGNATURE_MAX_AGE_MS;
+}
+
 export function verifyMercadoPagoSignature({
   dataId,
   requestId,
@@ -142,6 +154,7 @@ export function verifyMercadoPagoSignature({
   const timestamp = parts.ts;
   const hash = parts.v1;
   if (!timestamp || !hash || !/^[a-f0-9]{64}$/i.test(hash)) return false;
+  if (!isFreshSignatureTimestamp(timestamp)) return false;
 
   const manifestParts = [];
   if (dataId) manifestParts.push(`id:${dataId.toLowerCase()}`);
