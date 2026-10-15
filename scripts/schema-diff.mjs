@@ -7,6 +7,7 @@
 //   pnpm schema:diff --left-file a.json --right-file b.json   compare saved snapshots
 //   pnpm schema:diff --save-left a.json --save-right b.json   keep the snapshots
 //   pnpm schema:diff --json                   machine-readable report
+//   pnpm schema:diff --check-migrations       also verify migrations/ against both sides (release gate)
 //
 // Exit code: 0 = identical, 1 = differences, 2 = could not read a schema.
 // "left" is the project you are about to promote FROM (the backend branch), "right" the one you promote TO
@@ -21,6 +22,7 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { checkMigrations, parseMigrationFiles } from "./lib/migration-check.mjs";
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -224,6 +226,24 @@ function printReport(report, left, right) {
   console.log(`${total} difference(s).`);
 }
 
+// left = the branch being promoted, right = the parent. Compares both against the files in migrations/.
+function runMigrationCheck(left, right) {
+  const { migrations: repo, invalid } = parseMigrationFiles(readdirSync(path.join(repoRoot, "migrations")));
+  const result = checkMigrations({ repo, branch: left.sections.migrations ?? {}, parent: right.sections.migrations ?? {} });
+  return { ...result, ok: result.ok && invalid.length === 0, problems: [...invalid.map((file) => `Invalid file name in migrations/: ${file}`), ...result.problems] };
+}
+
+function printMigrationCheck(check) {
+  console.log("\n## migration check (migrations/ vs branch vs parent)");
+  for (const problem of check.problems) console.log(`  ! ${problem}`);
+  if (check.pending.length) {
+    console.log(`  Pending for the parent, apply in this order (${check.pending.length}):`);
+    for (const migration of check.pending) console.log(`    ${migration}.sql`);
+  } else console.log("  Nothing pending for the parent.");
+  console.log(check.ok ? "  OK: the only migration differences are the pending files above." : "  FAILED: fix the problems above before releasing.");
+  console.log("  The other sections above must be explained by those pending migrations; anything else is drift.");
+}
+
 try {
   const leftFile = flag("left-file");
   const rightFile = flag("right-file");
@@ -240,9 +260,16 @@ try {
     process.exit(2);
   }
   const report = diff(left, right);
-  if (has("json")) console.log(JSON.stringify({ left: left.project, right: right.project, report }, null, 2));
-  else printReport(report, left, right);
-  process.exit(Object.keys(report).length ? 1 : 0);
+  const migrationCheck = has("check-migrations") ? runMigrationCheck(left, right) : null;
+  if (has("json")) console.log(JSON.stringify({ left: left.project, right: right.project, report, migrationCheck }, null, 2));
+  else {
+    printReport(report, left, right);
+    if (migrationCheck) printMigrationCheck(migrationCheck);
+  }
+  if (migrationCheck && !migrationCheck.ok) process.exit(1);
+  // With --check-migrations, pending migrations of this release are the expected difference, not a failure.
+  const unexpected = migrationCheck ? Object.keys(report).filter((name) => name !== "migrations") : Object.keys(report);
+  process.exit(unexpected.length ? 1 : 0);
 } catch (error) {
   console.error(`schema-diff failed: ${error instanceof Error ? error.message : error}`);
   process.exit(2);

@@ -14,11 +14,25 @@ database-facing code.
 - [ ] No migration copies another by hand (the old `sync-mercadopago-preview-schema` pattern). If the parent already
       has the change, the migration must be a no-op there.
 
-## 2. Compare schemas
+## 2. Compare schemas (mandatory gate)
 
 ```bash
-pnpm schema:diff            # linked backend branch (left) vs its parent (right)
+pnpm schema:diff --check-migrations   # linked backend branch (left) vs its parent (right), plus migrations/
 ```
+
+There is no "apply every migration to an empty project" test: the InsForge plan has no room for another backend
+branch, and creating or deleting branches is not part of this process. This gate replaces it. `--check-migrations`
+compares the files in `migrations/` with the migrations applied on each side and fails (exit 1) if:
+
+- a file in `migrations/` was not applied to the branch (it was never rehearsed);
+- the branch has a migration applied without a file in `migrations/` (someone applied SQL that is not in git, or the
+  file is still on an unmerged branch);
+- the parent has a migration that is not in `migrations/` (a manual change in Production);
+- a version has different names on different sides, or a pending file is older than the parent's newest migration
+  (the CLI refuses to apply it; rename it with a newer timestamp).
+
+It then prints the pending migrations for the parent, in the order they must be applied. Those are the only
+acceptable differences in the `migrations` section; every difference in the other sections must be explained by them.
 
 Needs `npx @insforge/cli login` and the parent credentials in `.insforge/project.parent.json` (gitignored, next to
 `project.json`). The script is read-only (catalog SELECTs and `list` commands). The CLI only talks to the project in
@@ -43,12 +57,16 @@ pointing at Preview URLs). Anything else is drift: resolve it with a migration, 
 
 ## 3. Apply to the parent first
 
+- [ ] `pnpm test:e2e tests/e2e/rls-matrix.spec.ts tests/e2e/subscription-read-only.spec.ts` against the branch is green
+      (access matrix: anon / owner / other owner / expired owner per table and RPC, plus the integrity triggers).
 - [ ] Take a backup: `npx -y @insforge/cli backups create --name pre-release-<date> --wait` (parent linked or
       `--project <id>`).
-- [ ] Apply the pending migrations to the parent **before** deploying the app (the new code must never run against an
-      older schema). Use the InsForge CLI from a checkout linked to the parent, or the dashboard SQL runner.
-- [ ] Re-run `pnpm schema:diff`: the `migrations` section must show no `only in left` entries and the other sections
-      only the differences you expect.
+- [ ] Apply the pending migrations listed by step 2 to the parent, **one by one and in that order**, **before**
+      deploying the app (the new code must never run against an older schema). Use the InsForge CLI from a checkout
+      linked to the parent (`npx -y @insforge/cli db migrations up <file>`), or the dashboard SQL runner. Stop at the
+      first failure: forward-fix with a new migration, applied to the branch first.
+- [ ] Re-run `pnpm schema:diff --check-migrations`: it must print `Nothing pending for the parent` and exit 0 (no
+      differences in any section, other than Preview-only schedules).
 
 ## 4. Deploy and verify
 
