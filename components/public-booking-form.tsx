@@ -16,6 +16,7 @@ import { getWhatsAppUrl } from "@/lib/public-profile";
 import { normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
 import { formatInTimeZone } from "@/lib/time";
 import { WhatsAppIcon } from "@/components/public-business-info";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
 export function PublicBookingForm({
@@ -34,6 +35,8 @@ export function PublicBookingForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const [localReservations, setLocalReservations] = useState<Record<string, number>>({});
 
   const selectedService = services.find((service) => service.id === selectedServiceId) ?? null;
@@ -83,8 +86,10 @@ export function PublicBookingForm({
         clientEmail: String(form.get("email") ?? ""),
         clientPhone: String(form.get("phone") ?? ""),
         clientMessage: String(form.get("message") ?? ""),
+        turnstileToken,
       }),
     });
+    setTurnstileReset((count) => count + 1);
     const bookingData = (await response.json().catch(() => null)) as
       | {
           amount_cents?: number | null;
@@ -220,6 +225,7 @@ export function PublicBookingForm({
           <Field autoComplete="tel" label="Teléfono" name="phone" placeholder="Tu teléfono" type="tel" />
           <Field label="Nota para el negocio" name="message" placeholder="Opcional" required={false} />
         </div>
+        <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileReset} />
         <p className="mt-4 rounded-md border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-3 text-xs font-medium leading-5 text-[var(--color-ink-muted)]">
           Revisá que el email esté bien escrito. Ahí llega la confirmación del turno.
         </p>

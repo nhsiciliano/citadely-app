@@ -1,5 +1,15 @@
 import { NextResponse } from "next/server";
 import { GENERIC_BOOKING_ERROR, getPublicBookingErrorMessage } from "@/lib/booking-errors";
+import {
+  ATTEMPT_REJECTIONS,
+  BOOKING_LIMITS,
+  getClientIp,
+  hasEnoughPhoneDigits,
+  hashIp,
+  isEmail,
+  isUuid,
+  verifyTurnstileToken,
+} from "@/lib/booking-protection";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 
 export const runtime = "nodejs";
@@ -12,6 +22,7 @@ type PublicBookingRequest = {
   clientEmail?: unknown;
   clientPhone?: unknown;
   clientMessage?: unknown;
+  turnstileToken?: unknown;
 };
 
 type PublicBookingResult = {
@@ -35,7 +46,9 @@ export async function POST(request: Request) {
   let payload: PublicBookingRequest;
 
   try {
-    payload = (await request.json()) as PublicBookingRequest;
+    const raw = await request.text();
+    if (raw.length > BOOKING_LIMITS.bodyBytes) return badRequest("La solicitud es demasiado grande.");
+    payload = JSON.parse(raw) as PublicBookingRequest;
   } catch {
     return badRequest("El cuerpo de la solicitud no es valido.");
   }
@@ -53,8 +66,20 @@ export async function POST(request: Request) {
     return badRequest("Completá nombre y apellido, email, teléfono, servicio y horario.");
   }
 
-  if (!clientEmail.includes("@")) {
+  if (!isUuid(businessId) || !isUuid(serviceId)) {
+    return badRequest("Negocio o servicio no válido.");
+  }
+
+  if (clientName.length > BOOKING_LIMITS.name || clientPhone.length > BOOKING_LIMITS.phone || clientMessage.length > BOOKING_LIMITS.message) {
+    return badRequest("Alguno de los datos es demasiado largo.");
+  }
+
+  if (clientEmail.length > BOOKING_LIMITS.email || !isEmail(clientEmail)) {
     return badRequest("Ingresá un email válido.");
+  }
+
+  if (!hasEnoughPhoneDigits(clientPhone)) {
+    return badRequest("Ingresá un teléfono válido.");
   }
 
   if (Number.isNaN(startsAtDate.getTime())) {
@@ -63,6 +88,11 @@ export async function POST(request: Request) {
 
   if (!insforgeAdmin) {
     return NextResponse.json({ error: "InsForge admin no está configurado." }, { status: 500 });
+  }
+
+  const clientIp = getClientIp(request);
+  if (!(await verifyTurnstileToken(readString(payload.turnstileToken), clientIp))) {
+    return badRequest("No pudimos verificar que sos una persona. Recargá la página e intentá de nuevo.");
   }
 
   const [businessResult, serviceResult] = await Promise.all([
@@ -80,6 +110,24 @@ export async function POST(request: Request) {
 
   const business = businessResult.data;
   const service = serviceResult.data;
+
+  const { data: rejection, error: attemptError } = await insforgeAdmin.database.rpc("register_public_booking_attempt", {
+    p_business_id: business.id,
+    p_email: clientEmail,
+    p_phone: clientPhone,
+    p_ip_hash: hashIp(clientIp),
+  });
+
+  // Fail closed: without the limiter the endpoint would be an open relay for emails and held seats.
+  if (attemptError) {
+    console.error("public booking attempt check failed", { message: attemptError.message });
+    return NextResponse.json({ error: GENERIC_BOOKING_ERROR }, { status: 503 });
+  }
+
+  if (rejection) {
+    const message = ATTEMPT_REJECTIONS[String(rejection)] ?? ATTEMPT_REJECTIONS.ip;
+    return NextResponse.json({ error: message }, { status: 429, headers: { "Retry-After": "600" } });
+  }
 
   const { data: bookingData, error: bookingError } = await insforgeAdmin.database.rpc("create_public_booking", {
     p_business_id: business.id,
