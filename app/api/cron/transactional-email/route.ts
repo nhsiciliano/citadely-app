@@ -1,11 +1,15 @@
 import { NextRequest } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
+import { mapWithConcurrency } from "@/lib/concurrency";
 import { renderOutboxEmail, type EmailOutboxRow } from "@/lib/email-outbox";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 import { PermanentEmailError, sendOutboxEmail } from "@/lib/resend";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+// Resend limita las peticiones por segundo: enviar todo el lote a la vez provoca errores de rate limit.
+const EMAIL_SEND_CONCURRENCY = 3;
 
 async function processEmail(row: EmailOutboxRow) {
   if (!insforgeAdmin) throw new Error("InsForge admin no está configurado");
@@ -47,7 +51,7 @@ async function handle(request: NextRequest) {
   }
 
   const rows = (data ?? []) as EmailOutboxRow[];
-  const results = await Promise.all(rows.map(processEmail));
+  const results = await mapWithConcurrency(rows, EMAIL_SEND_CONCURRENCY, processEmail);
   const sent = results.filter((result) => result.status === "sent").length;
   const failed = results.filter((result) => result.status === "failed").length;
 
