@@ -4,16 +4,13 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRight, CalendarPlus, CircleDollarSign, Copy, ExternalLink, Plus, Sparkles, UserPlus } from "lucide-react";
 import { calculateStats, formatCurrency } from "@/lib/citadely-db";
+import { formatInTimeZone, isSameDayInTimeZone, toTimeKey } from "@/lib/time";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { AppointmentDetailDrawer, NewAppointmentDrawer } from "../appointment-actions";
 import { useWorkspace } from "../workspace-context";
 import { EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
 
-const DATE_FORMATTER = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long" });
-function formatTime(value: string) {
-  const date = new Date(value);
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-}
+const DATE_OPTIONS = { weekday: "long", day: "numeric", month: "long" } as const;
 
 export function OverviewScreen() {
   const { appointments, business, services } = useWorkspace();
@@ -21,12 +18,15 @@ export function OverviewScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const now = new Date();
-  const stats = calculateStats(appointments, services);
+  const timeZone = business.timezone;
+  const stats = calculateStats(appointments, services, timeZone, now);
+  const formatDate = (value: Date | string) => formatInTimeZone(value, timeZone, DATE_OPTIONS);
+  const formatTime = (value: string) => toTimeKey(value, timeZone);
   const publicUrl = getBusinessPublicUrl(business.slug);
   const isDemoWorkspace = business.slug === "citadely-demo-ux";
 
   const activeAppointments = useMemo(() => appointments.filter((appointment) => appointment.status !== "cancelled"), [appointments]);
-  const todayAppointments = activeAppointments.filter((appointment) => new Date(appointment.starts_at).toDateString() === now.toDateString());
+  const todayAppointments = activeAppointments.filter((appointment) => isSameDayInTimeZone(appointment.starts_at, now, timeZone));
   const upcoming = activeAppointments.filter((appointment) => new Date(appointment.starts_at) >= now);
   const nextAppointment = upcoming[0] ?? null;
   const pendingDeposits = appointments.filter((appointment) => appointment.status === "pending_payment");
@@ -43,7 +43,7 @@ export function OverviewScreen() {
       <PageHeader
         actions={<button className="button-primary" onClick={() => setCreateOpen(true)} type="button"><Plus aria-hidden="true" size={18} />Nuevo turno</button>}
         description={`Jornada actual · próximos turnos y señas pendientes.${isDemoWorkspace ? " Cuenta demo con datos ficticios." : ""}`}
-        title={`Hoy, ${DATE_FORMATTER.format(now)}`}
+        title={`Hoy, ${formatDate(now)}`}
       />
 
       <div className="grid gap-6 px-5 py-6 sm:px-8 lg:px-10 lg:py-6">
@@ -56,7 +56,7 @@ export function OverviewScreen() {
               <button className="mt-4 grid w-full gap-4 text-left sm:grid-cols-[130px_minmax(0,1fr)_auto] sm:items-center" onClick={() => setSelectedId(nextAppointment.id)} type="button">
                 <div>
                   <p className="font-mono text-4xl font-semibold tracking-[-0.04em] text-[var(--color-primary)]">{formatTime(nextAppointment.starts_at)}</p>
-                  <p className="mt-2 text-xs font-semibold text-[var(--color-primary)]">{new Date(nextAppointment.starts_at).toDateString() === now.toDateString() ? "Hoy" : DATE_FORMATTER.format(new Date(nextAppointment.starts_at))}</p>
+                  <p className="mt-2 text-xs font-semibold text-[var(--color-primary)]">{isSameDayInTimeZone(nextAppointment.starts_at, now, timeZone) ? "Hoy" : formatDate(nextAppointment.starts_at)}</p>
                 </div>
                 <div>
                   <p className="text-lg font-semibold">{nextAppointment.services?.name ?? "Servicio"}</p>

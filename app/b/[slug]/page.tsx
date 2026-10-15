@@ -149,7 +149,7 @@ export default async function PublicBookingPage({ params, searchParams }: Public
   const publicTheme = normalizePublicTheme(business.public_theme);
   const headerStyle = sectionThemeStyle("header", publicTheme, brandColor);
   const headerColors = resolveSectionColors("header", publicTheme, brandColor);
-  const availability = getPublicAvailabilitySummary(availabilitySlots, []);
+  const availability = getPublicAvailabilitySummary(availabilitySlots, [], business.timezone);
   const whatsappUrl = getWhatsAppUrl(business.whatsapp_phone, `Hola ${business.name}, quisiera hacer una consulta.`);
   const canonicalUrl = getBusinessPublicUrl(business.slug);
   const businessStructuredData = {

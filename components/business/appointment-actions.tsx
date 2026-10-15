@@ -28,11 +28,12 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
         appointments,
         service,
         initialSlot ? availabilitySlots.filter((slot) => new Date(slot.starts_at).getTime() === new Date(initialSlot.startsAt).getTime() && slot.service_id === service.id) : availabilitySlots,
+        business.timezone,
       ).filter((slot) => slot.available),
     })).filter((option) => initialSlot
       ? option.slots.some((slot) => slot.startsAt === initialSlot.startsAt)
       : option.slots.length > 0),
-    [activeServices, appointments, availabilitySlots, initialSlot],
+    [activeServices, appointments, availabilitySlots, business.timezone, initialSlot],
   );
   const resolvedServiceId = serviceId || (initialSlot && serviceOptions.length === 1 ? serviceOptions[0].service.id : "");
   const selectedOption = serviceOptions.find((option) => option.service.id === resolvedServiceId) ?? null;
@@ -154,7 +155,7 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
 
         <fieldset className="grid gap-3">
           <legend className="form-label">Fecha y hora</legend>
-          {initialSlot ? <p className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-4 font-mono text-sm font-semibold text-[var(--color-ink)]">{formatAppointmentTime(initialSlot.startsAt)}</p> : null}
+          {initialSlot ? <p className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-4 py-4 font-mono text-sm font-semibold text-[var(--color-ink)]">{formatAppointmentTime(initialSlot.startsAt, business.timezone)}</p> : null}
           {!initialSlot && !selectedOption ? <p className="border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] px-4 py-4 text-sm leading-6 text-[var(--color-ink-soft)]">Seleccioná un servicio para ver sus horarios.</p> : null}
           {!initialSlot && selectedOption ? (
             <div className="divide-y divide-[var(--color-line)] border border-[var(--color-line)]">
@@ -329,7 +330,7 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
   }
 
   return (
-    <Drawer description={appointment ? formatAppointmentTime(appointment.starts_at) : undefined} onClose={onClose} open={Boolean(appointment)} title="Detalle del turno" width="medium">
+    <Drawer description={appointment ? formatAppointmentTime(appointment.starts_at, business.timezone) : undefined} onClose={onClose} open={Boolean(appointment)} title="Detalle del turno" width="medium">
       {appointment ? (
         <div className="grid gap-7">
           <div className="flex items-center justify-between gap-4 border-b border-[var(--color-line)] pb-5">
@@ -344,7 +345,7 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
             </div>
             <div className="grid grid-cols-[24px_1fr] gap-3">
               <CalendarClock aria-hidden="true" className="text-[var(--color-primary)]" size={19} />
-              <div><dt className="text-[var(--color-ink-muted)]">Fecha y hora</dt><dd className="mt-1 font-semibold">{formatAppointmentTime(appointment.starts_at)}</dd></div>
+              <div><dt className="text-[var(--color-ink-muted)]">Fecha y hora</dt><dd className="mt-1 font-semibold">{formatAppointmentTime(appointment.starts_at, business.timezone)}</dd></div>
             </div>
             <div className="grid grid-cols-[24px_1fr] gap-3">
               <Clock3 aria-hidden="true" className="text-[var(--color-primary)]" size={19} />

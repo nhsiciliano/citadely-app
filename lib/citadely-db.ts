@@ -1,6 +1,7 @@
 import type { SubscriptionPlanId } from "@/lib/subscription-plans";
 import type { ServiceMode, VirtualPlatform } from "@/lib/virtual-service";
 import type { PublicTheme } from "@/lib/public-theme";
+import { addDaysToDateKey, addMonthsToMonthKey, formatInTimeZone, resolveTimeZone, startOfDayInTimeZone, toDateKey, toMonthKey, zonedTimeToUtc } from "@/lib/time";
 
 export type Business = {
   id: string;
@@ -236,15 +237,15 @@ export function formatCurrency(cents: number, currency = "ARS") {
   }).format(cents / 100);
 }
 
-export function formatAppointmentTime(value: string) {
-  return new Intl.DateTimeFormat("es-AR", {
+export function formatAppointmentTime(value: string, timeZone: string | null | undefined) {
+  return formatInTimeZone(value, timeZone, {
     weekday: "short",
     day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-  }).format(new Date(value));
+  });
 }
 
 export function getBookingAmountCents(service: Service) {
@@ -303,56 +304,32 @@ export function getSubscriptionState(business: Business) {
   };
 }
 
-export const PUBLIC_BOOKING_TIME_ZONE = "America/Argentina/Buenos_Aires";
-
-export function formatPublicBookingDateKey(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function buildSlotLabels(startsAt: Date) {
+function buildSlotLabels(startsAt: Date, timeZone: string) {
   return {
-    dateKey: formatPublicBookingDateKey(startsAt),
-    dateLabel: new Intl.DateTimeFormat("es-AR", {
-      day: "2-digit",
-      month: "short",
-      timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    }).format(startsAt),
-    weekdayLabel: new Intl.DateTimeFormat("es-AR", {
-      weekday: "short",
-      timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    }).format(startsAt),
-    timeLabel: new Intl.DateTimeFormat("es-AR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-      timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    }).format(startsAt),
-    label: new Intl.DateTimeFormat("es-AR", {
+    dateKey: toDateKey(startsAt, timeZone),
+    dateLabel: formatInTimeZone(startsAt, timeZone, { day: "2-digit", month: "short" }),
+    weekdayLabel: formatInTimeZone(startsAt, timeZone, { weekday: "short" }),
+    timeLabel: formatInTimeZone(startsAt, timeZone, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }),
+    label: formatInTimeZone(startsAt, timeZone, {
       weekday: "short",
       day: "2-digit",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
       hourCycle: "h23",
-      timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    }).format(startsAt),
+    }),
   };
 }
 
 export function buildBookingSlots(
   appointments: Appointment[],
-  service?: Service | null,
-  availabilitySlots: ServiceAvailabilitySlot[] = [],
+  service: Service | null | undefined,
+  availabilitySlots: ServiceAvailabilitySlot[],
+  timeZone: string | null | undefined,
 ): PublicBookingSlot[] {
   if (!service) return [];
 
+  const zone = resolveTimeZone(timeZone);
   const slots: PublicBookingSlot[] = [];
   const now = new Date();
   const activeSlots = availabilitySlots
@@ -370,7 +347,7 @@ export function buildBookingSlots(
     slots.push({
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
-      ...buildSlotLabels(startsAt),
+      ...buildSlotLabels(startsAt, zone),
       available: occupancy.remaining > 0,
       capacity: occupancy.capacity,
       booked: occupancy.booked,
@@ -382,14 +359,18 @@ export function buildBookingSlots(
   return slots.slice(0, 120);
 }
 
-export function calculateStats(appointments: Appointment[], services: Service[]): BusinessStats {
-  const now = new Date();
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date(todayStart);
-  todayEnd.setDate(todayEnd.getDate() + 1);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+export function calculateStats(
+  appointments: Appointment[],
+  services: Service[],
+  timeZone: string | null | undefined,
+  now = new Date(),
+): BusinessStats {
+  const todayKey = toDateKey(now, timeZone);
+  const todayStart = startOfDayInTimeZone(todayKey, timeZone);
+  const todayEnd = startOfDayInTimeZone(addDaysToDateKey(todayKey, 1), timeZone);
+  const currentMonth = toMonthKey(now, timeZone);
+  const monthStart = zonedTimeToUtc(`${currentMonth}-01`, "00:00", timeZone);
+  const monthEnd = zonedTimeToUtc(`${addMonthsToMonthKey(currentMonth, 1)}-01`, "00:00", timeZone);
 
   const todayAppointments = appointments.filter((appointment) => {
     const startsAt = new Date(appointment.starts_at);

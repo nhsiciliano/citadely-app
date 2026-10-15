@@ -31,7 +31,7 @@ export function getGoogleMapsSearchUrl(address: string | null | undefined) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(normalizedAddress)}`;
 }
 
-export function getPublicAvailabilitySummary(slots: ServiceAvailabilitySlot[], appointments: Appointment[]) {
+export function getPublicAvailabilitySummary(slots: ServiceAvailabilitySlot[], appointments: Appointment[], timeZone: string | null | undefined) {
   const dates = new Set<string>();
   const weekdays = new Set<number>();
   const times: string[] = [];
@@ -39,12 +39,10 @@ export function getPublicAvailabilitySummary(slots: ServiceAvailabilitySlot[], a
   for (const slot of slots) {
     if (!slot.is_active || new Date(slot.starts_at).getTime() <= Date.now() || getSlotOccupancy(slot, appointments).remaining === 0) continue;
 
-    const date = new Date(slot.starts_at);
-    const dateKey = formatPublicBookingDateKey(date);
-    const [year, month, day] = dateKey.split("-").map(Number);
+    const dateKey = toDateKey(slot.starts_at, timeZone);
     dates.add(dateKey);
-    weekdays.add(new Date(year, month - 1, day).getDay());
-    times.push(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: PUBLIC_BOOKING_TIME_ZONE }).format(date));
+    weekdays.add(getWeekdayOfDateKey(dateKey));
+    times.push(toTimeKey(slot.starts_at, timeZone));
   }
 
   const weekdayLabel = Array.from(weekdays).sort((a, b) => a - b).map((day) => WEEKDAYS[day]).join(", ");
@@ -55,6 +53,7 @@ export function getPublicAvailabilitySummary(slots: ServiceAvailabilitySlot[], a
     schedule: weekdayLabel && sortedTimes.length ? `${weekdayLabel} · ${sortedTimes[0]}–${sortedTimes.at(-1)}` : null,
   };
 }
-import { formatPublicBookingDateKey, getSlotOccupancy, PUBLIC_BOOKING_TIME_ZONE, type Appointment, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { getSlotOccupancy, type Appointment, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { getWeekdayOfDateKey, toDateKey, toTimeKey } from "@/lib/time";
 
 const WEEKDAYS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];

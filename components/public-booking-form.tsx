@@ -14,6 +14,7 @@ import {
 import { getErrorMessage } from "@/lib/auth";
 import { getWhatsAppUrl } from "@/lib/public-profile";
 import { normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
+import { formatInTimeZone } from "@/lib/time";
 import { WhatsAppIcon } from "@/components/public-business-info";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
@@ -37,12 +38,12 @@ export function PublicBookingForm({
 
   const selectedService = services.find((service) => service.id === selectedServiceId) ?? null;
   const slots = useMemo(
-    () => buildBookingSlots([], selectedService, availabilitySlots).map((slot) => {
+    () => buildBookingSlots([], selectedService, availabilitySlots, business.timezone).map((slot) => {
       const localCount = localReservations[`${selectedService?.id}:${slot.startsAt}`] ?? 0;
       const remaining = Math.max(0, slot.remaining - localCount);
       return { ...slot, booked: slot.booked + localCount, remaining, available: remaining > 0 };
     }),
-    [selectedService, availabilitySlots, localReservations],
+    [selectedService, availabilitySlots, business.timezone, localReservations],
   );
   const selectedSlotData = slots.find((slot) => slot.startsAt === selectedSlot) ?? null;
   const selectedAmountCents = selectedService ? getBookingAmountCents(selectedService) : 0;
@@ -101,7 +102,7 @@ export function PublicBookingForm({
 
     const amountCents = bookingData?.amount_cents ?? getBookingAmountCents(selectedService);
     const depositDeadline = bookingData?.deposit_expires_at
-      ? new Date(bookingData.deposit_expires_at).toLocaleString("es-AR", {
+      ? formatInTimeZone(bookingData.deposit_expires_at, business.timezone, {
           day: "2-digit",
           month: "2-digit",
           hour: "2-digit",
@@ -178,6 +179,7 @@ export function PublicBookingForm({
         selectedSlot={selectedSlot}
         serviceSelected={Boolean(selectedService)}
         slots={slots}
+        timeZone={business.timezone}
       />
 
       <section className="public-theme-card public-booking-summary h-fit border border-[var(--color-line)] bg-white p-5 sm:p-6 lg:sticky lg:top-6">

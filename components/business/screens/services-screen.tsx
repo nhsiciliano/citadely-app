@@ -6,47 +6,31 @@ import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { centsFromCurrency, formatCurrency, getSlotOccupancy, getSubscriptionState, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
+import { addMonthsToMonthKey, formatDateKey, getDaysInMonth, getWeekdayOfDateKey, toDateKey, toMonthKey, toTimeKey, zonedTimeToUtc } from "@/lib/time";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader } from "../workspace-ui";
 
-const MONTH_FORMATTER = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" });
-const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("es-AR", { weekday: "short" });
-
-function dateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function monthKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
 function monthDays(value: string) {
-  const [year, month] = value.split("-").map(Number);
-  const first = new Date(year, month - 1, 1);
-  const leading = (first.getDay() || 7) - 1;
+  const leading = (getWeekdayOfDateKey(`${value}-01`) + 6) % 7;
   return [
     ...Array.from({ length: leading }, (_, index) => ({ blank: true as const, key: `blank-${index}` })),
-    ...Array.from({ length: new Date(year, month, 0).getDate() }, (_, index) => {
-      const date = new Date(year, month - 1, index + 1);
-      return { blank: false as const, key: dateKey(date), date };
+    ...Array.from({ length: getDaysInMonth(value) }, (_, index) => {
+      const key = `${value}-${String(index + 1).padStart(2, "0")}`;
+      return { blank: false as const, key, day: index + 1, weekday: formatDateKey(key, { weekday: "short" }) };
     }),
   ];
 }
 
-function monthOptions() {
-  const today = new Date();
+function monthOptions(timeZone: string) {
+  const currentMonth = toMonthKey(new Date(), timeZone);
   return Array.from({ length: 6 }, (_, index) => {
-    const date = new Date(today.getFullYear(), today.getMonth() + index, 1);
-    return { key: monthKey(date), label: MONTH_FORMATTER.format(date) };
+    const key = addMonthsToMonthKey(currentMonth, index);
+    return { key, label: formatDateKey(`${key}-01`, { month: "long", year: "numeric" }) };
   });
 }
 
-function slotCount(slots: ServiceAvailabilitySlot[], serviceId: string, value: string) {
-  return slots.filter((slot) => slot.service_id === serviceId && slot.is_active && monthKey(new Date(slot.starts_at)) === value).length;
-}
-
-function timeKey(date: Date) {
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+function slotCount(slots: ServiceAvailabilitySlot[], serviceId: string, value: string, timeZone: string) {
+  return slots.filter((slot) => slot.service_id === serviceId && slot.is_active && toMonthKey(slot.starts_at, timeZone) === value).length;
 }
 
 function currencyInputValue(cents: number) {
@@ -59,8 +43,9 @@ export function ServicesScreen() {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const options = useMemo(() => monthOptions(), []);
-  const [selectedMonth, setSelectedMonth] = useState(options[0]?.key ?? monthKey(new Date()));
+  const timeZone = business.timezone;
+  const options = useMemo(() => monthOptions(timeZone), [timeZone]);
+  const [selectedMonth, setSelectedMonth] = useState(options[0]?.key ?? toMonthKey(new Date(), timeZone));
   const [selectedDate, setSelectedDate] = useState("");
   const [draftTime, setDraftTime] = useState("");
   const [dateTimes, setDateTimes] = useState<Record<string, Record<string, number>>>({});
@@ -92,10 +77,9 @@ export function ServicesScreen() {
   function openEditService(service: Service) {
     const editableMonths = new Set(options.map((option) => option.key));
     const serviceTimes = availabilitySlots.reduce<Record<string, Record<string, number>>>((result, slot) => {
-      const startsAt = new Date(slot.starts_at);
-      if (slot.service_id !== service.id || !slot.is_active || !editableMonths.has(monthKey(startsAt))) return result;
-      const day = dateKey(startsAt);
-      result[day] = { ...(result[day] ?? {}), [timeKey(startsAt)]: slot.capacity ?? 1 };
+      if (slot.service_id !== service.id || !slot.is_active || !editableMonths.has(toMonthKey(slot.starts_at, timeZone))) return result;
+      const day = toDateKey(slot.starts_at, timeZone);
+      result[day] = { ...(result[day] ?? {}), [toTimeKey(slot.starts_at, timeZone)]: slot.capacity ?? 1 };
       return result;
     }, {});
 
@@ -141,7 +125,7 @@ export function ServicesScreen() {
 
   function requestedSlots(duration: number) {
     return Object.entries(dateTimes).flatMap(([day, times]) => Object.entries(times).map(([time, capacity]) => {
-      const startsAt = new Date(`${day}T${time}:00`);
+      const startsAt = zonedTimeToUtc(day, time, timeZone);
       return { startsAt, endsAt: new Date(startsAt.getTime() + duration * 60000), capacity };
     }));
   }
@@ -261,7 +245,7 @@ export function ServicesScreen() {
 
     const editableMonths = new Set(options.map((option) => option.key));
     const existingSlots = availabilitySlots.filter((slot) =>
-      slot.service_id === editingService.id && editableMonths.has(monthKey(new Date(slot.starts_at))),
+      slot.service_id === editingService.id && editableMonths.has(toMonthKey(slot.starts_at, timeZone)),
     );
     const existingByStart = new Map(existingSlots.map((slot) => [new Date(slot.starts_at).toISOString(), slot]));
     const slotsToDeactivate = existingSlots.flatMap((slot) =>
@@ -350,7 +334,7 @@ export function ServicesScreen() {
                       <td><span className="inline-flex items-center gap-2"><Clock3 aria-hidden="true" size={16} />{service.duration_minutes} min</span></td>
                       <td className="font-mono font-semibold">{formatCurrency(service.price_cents, business.currency)}</td>
                       <td>{service.deposit_type === "free" ? "Sin seña" : service.deposit_type === "full" ? "100%" : formatCurrency(service.deposit_value_cents, business.currency)}</td>
-                      <td><span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" size={16} />{slotCount(availabilitySlots, service.id, selectedMonth)} horarios</span></td>
+                      <td><span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" size={16} />{slotCount(availabilitySlots, service.id, selectedMonth, timeZone)} horarios</span></td>
                       <td><div className="flex justify-end gap-2"><button aria-label={`Editar ${service.name}`} className="button-secondary" disabled={pending || !subscription.hasAccess} onClick={() => openEditService(service)} type="button"><Pencil aria-hidden="true" size={16} />Editar</button><button aria-label={`${service.is_active ? "Pausar" : "Activar"} ${service.name}`} className="button-secondary" disabled={pending || !subscription.hasAccess} onClick={() => toggleService(service)} type="button"><Power aria-hidden="true" size={16} />{service.is_active ? "Pausar" : "Activar"}</button></div></td>
                     </tr>
                   ))}
@@ -379,14 +363,14 @@ export function ServicesScreen() {
             <div className="calendar-month">
               {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map((day) => <span className="calendar-weekday" key={day}>{day}</span>)}
               {monthDays(selectedMonth).map((day) => day.blank ? <span key={day.key} /> : (
-                <button aria-pressed={selectedDate === day.key} className={selectedDate === day.key ? "is-selected" : Object.keys(dateTimes[day.key] ?? {}).length ? "has-slots" : ""} key={day.key} onClick={() => setSelectedDate(day.key)} type="button"><strong>{day.date.getDate()}</strong><small>{WEEKDAY_FORMATTER.format(day.date)}</small>{Object.keys(dateTimes[day.key] ?? {}).length ? <span><Check aria-hidden="true" size={11} />{Object.keys(dateTimes[day.key]).length}</span> : null}</button>
+                <button aria-pressed={selectedDate === day.key} className={selectedDate === day.key ? "is-selected" : Object.keys(dateTimes[day.key] ?? {}).length ? "has-slots" : ""} key={day.key} onClick={() => setSelectedDate(day.key)} type="button"><strong>{day.day}</strong><small>{day.weekday}</small>{Object.keys(dateTimes[day.key] ?? {}).length ? <span><Check aria-hidden="true" size={11} />{Object.keys(dateTimes[day.key]).length}</span> : null}</button>
               ))}
             </div>
             <div className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-4">
               <p className="text-sm font-semibold">{selectedDate ? `Horarios para ${selectedDate}` : "Elegí un día del calendario"}</p>
               <div className="mt-3 flex gap-2"><label className="sr-only" htmlFor="service-time">Hora</label><input className="form-control" disabled={!selectedDate} id="service-time" onChange={(event) => setDraftTime(event.target.value)} type="time" value={draftTime} /><button className="button-secondary" disabled={!selectedDate || !draftTime} onClick={addTime} type="button">Agregar</button></div>
               <div className="mt-3 grid gap-2">{selectedDate && !Object.keys(dateTimes[selectedDate] ?? {}).length ? <span className="text-sm text-[var(--color-ink-muted)]">Sin horarios para este día.</span> : null}{Object.entries(dateTimes[selectedDate] ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([time, capacity]) => {
-                const existing = availabilitySlots.find((slot) => editingService && slot.service_id === editingService.id && dateKey(new Date(slot.starts_at)) === selectedDate && timeKey(new Date(slot.starts_at)) === time);
+                const existing = availabilitySlots.find((slot) => editingService && slot.service_id === editingService.id && toDateKey(slot.starts_at, timeZone) === selectedDate && toTimeKey(slot.starts_at, timeZone) === time);
                 const booked = existing ? getSlotOccupancy(existing, appointments).booked : 0;
                 return <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-line)] py-2 last:border-0" key={time}>
                   <span className="min-w-16 font-mono text-sm font-semibold">{time}</span>
