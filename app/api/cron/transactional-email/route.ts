@@ -1,15 +1,11 @@
 import { NextRequest } from "next/server";
+import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { renderOutboxEmail, type EmailOutboxRow } from "@/lib/email-outbox";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 import { PermanentEmailError, sendOutboxEmail } from "@/lib/resend";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-function isAuthorized(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  return Boolean(secret && request.headers.get("authorization") === `Bearer ${secret}`);
-}
 
 async function processEmail(row: EmailOutboxRow) {
   if (!insforgeAdmin) throw new Error("InsForge admin no está configurado");
@@ -35,8 +31,8 @@ async function processEmail(row: EmailOutboxRow) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) return Response.json({ error: "No autorizado." }, { status: 401 });
+async function handle(request: NextRequest) {
+  if (!isAuthorizedCronRequest(request)) return Response.json({ error: "No autorizado." }, { status: 401 });
   if (!insforgeAdmin) return Response.json({ error: "InsForge admin no está configurado." }, { status: 500 });
 
   const cancellationResult = await insforgeAdmin.database.rpc("cancel_expired_deposit_bookings");
@@ -60,3 +56,6 @@ export async function POST(request: NextRequest) {
     expiredBookingsCancelled: cancellationResult.data ?? 0,
   });
 }
+
+// Vercel Cron sends GET; POST is kept for manual and legacy scheduler calls.
+export { handle as GET, handle as POST };
