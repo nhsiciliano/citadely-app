@@ -21,6 +21,7 @@ import { getPublicAvailabilitySummary, getWhatsAppUrl, normalizeWhatsAppPhone } 
 import { resolveSectionColors, sectionThemeStyle, type PublicTheme } from "@/lib/public-theme";
 import { useWorkspace } from "./workspace-context";
 import type { ServiceMode, VirtualPlatform } from "@/lib/virtual-service";
+import { RemoteImage } from "@/components/remote-image";
 
 type PreviewFaq = {
   localId: string;
@@ -95,7 +96,7 @@ export function PublicPagePreview({
             <div className="flex min-w-0 basis-full items-center gap-3 sm:basis-auto">
               <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border border-white/20 bg-white">
                 {business.logo_url ? (
-                  <span aria-label={`Logo de ${business.name}`} className="block h-full w-full bg-contain bg-center bg-no-repeat" role="img" style={{ backgroundImage: `url(${business.logo_url})` }} />
+                  <span className="relative block h-full w-full"><RemoteImage alt={`Logo de ${business.name}`} className="object-contain object-center" fill sizes="40px" src={business.logo_url} /></span>
                 ) : (
                   <span className="font-display font-semibold" style={{ color: headerColors.accent }}>{business.name.slice(0, 1).toUpperCase()}</span>
                 )}

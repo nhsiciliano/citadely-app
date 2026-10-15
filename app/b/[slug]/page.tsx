@@ -15,6 +15,7 @@ import { formatWhatsAppPhone, getPublicAvailabilitySummary, getWhatsAppUrl } fro
 import { DEFAULT_BRAND_COLOR, normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
 import { INDEX_ROBOTS, NO_INDEX_ROBOTS, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
 import { getBusinessPublicUrl } from "@/lib/urls";
+import { RemoteImage } from "@/components/remote-image";
 
 type PublicPageProps = {
   params: Promise<{ slug: string }>;
@@ -143,7 +144,7 @@ export default async function PublicBookingPage({ params }: PublicPageProps) {
           <div className="flex min-w-0 basis-full items-center gap-3 sm:basis-auto sm:flex-1">
             <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-md border border-white/20 bg-white">
               {business.logo_url ? (
-                <span aria-label={`Logo de ${business.name}`} className="block h-full w-full bg-contain bg-center bg-no-repeat" role="img" style={{ backgroundImage: `url(${business.logo_url})` }} />
+                <span className="relative block h-full w-full"><RemoteImage alt={`Logo de ${business.name}`} className="object-contain object-center" fill sizes="48px" src={business.logo_url} /></span>
               ) : (
                 <span className="font-display text-lg font-semibold" style={{ color: headerColors.accent }}>{business.name.slice(0, 1).toUpperCase()}</span>
               )}

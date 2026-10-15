@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type TouchEvent } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { BusinessGalleryImage } from "@/lib/citadely-db";
+import { RemoteImage } from "@/components/remote-image";
 
 type PublicGalleryCarouselProps = {
   businessName: string;
@@ -131,12 +132,12 @@ export function PublicGalleryCarousel({ businessName, compact = false, images, t
           <div className="public-gallery-composition">
             {images.length > 2 ? (
               <button aria-label={`Mostrar imagen ${previousIndex + 1} de ${images.length}`} className="public-gallery-side public-gallery-side-left" onClick={() => selectFromClick(previousIndex)} type="button">
-                <span aria-hidden="true" style={{ backgroundImage: `url(${images[previousIndex].image_url})` }} />
+                <span aria-hidden="true"><RemoteImage alt="" className="object-cover object-center" fill sizes="(min-width: 1024px) 30vw, 40vw" src={images[previousIndex].image_url} /></span>
               </button>
             ) : null}
             {hasMultipleImages ? (
               <button aria-label={`Mostrar imagen ${nextIndex + 1} de ${images.length}`} className="public-gallery-side public-gallery-side-right" onClick={() => selectFromClick(nextIndex)} type="button">
-                <span aria-hidden="true" style={{ backgroundImage: `url(${images[nextIndex].image_url})` }} />
+                <span aria-hidden="true"><RemoteImage alt="" className="object-cover object-center" fill sizes="(min-width: 1024px) 30vw, 40vw" src={images[nextIndex].image_url} /></span>
               </button>
             ) : null}
             <button
@@ -147,8 +148,8 @@ export function PublicGalleryCarousel({ businessName, compact = false, images, t
               ref={triggerRef}
               type="button"
             >
-              {frame.previous ? <span aria-hidden="true" className="public-gallery-previous public-gallery-photo" key={`previous-${frame.previous.id}`} style={{ backgroundImage: `url(${frame.previous.image_url})` }} /> : null}
-              <span aria-hidden="true" className={`public-gallery-photo ${frame.previous ? "public-gallery-current" : ""}`} key={frame.current?.id} onAnimationEnd={finishTransition} style={{ backgroundImage: `url(${frame.current?.image_url ?? activeImage.image_url})` }} />
+              {frame.previous ? <span aria-hidden="true" className="public-gallery-previous public-gallery-photo" key={`previous-${frame.previous.id}`}><RemoteImage alt="" className="object-contain object-center" fill sizes="(min-width: 1280px) 760px, 100vw" src={frame.previous.image_url} /></span> : null}
+              <span aria-hidden="true" className={`public-gallery-photo ${frame.previous ? "public-gallery-current" : ""}`} key={frame.current?.id} onAnimationEnd={finishTransition}><RemoteImage alt="" className="object-contain object-center" fill sizes="(min-width: 1280px) 760px, 100vw" src={frame.current?.image_url ?? activeImage.image_url} /></span>
               <span className="public-gallery-expand">Ver imagen completa</span>
             </button>
           </div>
@@ -193,8 +194,8 @@ export function PublicGalleryCarousel({ businessName, compact = false, images, t
               <button aria-label="Cerrar imagen completa" autoFocus className="public-gallery-dialog-button" onClick={() => dialogRef.current?.close()} type="button"><X aria-hidden="true" size={23} /></button>
             </div>
             <div className="public-gallery-dialog-stage">
-              {frame.previous ? <span aria-hidden="true" className="public-gallery-previous public-gallery-photo" style={{ backgroundImage: `url(${frame.previous.image_url})` }} /> : null}
-              <span aria-label={`${businessName}, imagen ${displayedIndex + 1} de ${images.length}`} className={`public-gallery-photo ${frame.previous ? "public-gallery-current" : ""}`} role="img" style={{ backgroundImage: `url(${frame.current?.image_url ?? activeImage.image_url})` }} />
+              {frame.previous ? <span aria-hidden="true" className="public-gallery-previous public-gallery-photo"><RemoteImage alt="" className="object-contain object-center" fill sizes="100vw" src={frame.previous.image_url} /></span> : null}
+              <span className={`public-gallery-photo ${frame.previous ? "public-gallery-current" : ""}`}><RemoteImage alt={`${businessName}, imagen ${displayedIndex + 1} de ${images.length}`} className="object-contain object-center" fill sizes="100vw" src={frame.current?.image_url ?? activeImage.image_url} /></span>
               {hasMultipleImages ? (
                 <>
                   <button aria-label="Imagen anterior en pantalla completa" className="public-gallery-dialog-button public-gallery-dialog-prev" onClick={() => { if (Date.now() >= ignoreClickUntil.current) move(-1); }} type="button"><ChevronLeft aria-hidden="true" size={24} /></button>

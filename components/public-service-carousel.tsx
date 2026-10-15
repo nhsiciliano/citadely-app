@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { Check, ChevronLeft, ChevronRight, Clock, X } from "lucide-react";
 import { formatCurrency, getBookingPaymentLabel, type Service } from "@/lib/citadely-db";
+import { RemoteImage } from "@/components/remote-image";
 
 export function PublicServiceCarousel({ services, currency, brandColor, selectedServiceId, onSelect, compact = false }: {
   services: Service[];
@@ -65,7 +66,7 @@ export function PublicServiceCarousel({ services, currency, brandColor, selected
               setExploredService(service);
             }} type="button">
               <span className="public-service-image">
-                {service.image_url ? <span aria-hidden="true" className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${service.image_url})` }} /> : <span aria-hidden="true" className="font-display text-5xl font-semibold text-ink-soft">{service.name.slice(0, 1).toUpperCase()}</span>}
+                {service.image_url ? <RemoteImage alt="" className="object-cover object-center" fill sizes="(min-width: 1024px) 360px, 90vw" src={service.image_url} /> : <span aria-hidden="true" className="font-display text-5xl font-semibold text-ink-soft">{service.name.slice(0, 1).toUpperCase()}</span>}
               </span>
               <span className="public-service-content">
                 {selected ? <span className="public-service-selected"><Check aria-hidden="true" size={14} strokeWidth={3} />Seleccionado</span> : null}
@@ -102,7 +103,7 @@ export function PublicServiceCarousel({ services, currency, brandColor, selected
               <button aria-label="Cerrar detalle del servicio" autoFocus className="public-carousel-control shrink-0" onClick={() => dialogRef.current?.close()} type="button"><X aria-hidden="true" size={22} /></button>
             </header>
             <div aria-label="Información del servicio" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7" tabIndex={0}>
-              {exploredService.image_url ? <div aria-label={`Imagen de ${exploredService.name}`} className="mb-6 aspect-[4/3] bg-surface-subtle bg-contain bg-center bg-no-repeat" role="img" style={{ backgroundImage: `url(${exploredService.image_url})` }} /> : null}
+              {exploredService.image_url ? <div className="relative mb-6 aspect-[4/3] bg-surface-subtle"><RemoteImage alt={`Imagen de ${exploredService.name}`} className="object-contain object-center" fill sizes="(min-width: 640px) 640px, 100vw" src={exploredService.image_url} /></div> : null}
               {exploredService.description ? <p className="mb-6 whitespace-pre-line break-words text-base leading-7 text-ink-soft">{exploredService.description}</p> : null}
               <dl className="grid grid-cols-2 gap-5 border-y border-line py-5">
                 <div><dt className="text-sm text-ink-soft">Precio</dt><dd className="mt-1 font-mono text-xl font-semibold tabular-nums">{formatCurrency(exploredService.price_cents, currency)}</dd></div>

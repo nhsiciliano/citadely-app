@@ -265,7 +265,7 @@ export default async function Home() {
             <figure className="w-44 shrink-0">
               <figcaption className="mb-3 text-sm font-semibold leading-5">Escanea y seguinos en Instagram.</figcaption>
               <a aria-label="Abrir Instagram de Citadely (@citadely.ar)" className="inline-block rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" href="https://www.instagram.com/citadely.ar/" rel="noopener noreferrer" target="_blank">
-                <Image alt="Código QR de Instagram de Citadely" className="h-auto w-full rounded-md" height={2700} src="/citadely-instagram-qr.webp" width={2350} />
+                <Image alt="Código QR de Instagram de Citadely" className="h-auto w-full rounded-md" height={2700} sizes="176px" src="/citadely-instagram-qr.webp" width={2350} />
               </a>
             </figure>
           </div>
