@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Citadely
 
-## Getting Started
+Central de turnos para negocios: agenda, servicios, clientes, página pública de reservas y suscripción mensual.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) sobre Node 24, desplegado en **Vercel**.
+- **InsForge** como backend: Postgres con RLS, auth, storage y funciones. El proyecto enlazado está en `.insforge/project.json` (no se commitea).
+- **Mercado Pago** para la suscripción de los negocios y **Resend** para emails transaccionales.
+- **pnpm** es el único gestor de paquetes (`packageManager` en `package.json`). No usar npm ni yarn.
+
+## Puesta en marcha
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local   # completar; ver la tabla de variables abajo
+pnpm dev                     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Para trabajar contra la base, enlazá la carpeta a un **backend branch** de InsForge con la CLI (`npx -y @insforge/cli link`). Nunca al proyecto padre.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variables de entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+La lista completa y comentada está en [`.env.example`](.env.example). Cada línea indica dónde se usa:
 
-## Learn More
+- `[Prod+Preview]`: se configura en ambos entornos de Vercel.
+- `[Preview]`: solo en Preview o en desarrollo local. En Production no debe estar definida o debe tener el valor seguro.
+- `[Local]`: solo para scripts, tests y mocks.
 
-To learn more about Next.js, take a look at the following resources:
+Los secretos (`INSFORGE_API_KEY`, tokens de Mercado Pago, `CRON_SECRET`, claves de sesión del admin) no se commitean ni se exponen con prefijos públicos.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Entornos y ramas
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Rama git | Backend InsForge | Entorno Vercel |
+| --- | --- | --- |
+| `main` | proyecto padre `Citadely` (producción) | Production (`citadely.com.ar`, canónico `www`) |
+| `lead-development` | rama de integración: recibe los PR de trabajo antes de `main` | Preview |
+| `feat/*`, `fix/*`, `chore/*` | backend branch con el mismo nombre | Preview del PR |
 
-## Deploy on Vercel
+Reglas:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Una rama git corresponde a **un** backend branch de InsForge con el mismo nombre. Las migraciones se prueban ahí antes de llegar al padre.
+- Los cambios de base se aplican al padre solo en el release, siguiendo [`docs/release-checklist.md`](docs/release-checklist.md).
+- Convención de nombres: `feat/<tema>`, `fix/<tema>`, `chore/<tema>`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Protección de `main` (configuración manual en GitHub)
+
+Settings → Branches → regla para `main`:
+
+1. Require a pull request before merging.
+2. Require status checks to pass: el job **`checks`** de [`ci.yml`](.github/workflows/ci.yml) (y el job `e2e` si el repositorio usa `E2E_ENABLED`).
+3. Require branches to be up to date before merging.
+4. Do not allow bypassing the above settings.
+
+Detalle de CI y secretos en [`docs/ci.md`](docs/ci.md).
+
+## Scripts
+
+| Script | Qué hace |
+| --- | --- |
+| `pnpm dev` / `pnpm build` / `pnpm start` | Desarrollo, build de producción y servidor de producción |
+| `pnpm lint` / `pnpm typecheck` | ESLint y `tsc --noEmit` |
+| `pnpm schema:diff` | Compara el esquema de dos proyectos InsForge (ver `docs/release-checklist.md`) |
+| `pnpm seed:demo`, `pnpm seed:barberia-luk`, `pnpm seed:clinica-colon` | Cargan datos de prueba |
+| `pnpm test:e2e` | Playwright contra un backend branch |
+| `pnpm smoke:resend` | Envía un email real de reserva para verificar Resend |
+| `pnpm email:dev` / `pnpm email:export` | Vista previa y export de las plantillas de email |
+
+### Seeds y E2E escriben datos
+
+Los seeds y el E2E de `citadely-business-flow` **solo** escriben en un backend branch. Antes de escribir:
+
+- Verifican que `.insforge/project.json` tenga `branched_from`; si no, se niegan a correr.
+- Muestran el nombre del proyecto. Si la sesión es interactiva, hay que escribirlo para confirmar. Si no lo es (CI, Playwright, pipes), hay que definirlo en el entorno:
+
+```bash
+SEED_CONFIRM_PROJECT=feature-functionalities-improves pnpm test:e2e
+SEED_CONFIRM_PROJECT=feature-functionalities-improves pnpm seed:demo
+```
+
+El nombre tiene que ser exactamente el `project_name` del backend branch enlazado.
+
+Los scripts de `scripts/archive/` son históricos y no se ejecutan.
+
+## Crons
+
+Declarados en [`vercel.ts`](vercel.ts) y ejecutados por Vercel Cron con `Authorization: Bearer $CRON_SECRET`:
+
+- `/api/cron/transactional-email`: cada minuto. Envía la cola de emails (`email_outbox`).
+- `/api/cron/cancel-expired-deposits`: cada 10 minutos. Cancela reservas con seña vencida.
+- `/api/cron/failure-alerts`: cada 15 minutos. Registra fallas de email y de webhooks.
+
+Si hay un schedule de InsForge que apunte a producción, es un duplicado de estos crons y hay que quitarlo.
+
+## Tests
+
+- `pnpm test:e2e` usa Playwright. El E2E corre contra `next dev` en el puerto 3002 y un mock de Mercado Pago. Requiere las variables de `[Local]` y `SEED_CONFIRM_PROJECT`.
+- Política de tests unitarios y de RLS: ver los tickets de la fase 7 del plan.
+
+## Seguridad y anti-abuso
+
+Límites de reservas, rate limit y decisiones de seguridad están en [`docs/anti-abuse.md`](docs/anti-abuse.md).
+
+## Archivos del repositorio que no son código de la app
+
+- `agent/`: skills de agentes de IA para este proyecto. Se versionan para que todas las sesiones usen las mismas reglas. Se excluyen del deploy (`.vercelignore`).
+- `skills-lock.json`: versiones fijadas de esas skills. Se versiona junto a `agent/`.
+- `opencode.json`: configuración del cliente de agentes OpenCode, con los MCP que usa el proyecto. Se versiona para que el equipo comparta la misma configuración. No contiene secretos.
+- `.impeccable/`: artefactos de revisión de diseño (PNG). No se versionan y están en `.gitignore`.
+
+## Deploy
+
+Push a `main` (vía PR) despliega Production; las ramas despliegan Preview. Antes de promover a Production, aplicar las migraciones al padre y correr el checklist de [`docs/release-checklist.md`](docs/release-checklist.md).
+
+Dominio: el apex `citadely.com.ar` redirige con 308 a `https://www.citadely.com.ar`, que es el host canónico. Los subdominios `<negocio>.citadely.com.ar` son las páginas públicas en producción; fuera de producción se usa `/b/<slug>`.
