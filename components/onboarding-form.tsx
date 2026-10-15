@@ -10,14 +10,25 @@ import {
 import { insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
+import { BUSINESS_SLUG_MAX_LENGTH, BUSINESS_SLUG_PATTERN, validateBusinessSlug } from "@/lib/business-slug";
+import { getBusinessCategoryOptions } from "@/lib/business-categories";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
+
+type SlugStatus = { state: "idle" | "checking" | "available" | "taken" | "invalid"; message?: string };
 
 export function OnboardingForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [category, setCategory] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
+  const [existingBusinessId, setExistingBusinessId] = useState<string | null>(null);
+  const [slugStatus, setSlugStatus] = useState<SlugStatus>({ state: "idle" });
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(true);
+
+  // A business that already exists keeps its public URL: changing it would break links already shared.
+  const slugLocked = existingBusinessId !== null;
 
   useEffect(() => {
     let mounted = true;
@@ -44,8 +55,27 @@ export function OnboardingForm() {
         return;
       }
 
-      setName(profile.business_name ?? "");
-      setSlug(profile.business_slug ?? "");
+      // El negocio guardado manda sobre el perfil: así reabrir el formulario nunca pisa sus datos.
+      const { data: business } = await insforge.database
+        .from("businesses")
+        .select("id,name,slug,category")
+        .eq("owner_id", data.user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (business) {
+        setExistingBusinessId(business.id);
+        setName(business.name ?? "");
+        setSlug(business.slug ?? "");
+        setCategory(business.category ?? "");
+      } else {
+        setName(profile.business_name ?? "");
+        setSlug(profile.business_slug ?? "");
+        // Solo cuenta como editado si el slug del perfil no es el derivado automáticamente del nombre.
+        setSlugEdited(Boolean(profile.business_slug) && profile.business_slug !== slugifyBusinessName(profile.business_name ?? ""));
+        setCategory(profile.business_category ?? "");
+      }
       setPending(false);
     }
 
@@ -56,15 +86,64 @@ export function OnboardingForm() {
     };
   }, [router]);
 
+  // Disponibilidad de la URL: validación local inmediata y consulta al servidor con debounce.
+  useEffect(() => {
+    if (slugLocked || pending) return;
+    const localError = slug ? validateBusinessSlug(slug) : null;
+    if (!slug || localError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- derived status for the typed slug
+      setSlugStatus(slug ? { state: "invalid", message: localError ?? undefined } : { state: "idle" });
+      return;
+    }
+
+    setSlugStatus({ state: "checking" });
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const { data, error: rpcError } = await insforge.database.rpc("is_business_slug_available", { p_slug: slug });
+      if (cancelled) return;
+      if (rpcError) {
+        // Sin respuesta confiable no bloqueamos: el servidor valida igual al guardar.
+        setSlugStatus({ state: "idle" });
+        return;
+      }
+      setSlugStatus(data === true ? { state: "available" } : { state: "taken", message: "Esa URL ya está en uso. Probá con otra." });
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [slug, slugLocked, pending]);
+
+  function handleNameChange(value: string) {
+    setName(value);
+    if (!slugEdited && !slugLocked) setSlug(slugifyBusinessName(value));
+  }
+
+  function handleSlugChange(value: string) {
+    setSlugEdited(true);
+    setSlug(value.toLowerCase().replace(/\s+/g, "-"));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
     setError(null);
 
-    const form = new FormData(event.currentTarget);
-    const businessName = String(form.get("business_name") ?? "");
-    const businessCategory = String(form.get("business_category") ?? "");
-    const businessSlug = slugifyBusinessName(String(form.get("business_slug") ?? businessName));
+    const businessName = name.trim();
+    const businessCategory = category;
+    const businessSlug = slugLocked ? slug : slugifyBusinessName(slug || businessName);
+
+    const slugError = slugLocked ? null : validateBusinessSlug(businessSlug);
+    if (slugError) {
+      setSlugStatus({ state: "invalid", message: slugError });
+      return;
+    }
+    if (!slugLocked && slugStatus.state === "taken") {
+      setError("Esa URL ya está en uso. Elegí otra para continuar.");
+      return;
+    }
+
+    setPending(true);
 
     const { data: userData, error: userError } = await insforge.auth.getCurrentUser();
 
@@ -74,12 +153,6 @@ export function OnboardingForm() {
       return;
     }
 
-    const { data: existingBusiness } = await insforge.database
-      .from("businesses")
-      .select("id")
-      .eq("owner_id", userData.user.id)
-      .maybeSingle();
-
     const businessPayload = {
       owner_id: userData.user.id,
       name: businessName,
@@ -87,11 +160,11 @@ export function OnboardingForm() {
       slug: businessSlug,
     };
 
-    const { data: savedBusiness, error: businessError } = existingBusiness
+    const { data: savedBusiness, error: businessError } = existingBusinessId
       ? await insforge.database
           .from("businesses")
           .update(businessPayload)
-          .eq("id", existingBusiness.id)
+          .eq("id", existingBusinessId)
           .select("id")
           .single()
       : await insforge.database
@@ -102,11 +175,16 @@ export function OnboardingForm() {
 
     if (businessError) {
       setPending(false);
-      setError(getErrorMessage(businessError));
+      const message = getErrorMessage(businessError);
+      setError(/businesses_slug_key|duplicate key|unique constraint/i.test(message)
+        ? "Esa URL ya está en uso. Elegí otra para continuar."
+        : /businesses_slug_not_reserved/i.test(message)
+          ? "Esa URL está reservada. Elegí otra."
+          : message);
       return;
     }
 
-    const businessId = existingBusiness?.id ?? savedBusiness?.id;
+    const businessId = existingBusinessId ?? savedBusiness?.id;
 
     if (businessId) {
       const { error: notificationError } =
@@ -137,39 +215,68 @@ export function OnboardingForm() {
     router.push("/negocio");
   }
 
+  const publicUrl = getBusinessPublicUrl(slug || "tu-negocio");
+  const slugHint = slugLocked
+    ? "La URL de un negocio existente no se cambia desde acá para no romper los enlaces ya compartidos."
+    : slugStatus.state === "checking"
+      ? "Verificando disponibilidad…"
+      : slugStatus.state === "available"
+        ? "Disponible."
+        : slugStatus.message ?? "Solo letras minúsculas, números y guiones.";
+  const slugInvalid = slugStatus.state === "invalid" || slugStatus.state === "taken";
+
   return (
     <div className="grid gap-5">
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
       <form className="grid gap-5" onSubmit={handleSubmit}>
         <div className="grid gap-4">
           <Field
+            id="business_name"
             label="Nombre del negocio"
+            maxLength={120}
             name="business_name"
+            onChange={handleNameChange}
             placeholder="Barberia Norte"
-            defaultValue={name}
+            value={name}
           />
           <label className="form-label">
             Rubro
             <select
               className="form-control"
               name="business_category"
+              onChange={(event) => setCategory(event.target.value)}
               required
+              value={category}
             >
-              <option value="barberia">Barbería / peluquería</option>
-              <option value="salud">Consultorio médico</option>
-              <option value="spa">Spa / estética</option>
-              <option value="fitness">Fitness / bienestar</option>
-              <option value="otros">Otros servicios</option>
+              <option disabled value="">Elegí un rubro</option>
+              {getBusinessCategoryOptions(category).map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
           <Field
+            describedBy="business_slug_hint"
+            id="business_slug"
+            invalid={slugInvalid}
             label="URL pública"
+            maxLength={BUSINESS_SLUG_MAX_LENGTH}
             name="business_slug"
+            onChange={handleSlugChange}
+            pattern={BUSINESS_SLUG_PATTERN}
             placeholder="barberia-norte"
-            defaultValue={slug || slugifyBusinessName(name)}
+            readOnly={slugLocked}
+            title="Letras minúsculas, números y guiones simples"
+            value={slug}
           />
-          <p className="text-sm leading-6 text-[var(--ink-soft)]">
-            Tu página pública quedará disponible en <strong>{getBusinessPublicUrl(slug || slugifyBusinessName(name) || "tu-negocio")}</strong>. Incluye 7 días de uso gratuito sin restricciones.
+          <p
+            aria-live="polite"
+            className={`text-sm leading-6 ${slugInvalid ? "text-[var(--color-danger)]" : "text-[var(--color-ink-soft)]"}`}
+            id="business_slug_hint"
+          >
+            {slugHint}
+          </p>
+          <p className="text-sm leading-6 text-[var(--color-ink-soft)]">
+            Tu página pública quedará disponible en <strong>{publicUrl}</strong>. Incluye 7 días de uso gratuito sin restricciones.
           </p>
         </div>
 
