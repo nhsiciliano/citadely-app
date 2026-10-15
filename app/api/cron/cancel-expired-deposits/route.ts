@@ -1,11 +1,9 @@
 import { NextRequest } from "next/server";
+import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 
-export async function POST(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const authorization = request.headers.get("authorization");
-
-  if (!secret || authorization !== `Bearer ${secret}`) {
+async function handle(request: NextRequest) {
+  if (!isAuthorizedCronRequest(request)) {
     return Response.json({ error: "No autorizado." }, { status: 401 });
   }
 
@@ -21,3 +19,6 @@ export async function POST(request: NextRequest) {
 
   return Response.json({ cancelled: data ?? 0 });
 }
+
+// Vercel Cron sends GET; POST is kept for manual and legacy scheduler calls.
+export { handle as GET, handle as POST };
