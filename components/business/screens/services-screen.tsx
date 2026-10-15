@@ -47,6 +47,7 @@ export function ServicesScreen() {
   const options = useMemo(() => monthOptions(timeZone), [timeZone]);
   const [selectedMonth, setSelectedMonth] = useState(options[0]?.key ?? toMonthKey(new Date(), timeZone));
   const [selectedDate, setSelectedDate] = useState("");
+  const selectedMonthLabel = formatDateKey(`${selectedMonth}-01`, { month: "long", year: "numeric" });
   const [draftTime, setDraftTime] = useState("");
   const [dateTimes, setDateTimes] = useState<Record<string, Record<string, number>>>({});
   const subscription = getSubscriptionState(business);
@@ -334,7 +335,7 @@ export function ServicesScreen() {
                       <td><span className="inline-flex items-center gap-2"><Clock3 aria-hidden="true" size={16} />{service.duration_minutes} min</span></td>
                       <td className="font-mono font-semibold">{formatCurrency(service.price_cents, business.currency)}</td>
                       <td>{service.deposit_type === "free" ? "Sin seña" : service.deposit_type === "full" ? "100%" : formatCurrency(service.deposit_value_cents, business.currency)}</td>
-                      <td><span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" size={16} />{slotCount(availabilitySlots, service.id, selectedMonth, timeZone)} horarios</span></td>
+                      <td><span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" size={16} />{slotCount(availabilitySlots, service.id, selectedMonth, timeZone)} horarios en {selectedMonthLabel}</span></td>
                       <td><div className="flex justify-end gap-2"><button aria-label={`Editar ${service.name}`} className="button-secondary" disabled={pending || !subscription.hasAccess} onClick={() => openEditService(service)} type="button"><Pencil aria-hidden="true" size={16} />Editar</button><button aria-label={`${service.is_active ? "Pausar" : "Activar"} ${service.name}`} className="button-secondary" disabled={pending || !subscription.hasAccess} onClick={() => toggleService(service)} type="button"><Power aria-hidden="true" size={16} />{service.is_active ? "Pausar" : "Activar"}</button></div></td>
                     </tr>
                   ))}

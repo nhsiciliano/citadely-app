@@ -13,13 +13,13 @@ import { EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
 const DATE_OPTIONS = { weekday: "long", day: "numeric", month: "long" } as const;
 
 export function OverviewScreen() {
-  const { appointments, business, services } = useWorkspace();
+  const { appointments, availabilitySlots, business, services } = useWorkspace();
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const now = new Date();
   const timeZone = business.timezone;
-  const stats = calculateStats(appointments, services, timeZone, now);
+  const stats = calculateStats(appointments, services, timeZone, now, availabilitySlots);
   const formatDate = (value: Date | string) => formatInTimeZone(value, timeZone, DATE_OPTIONS);
   const formatTime = (value: string) => toTimeKey(value, timeZone);
   const publicUrl = getBusinessPublicUrl(business.slug);
@@ -80,7 +80,7 @@ export function OverviewScreen() {
         </section>
 
         <section aria-label="Resumen de la jornada" className="metrics-strip">
-          <div><p>Ocupación hoy</p><strong>{stats.occupancy}%</strong><span>sobre 8 horas</span></div>
+          <div><p>Ocupación hoy</p><strong>{stats.occupancy}%</strong><span>{stats.publishedMinutes > 0 ? `sobre ${Math.round((stats.publishedMinutes / 60) * 10) / 10} h publicadas` : "Sin horarios publicados hoy"}</span></div>
           <div><p>Turnos hoy</p><strong>{stats.todayAppointments}</strong><span>{upcoming.length} próximos</span></div>
           <div><p>Ingresos del mes</p><strong>{formatCurrency(stats.monthlyRevenueCents, business.currency)}</strong><span>servicios agendados</span></div>
           <div><p>Servicios activos</p><strong>{services.filter((service) => service.is_active).length}</strong><span>de {services.length}</span></div>

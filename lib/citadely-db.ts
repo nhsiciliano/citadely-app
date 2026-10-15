@@ -220,7 +220,9 @@ export type BusinessStats = {
   todayAppointments: number;
   upcomingAppointments: number;
   monthlyRevenueCents: number;
+  // Porcentaje de los minutos publicados hoy (activos, con capacidad) que están ocupados.
   occupancy: number;
+  publishedMinutes: number;
 };
 
 export function centsFromCurrency(value: FormDataEntryValue | null) {
@@ -364,6 +366,7 @@ export function calculateStats(
   services: Service[],
   timeZone: string | null | undefined,
   now = new Date(),
+  availabilitySlots: ServiceAvailabilitySlot[] = [],
 ): BusinessStats {
   const todayKey = toDateKey(now, timeZone);
   const todayStart = startOfDayInTimeZone(todayKey, timeZone);
@@ -398,10 +401,18 @@ export function calculateStats(
     return total + Math.max(0, new Date(appointment.ends_at).getTime() - startsAt.getTime()) / 60000;
   }, 0);
 
+  const publishedMinutes = availabilitySlots.reduce((total, slot) => {
+    const startsAt = new Date(slot.starts_at);
+    if (!slot.is_active || startsAt < todayStart || startsAt >= todayEnd) return total;
+    const slotMinutes = Math.max(0, new Date(slot.ends_at).getTime() - startsAt.getTime()) / 60000;
+    return total + slotMinutes * Math.max(1, slot.capacity ?? 1);
+  }, 0);
+
   return {
     todayAppointments,
     upcomingAppointments,
     monthlyRevenueCents,
-    occupancy: Math.min(100, Math.round((occupiedMinutes / (8 * 60)) * 100)),
+    occupancy: publishedMinutes > 0 ? Math.min(100, Math.round((occupiedMinutes / publishedMinutes) * 100)) : 0,
+    publishedMinutes,
   };
 }
