@@ -146,9 +146,6 @@ async function seedDemoData(client, admin, business) {
       }
     }
   }
-  const slotsResult = await client.database.from("service_availability_slots").insert(slots);
-  if (slotsResult.error) throw new Error(slotsResult.error.message);
-
   const appointmentBlueprints = [
     [0, 9, 0, 0, 0, "confirmed", 0],
     [0, 10, 30, 1, 1, "confirmed", 0],
@@ -176,6 +173,16 @@ async function seedDemoData(client, admin, business) {
       deposit_expires_at: status === "pending_payment" ? addMinutes(new Date(), 90).toISOString() : null,
     };
   });
+  // The seat guard rejects future appointments without a published slot: publish any the grid above misses.
+  const slotKeys = new Set(slots.map((slot) => `${slot.service_id}|${slot.starts_at}`));
+  for (const appointment of appointments) {
+    if (appointment.status === "cancelled" || new Date(appointment.starts_at) <= new Date()) continue;
+    if (slotKeys.has(`${appointment.service_id}|${appointment.starts_at}`)) continue;
+    slots.push({ business_id: business.id, service_id: appointment.service_id, starts_at: appointment.starts_at, ends_at: appointment.ends_at, is_active: true });
+  }
+  const slotsResult = await client.database.from("service_availability_slots").insert(slots);
+  if (slotsResult.error) throw new Error(slotsResult.error.message);
+
   const appointmentResult = await admin.database.from("appointments").insert(appointments);
   if (appointmentResult.error) throw new Error(appointmentResult.error.message);
 

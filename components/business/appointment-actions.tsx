@@ -5,6 +5,7 @@ import { CalendarClock, CheckCircle2, Clock3, CreditCard, Plus, Search, UserRoun
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { buildBookingSlots, formatAppointmentTime, formatCurrency, type Appointment, type Client } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
+import { getClientSaveErrorMessage } from "@/lib/client-errors";
 import { insforge } from "@/lib/insforge";
 import { Drawer, StatusBadge } from "./workspace-ui";
 import { useWorkspace } from "./workspace-context";
@@ -243,7 +244,7 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
     }]).select("id,business_id,user_id,name,email,phone,notes_summary").single();
     setPending(false);
     if (error || !created) {
-      setMessage(error ? getErrorMessage(error) : "No pudimos crear el cliente. Intentá nuevamente.");
+      setMessage(error ? getClientSaveErrorMessage(error) : "No pudimos crear el cliente. Intentá nuevamente.");
       return;
     }
     onSelect(created as Client);

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Mail, Phone, Plus, Search, UserRound } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import type { Client } from "@/lib/citadely-db";
-import { getErrorMessage } from "@/lib/auth";
+import { getClientSaveErrorMessage } from "@/lib/client-errors";
 import { insforge } from "@/lib/insforge";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader } from "../workspace-ui";
@@ -44,7 +44,7 @@ export function ClientsScreen() {
     }]);
     setPending(false);
     if (error) {
-      setMessage(getErrorMessage(error));
+      setMessage(getClientSaveErrorMessage(error));
       return;
     }
     formElement.reset();
