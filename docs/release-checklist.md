@@ -65,3 +65,11 @@ pointing at Preview URLs). Anything else is drift: resolve it with a migration, 
 
 Code: promote the previous deployment in Vercel. Schema: forward-fix with a new migration; use the pre-release backup
 only as a last resort (`backups restore` overwrites database **and** storage).
+
+## Changing subscription prices
+
+`public.subscription_plans` is the only source of prices (landing, Settings, Mercado Pago checkout and
+`apply_mercadopago_subscription_payment`). To change a price, in one migration: set the current row of that `code` to
+`is_active = false` and insert a new active row with the new `amount_cents`. Keep the old row: subscribers still
+paying the old preapproval amount keep being recognised. Existing Mercado Pago preapprovals are not updated
+automatically; new checkouts and plan changes use the new price. The landing page refreshes within 5 minutes.

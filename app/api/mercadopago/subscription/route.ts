@@ -7,7 +7,8 @@ import {
   getMercadoPagoPreapproval,
   updateMercadoPagoPreapproval,
 } from "@/lib/mercadopago";
-import { getSubscriptionPlan, isSubscriptionPlanId, type SubscriptionPlanId } from "@/lib/subscription-plans";
+import { isSubscriptionPlanId, type SubscriptionPlanId } from "@/lib/subscription-plans";
+import { requireSubscriptionPlans } from "@/lib/subscription-plans-server";
 import { getBillingStartAt } from "@/lib/subscription-billing";
 
 type SubscriptionBusiness = {
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
       return Response.json(result);
     }
 
-    const plan = getSubscriptionPlan(body.plan);
+    const plan = (await requireSubscriptionPlans())[body.plan];
     const origin = getAppBaseUrl(request);
     const payerEmail = getPayerEmailOverride() ?? user.email;
     if (!payerEmail) throw new Error("La cuenta no tiene un email valido.");

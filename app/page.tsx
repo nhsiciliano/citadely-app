@@ -24,7 +24,8 @@ import {
 import { PrimaryLink } from "@/components/ui";
 import { MarketingFooter, MarketingHeader } from "@/components/marketing-shell";
 import { HOME_DESCRIPTION, HOME_TITLE, INDEX_ROBOTS, SITE_NAME, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
-import { SUBSCRIPTION_PLANS } from "@/lib/subscription-plans";
+import { formatPlanPrice, SUBSCRIPTION_PLAN_DETAILS, type SubscriptionPlans } from "@/lib/subscription-plans";
+import { getSubscriptionPlans } from "@/lib/subscription-plans-server";
 
 export const metadata: Metadata = {
   title: { absolute: HOME_TITLE },
@@ -71,12 +72,17 @@ const INDUSTRIES = [
   { name: "Centros de estética", icon: Sparkles },
 ];
 
-const FAQS = [
+// Prices come from subscription_plans and are refreshed at most every 5 minutes.
+export const revalidate = 300;
+
+const getFaqs = (plans: SubscriptionPlans | null) => [
   ["¿Necesito instalar algo?", "No. Citadely funciona desde el navegador, tanto en escritorio como en dispositivos móviles."],
   ["¿Cómo reciben turnos mis clientes?", "Compartís la página pública de tu negocio. El cliente elige servicio, fecha y hora, completa sus datos y confirma la reserva."],
   ["¿Cómo funcionan las señas?", "Configurás el monto por servicio y tus datos de transferencia. Luego confirmás la recepción desde el turno."],
   ["¿Puedo usarlo para distintos tipos de servicios?", "Sí. La agenda se organiza por días y horarios, por lo que se adapta a negocios profesionales, de salud, deporte, educación y bienestar."],
-  ["¿Qué pasa cuando termina la prueba?", "La prueba dura 7 días e incluye todas las funciones Pro. Después elegís Esencial por $14.000 ARS o Pro por $18.000 ARS al mes."],
+  ["¿Qué pasa cuando termina la prueba?", plans
+    ? `La prueba dura 7 días e incluye todas las funciones Pro. Después elegís Esencial por ${formatPlanPrice(plans.essential.priceCents)} ARS o Pro por ${formatPlanPrice(plans.pro.priceCents)} ARS al mes.`
+    : "La prueba dura 7 días e incluye todas las funciones Pro. Después elegís el plan Esencial o Pro, con cobro mensual."],
 ];
 
 function DemoTimeline() {
@@ -106,7 +112,9 @@ function DemoTimeline() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const plans = await getSubscriptionPlans();
+  const faqs = getFaqs(plans);
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -133,17 +141,19 @@ export default function Home() {
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
         inLanguage: "es-AR",
-        offers: Object.values(SUBSCRIPTION_PLANS).map((plan) => ({
-          "@type": "Offer",
-          name: `Plan ${plan.name}`,
-          price: String(plan.priceCents / 100),
-          priceCurrency: "ARS",
-          url: `${SITE_ORIGIN}/#precio`,
-        })),
+        ...(plans ? {
+          offers: Object.values(plans).map((plan) => ({
+            "@type": "Offer",
+            name: `Plan ${plan.name}`,
+            price: String(plan.priceCents / 100),
+            priceCurrency: plan.currency,
+            url: `${SITE_ORIGIN}/#precio`,
+          })),
+        } : {}),
       },
       {
         "@type": "FAQPage",
-        mainEntity: FAQS.map(([question, answer]) => ({
+        mainEntity: faqs.map(([question, answer]) => ({
           "@type": "Question",
           name: question,
           acceptedAnswer: { "@type": "Answer", text: answer },
@@ -235,14 +245,14 @@ export default function Home() {
         <section className="border-y border-[var(--color-line)] bg-[var(--color-surface-subtle)]" id="preguntas">
           <div className="mx-auto grid max-w-[1440px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.7fr_1.3fr] lg:px-12">
             <div><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)]">Preguntas frecuentes</h2><p className="mt-4 leading-7 text-[var(--color-ink-soft)]">Lo esencial antes de empezar a organizar tus turnos.</p></div>
-            <div className="border-t border-[var(--color-line)]">{FAQS.map(([question, answer]) => <details className="group border-b border-[var(--color-line)]" key={question}><summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 font-semibold">{question}<span aria-hidden="true" className="text-[var(--color-primary)] group-open:rotate-45">+</span></summary><p className="max-w-2xl pb-6 text-sm leading-6 text-[var(--color-ink-soft)]">{answer}</p></details>)}</div>
+            <div className="border-t border-[var(--color-line)]">{faqs.map(([question, answer]) => <details className="group border-b border-[var(--color-line)]" key={question}><summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 font-semibold">{question}<span aria-hidden="true" className="text-[var(--color-primary)] group-open:rotate-45">+</span></summary><p className="max-w-2xl pb-6 text-sm leading-6 text-[var(--color-ink-soft)]">{answer}</p></details>)}</div>
           </div>
         </section>
 
         <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="precio">
           <div className="mb-10 max-w-3xl"><h2 className="font-display text-4xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">Dos planes para administrar y crecer.</h2><p className="mt-4 max-w-2xl leading-7 text-[var(--color-ink-soft)]">Empezá con 7 días de Pro. Después elegí si necesitás el dashboard o también una página pública que reciba reservas.</p></div>
           <div className="grid border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)] lg:grid-cols-2">
-            {Object.values(SUBSCRIPTION_PLANS).map((plan) => <article className={`p-7 sm:p-10 ${plan.id === "pro" ? "border-t border-[var(--color-line)] bg-[var(--color-navy)] text-white lg:border-l lg:border-t-0" : ""}`} key={plan.id}><div className="flex items-center justify-between gap-4"><h3 className="font-display text-3xl font-semibold">{plan.name}</h3>{plan.id === "pro" ? <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">Reservas online</span> : null}</div><p className={`mt-3 min-h-12 text-sm leading-6 ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-soft)]"}`}>{plan.description}</p><p className="mt-7 font-mono text-4xl font-semibold tracking-[-0.04em]">${(plan.priceCents / 100).toLocaleString("es-AR")}</p><p className={`mt-1 text-sm ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-muted)]"}`}>ARS por mes</p><ul className="mt-7 grid gap-3">{plan.features.map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className={plan.id === "pro" ? "text-white" : "text-[var(--color-success)]"} size={17} />{item}</li>)}</ul><Link className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold ${plan.id === "pro" ? "bg-white text-[var(--color-navy)] hover:bg-[var(--color-surface-subtle)]" : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-strong)]"}`} href="/registro">Probar Pro durante 7 días<ArrowRight aria-hidden="true" size={17} /></Link></article>)}
+            {Object.values(SUBSCRIPTION_PLAN_DETAILS).map((plan) => <article className={`p-7 sm:p-10 ${plan.id === "pro" ? "border-t border-[var(--color-line)] bg-[var(--color-navy)] text-white lg:border-l lg:border-t-0" : ""}`} key={plan.id}><div className="flex items-center justify-between gap-4"><h3 className="font-display text-3xl font-semibold">{plan.name}</h3>{plan.id === "pro" ? <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">Reservas online</span> : null}</div><p className={`mt-3 min-h-12 text-sm leading-6 ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-soft)]"}`}>{plan.description}</p><p className="mt-7 font-mono text-4xl font-semibold tracking-[-0.04em]">{plans ? formatPlanPrice(plans[plan.id].priceCents) : "Consultar"}</p><p className={`mt-1 text-sm ${plan.id === "pro" ? "text-white/70" : "text-[var(--color-ink-muted)]"}`}>{plans ? "ARS por mes" : "precio vigente al registrarte"}</p><ul className="mt-7 grid gap-3">{plan.features.map((item) => <li className="flex items-center gap-2 text-sm font-semibold" key={item}><Check aria-hidden="true" className={plan.id === "pro" ? "text-white" : "text-[var(--color-success)]"} size={17} />{item}</li>)}</ul><Link className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold ${plan.id === "pro" ? "bg-white text-[var(--color-navy)] hover:bg-[var(--color-surface-subtle)]" : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-strong)]"}`} href="/registro">Probar Pro durante 7 días<ArrowRight aria-hidden="true" size={17} /></Link></article>)}
           </div>
         </section>
 

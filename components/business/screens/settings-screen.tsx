@@ -7,13 +7,15 @@ import { getErrorMessage } from "@/lib/auth";
 import { getSubscriptionState } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
 import { normalizeWhatsAppPhone } from "@/lib/public-profile";
-import { SUBSCRIPTION_PLANS, type SubscriptionPlanId } from "@/lib/subscription-plans";
+import { formatPlanPrice, SUBSCRIPTION_PLAN_DETAILS, type SubscriptionPlanId } from "@/lib/subscription-plans";
+import { useSubscriptionPlans } from "../use-subscription-plans";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "../workspace-ui";
 
 export function SettingsScreen() {
   const { business, refresh, signOut, userEmail } = useWorkspace();
   const subscription = getSubscriptionState(business);
+  const plans = useSubscriptionPlans();
   const [paymentPending, setPaymentPending] = useState(false);
   const [subscriptionPending, setSubscriptionPending] = useState(false);
   const [cancellationPending, setCancellationPending] = useState(false);
@@ -179,7 +181,7 @@ export function SettingsScreen() {
                     : subscription.isPastDue
                       ? "Pago pendiente"
                       : subscription.hasPaidPeriod
-                        ? `Plan ${SUBSCRIPTION_PLANS[subscription.currentPlan].name}`
+                        ? `Plan ${SUBSCRIPTION_PLAN_DETAILS[subscription.currentPlan].name}`
                         : subscription.isTrialing
                           ? "Prueba Pro activa"
                           : "Pago requerido"}
@@ -202,7 +204,7 @@ export function SettingsScreen() {
               {subscription.pendingPlan ? (
                 <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]">
                   <Clock3 aria-hidden="true" size={16} />
-                  {subscription.awaitingFirstPayment ? "Primer cobro" : `Cambio a ${SUBSCRIPTION_PLANS[subscription.pendingPlan].name}`}
+                  {subscription.awaitingFirstPayment ? "Primer cobro" : `Cambio a ${SUBSCRIPTION_PLAN_DETAILS[subscription.pendingPlan].name}`}
                   {subscription.promotionEndsAt && subscription.promotionEndsAt > new Date()
                     ? ` el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(subscription.promotionEndsAt)}`
                     : subscription.isTrialing
@@ -214,7 +216,7 @@ export function SettingsScreen() {
               ) : null}
             </div>
             <dl className="grid content-center gap-3 border-t border-[var(--color-line)] py-5 text-sm md:border-s md:border-t-0 md:ps-6">
-              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Importe actual</dt><dd className="font-mono font-semibold tabular-nums">{subscription.hasPromotion || subscription.promotionPending ? "Sin cargo" : `$${(SUBSCRIPTION_PLANS[subscription.currentPlan].priceCents / 100).toLocaleString("es-AR")} ARS`}</dd></div>
+              <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Importe actual</dt><dd className="font-mono font-semibold tabular-nums">{subscription.hasPromotion || subscription.promotionPending ? "Sin cargo" : plans ? `${formatPlanPrice(plans[subscription.currentPlan].priceCents)} ARS` : "—"}</dd></div>
               <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Frecuencia</dt><dd className="font-semibold">Mensual</dd></div>
               <div className="flex items-center justify-between gap-4"><dt className="text-[var(--color-ink-muted)]">Próxima fecha</dt><dd className="text-end font-semibold">{subscription.promotionEndsAt && subscription.promotionEndsAt > new Date() ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(subscription.promotionEndsAt) : subscription.periodEndsAt ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(subscription.periodEndsAt) : subscription.isTrialing ? new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(business.trial_ends_at)) : "Al aprobarse"}</dd></div>
             </dl>
@@ -225,7 +227,7 @@ export function SettingsScreen() {
             {!business.promotion_ends_at && (subscription.hasPaidPeriod || (business.subscription_external_id && !business.subscription_cancel_at_period_end)) ? <p className="mt-3 text-xs text-[var(--color-ink-muted)]">Para canjearlo, cancelá la suscripción y esperá a que termine el período pagado.</p> : null}
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
-            {(Object.values(SUBSCRIPTION_PLANS) as (typeof SUBSCRIPTION_PLANS)[SubscriptionPlanId][]).map((plan) => {
+            {(Object.values(SUBSCRIPTION_PLAN_DETAILS) as (typeof SUBSCRIPTION_PLAN_DETAILS)[SubscriptionPlanId][]).map((plan) => {
               const isCurrent = subscription.hasPaidPeriod && subscription.currentPlan === plan.id && !subscription.pendingPlan;
               const isPending = subscription.pendingPlan === plan.id;
               const isLoading = subscriptionPending && requestedPlan === plan.id;
@@ -235,7 +237,7 @@ export function SettingsScreen() {
                     <div><h3 className="text-xl font-semibold">{plan.name}</h3><p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">{plan.description}</p></div>
                     {plan.publicPage ? <Globe2 aria-hidden="true" className="shrink-0 text-[var(--color-primary)]" size={22} /> : <Building2 aria-hidden="true" className="shrink-0 text-[var(--color-primary)]" size={22} />}
                   </div>
-                  <p className="mt-5 text-3xl font-semibold tracking-[-0.03em]">${(plan.priceCents / 100).toLocaleString("es-AR")} <span className="text-sm font-medium text-[var(--color-ink-muted)]">ARS/mes</span></p>
+                  <p className="mt-5 text-3xl font-semibold tracking-[-0.03em]">{plans ? formatPlanPrice(plans[plan.id].priceCents) : "—"} <span className="text-sm font-medium text-[var(--color-ink-muted)]">ARS/mes</span></p>
                   <ul className="mt-5 grid gap-2 text-sm">{plan.features.map((feature) => <li className="flex gap-2" key={feature}><Check aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-primary)]" size={16} />{feature}</li>)}</ul>
                   <button aria-busy={isLoading} className={plan.id === "pro" ? "button-primary mt-6 w-full" : "button-secondary mt-6 w-full"} disabled={subscriptionPending || cancellationPending || (isCurrent && !subscription.cancelAtPeriodEnd) || isPending} onClick={() => void selectPlan(plan.id)} type="button">{isLoading ? <LoadingSpinner label={`Procesando cambio al plan ${plan.name}`} /> : <><CreditCard aria-hidden="true" size={17} />{subscription.cancelAtPeriodEnd && subscription.currentPlan === plan.id ? "Reactivar renovación" : isCurrent ? "Plan actual" : isPending ? "Cambio programado" : subscription.hasPaidPeriod ? `Cambiar a ${plan.name}` : `Elegir ${plan.name}`}</>}</button>
                 </article>
