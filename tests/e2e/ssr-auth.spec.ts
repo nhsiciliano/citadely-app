@@ -192,3 +192,39 @@ test("las rutas API del panel reciben la sesión por cookie", async ({ page }) =
   expect(response.status()).not.toBe(403);
   await expect(page.getByText(/sesión venció/)).toHaveCount(0);
 });
+
+test("un refresh sin sesión que responde tarde no borra el login que terminó antes", async ({ page }) => {
+  // Reproduce la carrera de dev en frío: el refresh que el cliente pide al cargar /login (todavía sin sesión)
+  // se retiene hasta después del login; al soltarlo no debe borrar las cookies nuevas.
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let first = true;
+  await page.route("**/api/auth/refresh", async (route) => {
+    if (!first) return route.continue();
+    first = false;
+    await gate;
+    // Se envía como salió originalmente, sin cookies (desde Node, que no usa el cookie jar del navegador),
+    // y su respuesta llega tarde con los Set-Cookie que traiga.
+    const stale = await fetch(route.request().url(), { method: "POST" });
+    const setCookie = stale.headers.getSetCookie();
+    await route.fulfill({
+      status: stale.status,
+      contentType: "application/json",
+      headers: setCookie.length ? { "set-cookie": setCookie.join("\n") } : {},
+      body: await stale.text(),
+    });
+  });
+
+  await page.goto("/login");
+  await login(page);
+  await expect(page).toHaveURL(/\/negocio$/);
+
+  const late = page.waitForResponse((response) => response.url().endsWith("/api/auth/refresh"));
+  release();
+  expect((await late).status()).toBe(401);
+  expect((await page.context().cookies()).some((cookie) => cookie.name === "insforge_refresh_token" && cookie.value)).toBe(true);
+
+  await page.goto("/negocio/agenda");
+  await expect(page).toHaveURL(/\/negocio\/agenda$/);
+  await expect(page.getByRole("heading", { name: "Agenda", exact: true })).toBeVisible();
+});
