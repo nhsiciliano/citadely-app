@@ -9,7 +9,7 @@ import type { BusinessFaq, BusinessGalleryImage } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { insforge } from "@/lib/insforge";
-import { normalizePublicAddress } from "@/lib/public-profile";
+import { normalizePublicAddress, normalizeWhatsAppPhone } from "@/lib/public-profile";
 import { normalizePublicTheme } from "@/lib/public-theme";
 import { normalizeVirtualPlatforms, VIRTUAL_PLATFORM_OPTIONS, type ServiceMode, type VirtualPlatform } from "@/lib/virtual-service";
 import { useWorkspace } from "../workspace-context";
@@ -61,6 +61,7 @@ export function PublicPageScreen() {
   const [brandColor, setBrandColor] = useState(business.brand_color ?? "#0957d9");
   const [publicTheme, setPublicTheme] = useState(() => normalizePublicTheme(business.public_theme));
   const [publicAddress, setPublicAddress] = useState(business.public_address ?? "");
+  const [whatsappPhone, setWhatsappPhone] = useState(business.whatsapp_phone ?? "");
   const [serviceMode, setServiceMode] = useState<ServiceMode>(business.service_mode ?? "physical");
   const [virtualPlatforms, setVirtualPlatforms] = useState<VirtualPlatform[]>(normalizeVirtualPlatforms(business.virtual_platforms));
   const [savedGalleryImages, setSavedGalleryImages] = useState(galleryImages);
@@ -105,6 +106,7 @@ export function PublicPageScreen() {
       if (visibleGalleryImages.length + galleryFiles.length > 10) throw new Error("La galería admite hasta 10 fotos.");
       const normalizedFaqs = draftFaqs.map((faq) => ({ ...faq, question: faq.question.trim(), answer: faq.answer.trim() }));
       const normalizedAddress = normalizePublicAddress(publicAddress);
+      const normalizedPhone = normalizeWhatsAppPhone(whatsappPhone);
       if (serviceMode === "virtual" && virtualPlatforms.length === 0) throw new Error("Elegí al menos una plataforma para el servicio virtual.");
       if (normalizedFaqs.length > 10) throw new Error("FAQ admite hasta 10 preguntas.");
       if (normalizedFaqs.some((faq) => !faq.question || !faq.answer)) throw new Error("Completá pregunta y respuesta en cada FAQ.");
@@ -135,6 +137,7 @@ export function PublicPageScreen() {
         description,
         brand_color: brandColor,
         public_theme: normalizePublicTheme(publicTheme),
+        whatsapp_phone: normalizedPhone,
         public_address: normalizedAddress,
         service_mode: serviceMode,
         virtual_platforms: virtualPlatforms,
@@ -247,12 +250,8 @@ export function PublicPageScreen() {
                   </label>
                 </div>
               </fieldset>
-              <div className="grid gap-2 text-sm">
-                <span className="form-label">WhatsApp de contacto</span>
-                <p className="text-[var(--color-ink-soft)]">
-                  {business.whatsapp_phone ? `+${business.whatsapp_phone}` : "Sin cargar"} · <Link className="font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline" href="/negocio/configuracion">Editar en Configuración</Link>
-                </p>
-              </div>
+              <label className="form-label">WhatsApp de contacto<input autoComplete="tel" className="form-control" inputMode="tel" maxLength={24} name="whatsapp_phone" onChange={(event) => setWhatsappPhone(event.target.value)} placeholder="5491123456789" type="tel" value={whatsappPhone} /></label>
+              <p className="-mt-3 text-xs leading-5 text-[var(--color-ink-muted)]">Código de país, sin +, espacios ni guiones.</p>
               {serviceMode === "physical" ? (
                 <>
                   <label className="form-label">Dirección pública<input autoComplete="street-address" className="form-control" maxLength={300} name="public_address" onChange={(event) => setPublicAddress(event.target.value)} placeholder="Av. Corrientes 1234, CABA" value={publicAddress} /></label>
@@ -351,7 +350,7 @@ export function PublicPageScreen() {
             serviceMode={serviceMode}
             services={services}
             virtualPlatforms={virtualPlatforms}
-            whatsappPhone={business.whatsapp_phone ?? ""}
+            whatsappPhone={whatsappPhone}
           />
         </div>
       </form>
