@@ -22,7 +22,7 @@ export default async function AdminPreviewPage({ params }: Params) {
         <h1 className="font-display mt-8 text-balance text-4xl font-semibold leading-tight text-[var(--color-navy)] sm:text-6xl">{post.title || "Sin título"}</h1>
         <p className="mt-5 text-sm text-[var(--color-ink-soft)]">{post.published_at ? blogDate(post.published_at) : "Sin publicar"} · Equipo Citadely</p>
       </header>
-      {post.cover_url ? <div className="relative mx-auto aspect-[16/9] max-w-5xl bg-[var(--color-primary-soft)]"><Image alt={post.cover_alt || "Portada de la publicación"} className="object-cover" fill sizes="(max-width: 1024px) 100vw, 1024px" src={post.cover_url} unoptimized /></div> : null}
+      {post.cover_url ? <div className="relative mx-auto aspect-[16/9] max-w-5xl bg-[var(--color-primary-soft)]"><Image alt={post.cover_alt || "Portada de la publicación"} className="object-cover" fill sizes="(max-width: 1024px) 100vw, 1024px" src={post.cover_url} /></div> : null}
       <div className="mx-auto max-w-3xl px-5 py-14 sm:px-8"><BlogContent blocks={blocks} /></div>
     </article>
     <MarketingFooter />

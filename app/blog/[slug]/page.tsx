@@ -53,7 +53,7 @@ export default async function BlogPostPage({ params }: Params) {
           <h1 className="font-display mt-9 text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.035em] text-[var(--color-navy)] sm:text-6xl">{post.title}</h1>
           <p className="mt-6 text-sm text-[var(--color-ink-soft)]"><time dateTime={post.published_at!}>{blogDate(post.published_at!)}</time> · Equipo Citadely</p>
         </header>
-        {post.cover_url ? <div className="relative mx-auto aspect-[16/9] max-w-5xl bg-[var(--color-primary-soft)]"><Image alt={post.cover_alt} className="object-cover" fill priority sizes="(max-width: 1024px) 100vw, 1024px" src={post.cover_url} unoptimized /></div> : null}
+        {post.cover_url ? <div className="relative mx-auto aspect-[16/9] max-w-5xl bg-[var(--color-primary-soft)]"><Image alt={post.cover_alt} className="object-cover" fill preload sizes="(max-width: 1024px) 100vw, 1024px" src={post.cover_url} /></div> : null}
         <div className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20"><BlogContent blocks={blocks} /></div>
       </article>
       <div className="mx-auto max-w-3xl border-t border-[var(--color-line)] px-5 py-10 sm:px-8"><Link className="inline-flex items-center gap-2 font-semibold text-[var(--color-primary)]" href="/blog"><ArrowLeft aria-hidden="true" size={18} />Más novedades</Link></div>

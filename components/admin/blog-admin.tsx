@@ -176,7 +176,7 @@ export function AdminEditor({ initialPost, initialBlocks }: { initialPost: BlogP
               <button aria-busy={uploading} className="button-secondary w-full justify-center sm:w-auto" disabled={busy} onClick={() => coverInputRef.current?.click()} type="button">{post.cover_url ? "Cambiar imagen" : "Seleccionar imagen"}</button>
             </div>
           </div>
-          {post.cover_url ? <div className="relative aspect-[16/9] overflow-hidden bg-[var(--color-primary-soft)]"><Image alt={coverAlt || "Vista previa de portada"} className="object-cover" fill sizes="(max-width: 896px) 100vw, 800px" src={post.cover_url} unoptimized /></div> : null}
+          {post.cover_url ? <div className="relative aspect-[16/9] overflow-hidden bg-[var(--color-primary-soft)]"><Image alt={coverAlt || "Vista previa de portada"} className="object-cover" fill sizes="(max-width: 896px) 100vw, 800px" src={post.cover_url} /></div> : null}
           <label className="form-label">Descripción de la imagen<input className="form-control" maxLength={240} onChange={(event) => setCoverAlt(event.target.value)} placeholder="Describí la portada para lectores y buscadores" type="text" value={coverAlt} /></label>
         </div>
       </section>
