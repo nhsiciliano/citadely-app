@@ -75,7 +75,7 @@ export function VerifyEmailForm() {
     <div className="grid gap-5">
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
       {success ? <FormMessage type="success">{success}</FormMessage> : null}
-      <form className="grid gap-4" onSubmit={handleVerify}>
+      <form method="post" className="grid gap-4" onSubmit={handleVerify}>
         <Field label="Email" name="email" type="email" defaultValue={defaultEmail} />
         <Field label="Código de 6 dígitos" name="otp" placeholder="123456" />
         <SubmitButton pending={pending}>Verificar email</SubmitButton>

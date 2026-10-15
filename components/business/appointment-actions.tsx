@@ -125,7 +125,7 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
   return (
     <>
     <Drawer description={initialSlot ? "Asigná este horario libre a un cliente." : "Elegí un cliente, un servicio disponible y uno de sus horarios publicados."} onClose={closeDrawer} open={open} title="Nuevo turno">
-      <form className="grid gap-5" onSubmit={addAppointment}>
+      <form method="post" className="grid gap-5" onSubmit={addAppointment}>
         <div className="grid gap-2">
           <span className="form-label">Cliente</span>
           <button aria-haspopup="dialog" className="form-control flex items-center justify-between gap-3 text-left" disabled={pending} onClick={() => setClientPickerOpen(true)} ref={clientTriggerRef} type="button">
@@ -266,7 +266,7 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
         <button aria-label="Cerrar selector de clientes" className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-[var(--color-line)]" disabled={pending} onClick={close} type="button"><X aria-hidden="true" size={19} /></button>
       </div>
       {creating ? (
-        <form className="grid gap-5 px-5 py-6 sm:px-7" onSubmit={addClient}>
+        <form method="post" className="grid gap-5 px-5 py-6 sm:px-7" onSubmit={addClient}>
           <Field label="Nombre" name="client_name" placeholder="Nombre y apellido" />
           <Field autoComplete="email" label="Email" name="client_email" placeholder="cliente@ejemplo.com" required={false} type="email" />
           <Field autoComplete="tel" label="Teléfono" name="client_phone" placeholder="11 2345 6789" required={false} />

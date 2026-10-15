@@ -100,12 +100,12 @@ export function ResetPasswordForm() {
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
       {success ? <FormMessage type="success">{success}</FormMessage> : null}
       {step === "request" ? (
-        <form className="grid gap-4" onSubmit={requestCode}>
+        <form method="post" className="grid gap-4" onSubmit={requestCode}>
           <Field label="Email" name="email" placeholder="tu@email.com" type="email" />
           <SubmitButton pending={pending}>Enviar código</SubmitButton>
         </form>
       ) : token ? (
-        <form className="grid gap-4" onSubmit={resetPassword}>
+        <form method="post" className="grid gap-4" onSubmit={resetPassword}>
           <PasswordField
             autoComplete="new-password"
             label="Nueva contraseña"
@@ -115,7 +115,7 @@ export function ResetPasswordForm() {
           <SubmitButton pending={pending}>Actualizar contraseña</SubmitButton>
         </form>
       ) : (
-        <form className="grid gap-4" onSubmit={exchangeCode}>
+        <form method="post" className="grid gap-4" onSubmit={exchangeCode}>
           <Field label="Código recibido" name="code" placeholder="123456" />
           <SubmitButton pending={pending}>Validar código</SubmitButton>
         </form>

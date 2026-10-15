@@ -70,7 +70,7 @@ export function RegisterForm() {
   return (
     <div className="grid gap-5">
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
-      <form className="grid gap-4" onSubmit={handleSubmit}>
+      <form method="post" className="grid gap-4" onSubmit={handleSubmit}>
         <Field autoComplete="name" label="Nombre" name="name" placeholder="Tu nombre" />
         <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
         <PasswordField

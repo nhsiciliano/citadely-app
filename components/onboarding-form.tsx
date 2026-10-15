@@ -140,7 +140,7 @@ export function OnboardingForm() {
   return (
     <div className="grid gap-5">
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
-      <form className="grid gap-5" onSubmit={handleSubmit}>
+      <form method="post" className="grid gap-5" onSubmit={handleSubmit}>
         <div className="grid gap-4">
           <Field
             label="Nombre del negocio"
