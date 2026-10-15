@@ -96,6 +96,11 @@ export async function recordFailedLogin(request: Request) {
   const { error } = await insforgeAdmin.database.from("blog_admin_login_attempts")
     .insert([{ ip_hash: ipHash(request) }]);
   if (error) throw error;
+
+  // Los intentos fuera de la ventana ya no cuentan para el bloqueo: se purgan al registrar uno nuevo.
+  const { error: purgeError } = await insforgeAdmin.database.from("blog_admin_login_attempts")
+    .delete().lt("attempted_at", new Date(Date.now() - WINDOW_MS).toISOString());
+  if (purgeError) console.error("blog admin login attempts purge failed", { message: purgeError.message });
 }
 
 export async function clearFailedLogins(request: Request) {

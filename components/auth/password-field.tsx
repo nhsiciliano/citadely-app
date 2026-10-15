@@ -30,7 +30,7 @@ export function PasswordField({
           autoComplete={autoComplete}
           className="form-control pr-14"
           id={inputId}
-          minLength={requireStrongPassword ? 6 : undefined}
+          minLength={requireStrongPassword ? 8 : undefined}
           name={name}
           pattern={requireStrongPassword ? PASSWORD_PATTERN : undefined}
           placeholder={placeholder}

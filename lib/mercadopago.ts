@@ -1,12 +1,6 @@
 import crypto from "node:crypto";
 import { assertProductionEnv } from "@/lib/env";
 
-export type MercadoPagoPreferenceResponse = {
-  id: string;
-  init_point?: string;
-  sandbox_init_point?: string;
-};
-
 export type MercadoPagoPaymentResponse = {
   id: number;
   status: string;
@@ -84,13 +78,6 @@ async function mercadoPagoRequest<T>(path: string, init: RequestInit = {}) {
   }
 
   return data;
-}
-
-export async function createMercadoPagoPreference(body: Record<string, unknown>) {
-  return mercadoPagoRequest<MercadoPagoPreferenceResponse>("/checkout/preferences", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
 }
 
 export async function getMercadoPagoPayment(paymentId: string) {
