@@ -2,6 +2,10 @@
   "name": "citadely-app",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -26,14 +30,13 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "resend": "^6.28.1",
-    "sharp": "^0.35.4",
-    "vercel": "^54.20.1"
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@insforge/cli": "^0.1.81",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
@@ -41,6 +44,7 @@
     "react-email": "^6.9.5",
     "resend-cli": "^2.21.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vercel": "^54.20.1"
   }
 }
