@@ -1,4 +1,4 @@
-import { isClientProduction } from "./env";
+import { isClientProduction, isProduction } from "./env";
 
 export const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN ?? "citadely.com.ar";
 
@@ -29,7 +29,9 @@ export function isMainAppHost(host: string) {
 // En producción cada negocio vive en su subdominio. Fuera de producción (Preview y local)
 // no hay wildcard, así que la página pública es /b/<slug> en el mismo origen.
 export function getBusinessPublicUrl(slug: string, origin?: string) {
-  if (!isClientProduction) {
+  // En servidor VERCEL_ENV siempre existe; NEXT_PUBLIC_VERCEL_ENV solo si Vercel lo expone. Debe coincidir con proxy.ts.
+  const production = isProduction || isClientProduction;
+  if (!production) {
     return `${resolvePublicOrigin(origin)}/b/${slug}`;
   }
   const protocol = APP_DOMAIN.includes("localhost") ? "http" : "https";
