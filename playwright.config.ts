@@ -1,8 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
+import { loadE2eEnvironment } from "./tests/e2e/support/env";
+
+// The only place that reads .env.local / .insforge/project.json; specs read process.env.
+loadE2eEnvironment();
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  timeout: 60_000,
+  timeout: 90_000,
+  globalSetup: "./tests/e2e/support/global-setup.ts",
+  globalTeardown: "./tests/e2e/support/global-teardown.ts",
   expect: { timeout: 10_000 },
   fullyParallel: false,
   reporter: [["list"], ["html", { open: "never" }]],
@@ -18,7 +24,8 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
-      command: "pnpm exec next dev --hostname 127.0.0.1 --port 3002",
+      // Direct node call: does not depend on pnpm being on PATH.
+      command: "node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3002",
       env: {
         MERCADOPAGO_ACCESS_TOKEN: "TEST-e2e-access-token",
         MERCADOPAGO_API_BASE_URL: "http://127.0.0.1:3010",

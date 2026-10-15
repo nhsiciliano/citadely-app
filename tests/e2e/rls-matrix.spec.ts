@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
 import type { InsForgeClient } from "@insforge/sdk";
 import { expect, test } from "@playwright/test";
-import { assertBackendBranch, readLinkedProject } from "../../scripts/lib/seed-guard.mjs";
+import { admin, env } from "./support/backend";
 
 // Matriz de acceso (7.3): qué puede hacer cada actor sobre cada tabla y RPC del esquema public.
 // Actores: anon (anon key), owner (dueño del negocio A, en prueba), other (dueño de B, intenta tocar A) y
@@ -23,24 +22,6 @@ const clients: Partial<Record<Actor, InsForgeClient>> = {};
 // Filas del negocio A (y C para las pruebas de solo lectura), creadas en beforeAll.
 const A: Record<string, string> = {};
 const C: Record<string, string> = {};
-
-function env(name: string) {
-  if (process.env[name]) return process.env[name] as string;
-  const line = readFileSync(".env.local", "utf8").split(/\r?\n/).find((candidate) => candidate.startsWith(`${name}=`));
-  if (!line) throw new Error(`Falta ${name}.`);
-  return line.slice(name.length + 1);
-}
-
-async function admin(path: string, init?: RequestInit) {
-  const project = readLinkedProject() as { oss_host: string; api_key: string };
-  assertBackendBranch(project);
-  const response = await fetch(`${project.oss_host}/api/${path}`, {
-    ...init,
-    headers: { Authorization: `Bearer ${project.api_key}`, "x-api-key": project.api_key, "Content-Type": "application/json" },
-  });
-  if (!response.ok) throw new Error(`InsForge ${response.status} en ${path}: ${(await response.text()).slice(0, 300)}`);
-  return response;
-}
 
 async function adminRows(path: string) {
   return await (await admin(`database/records/${path}`)).json() as Row[];

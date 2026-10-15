@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { assertBackendBranch, readLinkedProject } from "../../scripts/lib/seed-guard.mjs";
+import { admin, env } from "./support/backend";
 
 // Reconciliación con Mercado Pago (2.7) contra tests/fixtures/mercadopago-mock.mjs. Crea su propio negocio y
 // limita el cron con ?businessId=, así que no toca el negocio demo ni datos de otras corridas.
@@ -19,34 +18,6 @@ const MOCK_URL = process.env.E2E_MERCADOPAGO_MOCK_URL ?? "http://127.0.0.1:3010"
 const CRON_SECRET = process.env.CRON_SECRET ?? "e2e-cron-secret";
 const DAY = 86_400_000;
 const runId = `${Date.now().toString(36)}-${randomUUID().slice(0, 6)}`;
-
-function env(name: string) {
-  if (process.env[name]) return process.env[name] as string;
-  const line = readFileSync(".env.local", "utf8").split(/\r?\n/).find((candidate) => candidate.startsWith(`${name}=`));
-  if (!line) throw new Error(`Falta ${name}.`);
-  return line.slice(name.length + 1);
-}
-
-function branchProject() {
-  const project = readLinkedProject() as { oss_host: string; api_key: string };
-  assertBackendBranch(project);
-  return project;
-}
-
-async function admin(path: string, init?: RequestInit) {
-  const project = branchProject();
-  const response = await fetch(`${project.oss_host}/api/${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${project.api_key}`,
-      "Content-Type": "application/json",
-      "x-api-key": project.api_key,
-      ...(init?.headers ?? {}),
-    },
-  });
-  if (!response.ok) throw new Error(`InsForge ${response.status}: ${(await response.text()).slice(0, 300)}`);
-  return response;
-}
 
 async function adminRows(path: string) {
   return await (await admin(`database/records/${path}`)).json() as Row[];

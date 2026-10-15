@@ -1,5 +1,6 @@
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { env } from "./support/backend";
 
 const reviewDir = ".impeccable/review/catalog";
 
@@ -122,12 +123,9 @@ for (const width of [1440, 390]) {
 }
 
 test("vista previa reutiliza catálogo y preguntas sin reservar", async ({ page }) => {
-  const env = readFileSync(".env.local", "utf8");
-  const value = (name: string) => env.split(/\r?\n/).find((line) => line.startsWith(`${name}=`))?.slice(name.length + 1) ?? "";
-  test.skip(!value("CITADELY_DEMO_EMAIL"), "Requiere cuenta demo local.");
   await page.goto("/login");
-  await page.getByLabel("Email", { exact: true }).fill(value("CITADELY_DEMO_EMAIL"));
-  await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(value("CITADELY_DEMO_PASSWORD"));
+  await page.getByLabel("Email", { exact: true }).fill(env("CITADELY_DEMO_EMAIL"));
+  await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(env("CITADELY_DEMO_PASSWORD"));
   await page.getByRole("button", { name: "Ingresar" }).click();
   await expect(page).toHaveURL(/\/negocio/);
   await page.goto("/negocio/pagina-publica");

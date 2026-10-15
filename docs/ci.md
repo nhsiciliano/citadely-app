@@ -33,3 +33,28 @@ and Mercado Pago runs against the local mock in `tests/fixtures`.
 
 Until task 7.2, the specs read `.env.local` / `.insforge/project.json` from disk, so the job recreates both from the
 secrets above and runs `pnpm seed:demo` to create the demo account.
+
+## E2E configuration (7.2)
+
+The specs read **only `process.env`** (through `tests/e2e/support/backend.ts`) and fail, never skip, when a value is
+missing. `playwright.config.ts` is the single place that touches files: it loads `.env.local` (without overriding the
+environment) and, if `E2E_INSFORGE_*` is not set, derives it from `.insforge/project.json`.
+
+| Variable | Meaning |
+|---|---|
+| `E2E_INSFORGE_OSS_HOST`, `E2E_INSFORGE_API_KEY`, `E2E_INSFORGE_PROJECT_NAME` | Backend branch the specs write to (admin access) |
+| `E2E_INSFORGE_BRANCHED_FROM` | Parent project name. **Required**: without it the run aborts (never against Production). `NEXT_PUBLIC_INSFORGE_BASE_URL` must point at the same backend |
+| `SEED_CONFIRM_PROJECT` | Must equal the backend branch name (explicit confirmation of the target) |
+| `CITADELY_DEMO_EMAIL` / `CITADELY_DEMO_PASSWORD` | Demo owner. If unset, the seed generates them and appends them to `.env.local` |
+| `E2E_ADMIN_PASSWORD` | Admin panel password for the blog/promo specs |
+| `E2E_SKIP_SEED=1` | Skip the demo seed (already seeded) |
+| `E2E_PROMO_BRANCH` | Optional: only run `promo-redemption-preview` against this backend branch (it also needs `RUN_PROMO_REDEMPTION=1`) |
+| `E2E_RUN_ID` | Created per run; data the specs create carries it |
+
+Lifecycle: `support/global-setup.ts` checks the guard and runs the idempotent demo seed once; `support/global-teardown.ts`
+deletes what the run created in the demo business (appointments, clients, availability and services tagged with the run id).
+Specs with their own users and businesses (`rls-matrix`, `ssr-auth`, `subscription-*`) clean up after themselves.
+
+Specs are split by domain: `public-seo`, `public-contact`, `public-catalog`, `public-theme`, `dashboard-crud`,
+`dashboard-responsive`, `booking-capacity`, `availability-editor`, `manual-appointments-rpc`, `subscription-plans`,
+`subscription-mercadopago`, plus the isolated suites mentioned above.

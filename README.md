@@ -68,9 +68,9 @@ Detalle de CI y secretos en [`docs/ci.md`](docs/ci.md).
 
 ### Seeds y E2E escriben datos
 
-Los seeds y el E2E de `citadely-business-flow` **solo** escriben en un backend branch. Antes de escribir:
+Los seeds y el E2E **solo** escriben en un backend branch. Antes de escribir:
 
-- Verifican que `.insforge/project.json` tenga `branched_from`; si no, se niegan a correr.
+- Verifican que el proyecto tenga `branched_from` (`.insforge/project.json` en los seeds; `E2E_INSFORGE_BRANCHED_FROM` en los E2E, que el config deriva de ese archivo si no está definida) y, en los E2E, que la app apunte al mismo backend; si no, se niegan a correr.
 - Muestran el nombre del proyecto. Si la sesión es interactiva, hay que escribirlo para confirmar. Si no lo es (CI, Playwright, pipes), hay que definirlo en el entorno:
 
 ```bash

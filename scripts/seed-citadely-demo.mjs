@@ -28,8 +28,14 @@ function readLocalEnv() {
   );
 }
 
+// The environment wins over .env.local, so CI and E2E runs can provide the demo account without any file.
+// Missing values are generated once and appended to .env.local (local use).
 function ensureLocalCredentials() {
-  const env = readLocalEnv();
+  const env = {
+    ...readLocalEnv(),
+    ...(process.env.CITADELY_DEMO_EMAIL ? { CITADELY_DEMO_EMAIL: process.env.CITADELY_DEMO_EMAIL } : {}),
+    ...(process.env.CITADELY_DEMO_PASSWORD ? { CITADELY_DEMO_PASSWORD: process.env.CITADELY_DEMO_PASSWORD } : {}),
+  };
   const password = env.CITADELY_DEMO_PASSWORD || `Citadely-${randomBytes(12).toString("base64url")}9!`;
   const additions = [];
 
