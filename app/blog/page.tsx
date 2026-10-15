@@ -6,7 +6,6 @@ import { MarketingFooter, MarketingHeader } from "@/components/marketing-shell";
 import { BLOG_PAGE_SIZE, blogDate, getPublishedPosts } from "@/lib/blog";
 import { INDEX_ROBOTS, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
 type SearchParams = { searchParams: Promise<{ page?: string }> };
 
 function parsePage(value: string | undefined) {

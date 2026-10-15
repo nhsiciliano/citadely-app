@@ -8,7 +8,8 @@ import { MarketingFooter, MarketingHeader } from "@/components/marketing-shell";
 import { blogDate, getBlogBlocks, getPublishedPost } from "@/lib/blog";
 import { INDEX_ROBOTS, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+// Cached until the editor saves: the admin API calls revalidatePath for the post and the listing.
+export const revalidate = 3600;
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {

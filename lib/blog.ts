@@ -18,6 +18,9 @@ export type BlogPost = {
 };
 
 export const BLOG_PAGE_SIZE = 8;
+
+// Publicaciones por página en el panel editorial.
+export const ADMIN_POSTS_PAGE_SIZE = 25;
 export const BLOG_POST_COLUMNS = "id,title,slug,cover_url,cover_key,cover_alt,status,published_at,created_at,updated_at";
 
 export function blogSlug(title: string) {
