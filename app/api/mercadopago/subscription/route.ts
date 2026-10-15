@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@insforge/sdk";
+import { getPayerEmailOverride, getProtectionBypassSecret } from "@/lib/env";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 import {
   createMercadoPagoPreapproval,
@@ -47,7 +48,7 @@ function getAppBaseUrl(request: NextRequest) {
 
 function getWebhookUrl(origin: string) {
   const webhookUrl = new URL("/api/mercadopago/webhook", origin);
-  const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const protectionBypass = getProtectionBypassSecret();
   if (protectionBypass) webhookUrl.searchParams.set("x-vercel-protection-bypass", protectionBypass);
   return webhookUrl.toString();
 }
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     const plan = getSubscriptionPlan(body.plan);
     const origin = getAppBaseUrl(request);
-    const payerEmail = process.env.MERCADOPAGO_PAYER_EMAIL ?? user.email;
+    const payerEmail = getPayerEmailOverride() ?? user.email;
     if (!payerEmail) throw new Error("La cuenta no tiene un email valido.");
 
     const billingStartAt = getBillingStartAt(business);

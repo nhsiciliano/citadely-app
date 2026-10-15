@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { assertProductionEnv } from "@/lib/env";
 
 export type MercadoPagoPreferenceResponse = {
   id: string;
@@ -60,6 +61,7 @@ type MercadoPagoError = {
 export function getMercadoPagoAccessToken() {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
   if (!token) throw new Error("Falta MERCADOPAGO_ACCESS_TOKEN en el entorno.");
+  assertProductionEnv();
   return token;
 }
 
