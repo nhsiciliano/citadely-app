@@ -43,7 +43,7 @@ const LEGACY_HASHES: Record<string, string> = {
 export function BusinessShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { access: subscription, business, signOut, userEmail } = useWorkspace();
+  const { access: subscription, business, error, signOut, userEmail } = useWorkspace();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const publicUrl = getBusinessPublicUrl(business.slug);
@@ -147,6 +147,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="min-w-0" id="contenido-principal" inert={mobileOpen}>
+        {error ? <p className="border-b border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] px-5 py-3 text-sm font-semibold text-[var(--color-danger)]" role="alert">{error}</p> : null}
         {subscription.needsPayment ? (
           <div className="flex flex-col gap-3 border-b border-[var(--color-warning)] bg-[var(--color-warning-soft)] px-5 py-3 pl-20 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pl-20 lg:px-10" role="status">
             <p className="flex items-start gap-2 text-sm font-medium text-[var(--color-ink)]">

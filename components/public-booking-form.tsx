@@ -101,8 +101,13 @@ export function PublicBookingForm({
         clientMessage: String(form.get("message") ?? ""),
         turnstileToken,
       }),
-    });
+    }).catch(() => null);
     setTurnstileReset((count) => count + 1);
+    if (!response) {
+      setPending(false);
+      setError("No pudimos conectar con el servidor. Intentá de nuevo.");
+      return;
+    }
     const bookingData = (await response.json().catch(() => null)) as
       | {
           amount_cents?: number | null;

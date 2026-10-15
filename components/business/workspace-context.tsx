@@ -2,11 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getCitadelyProfile, getErrorMessage, getPostAuthPath, slugifyBusinessName } from "@/lib/auth";
+import { getErrorMessage, getPostAuthPath } from "@/lib/auth";
 import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Client, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { fetchBusinessAccessState, type BusinessAccessState } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
-import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
 import { AlertCircle, LoaderCircle } from "lucide-react";
 
 export type WorkspaceContextValue = {
@@ -127,27 +126,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
     if (businessError) throw new Error(getErrorMessage(businessError));
 
-    let currentBusiness = businessData as Business | null;
-    if (!currentBusiness) {
-      const profile = getCitadelyProfile(data.user);
-      const fallbackName = profile.business_name ?? "Mi negocio";
-      const { data: created, error: createError } = await insforge.database
-        .from("businesses")
-        .insert([{
-          owner_id: data.user.id,
-          name: fallbackName,
-          slug: profile.business_slug ?? slugifyBusinessName(fallbackName),
-          category: profile.business_category ?? "otros",
-        }])
-        .select("*")
-        .single();
-
-      if (createError || !created) throw new Error(getErrorMessage(createError) || "No se pudo crear el negocio.");
-      currentBusiness = created as Business;
+    // Sin negocio no hay panel: el onboarding es quien lo crea.
+    if (!businessData) {
+      router.replace("/onboarding");
+      return;
     }
-
+    const currentBusiness = businessData as Business;
     setBusiness(currentBusiness);
-    await saveBusinessNotificationEmail(currentBusiness.id, data.user.email);
     await loadBusinessData(currentBusiness.id);
   }
 

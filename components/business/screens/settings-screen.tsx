@@ -12,6 +12,15 @@ import { useSubscriptionPlans } from "../use-subscription-plans";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "../workspace-ui";
 
+// Lee la respuesta como JSON sin romper el flujo si el servidor responde algo que no lo es.
+async function readJson<T extends object>(response: Response): Promise<Partial<T> & { error?: string }> {
+  try {
+    return (await response.json()) as Partial<T> & { error?: string };
+  } catch {
+    return { error: "La respuesta del servidor no es válida." } as Partial<T> & { error?: string };
+  }
+}
+
 export function SettingsScreen() {
   const { access: subscription, business, refresh, signOut, userEmail } = useWorkspace();
   const plans = useSubscriptionPlans();
@@ -42,7 +51,7 @@ export function SettingsScreen() {
         headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ businessId: business.id, code: promoCode }),
       });
-      const data = await response.json() as { startsAt?: string; endsAt?: string; error?: string };
+      const data = await readJson<{ startsAt?: string; endsAt?: string }>(response);
       if (!response.ok) throw new Error(data.error ?? "No se pudo canjear el código.");
       setPromoCode("");
       await refresh();
@@ -74,8 +83,15 @@ export function SettingsScreen() {
       method: "POST",
       headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ businessId: business.id, plan, requestId: crypto.randomUUID() }),
-    });
-    const data = (await response.json()) as { checkoutUrl?: string; changeScheduled?: boolean; unchanged?: boolean; awaitingFirstPayment?: boolean; effectiveAt?: string; error?: string };
+    }).catch(() => null);
+    if (!response) {
+      setSubscriptionPending(false);
+      setRequestedPlan(null);
+      setMessageType("error");
+      setMessage("No pudimos conectar con el servidor. Intentá de nuevo.");
+      return;
+    }
+    const data = await readJson<{ checkoutUrl?: string; changeScheduled?: boolean; unchanged?: boolean; awaitingFirstPayment?: boolean; effectiveAt?: string; error?: string }>(response);
 
     if (!response.ok) {
       setSubscriptionPending(false);
@@ -121,8 +137,14 @@ export function SettingsScreen() {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ businessId: business.id, requestId: crypto.randomUUID() }),
-    });
-    const data = (await response.json()) as { cancelled?: boolean; unchanged?: boolean; cancelAt?: string | null; error?: string };
+    }).catch(() => null);
+    if (!response) {
+      setCancellationPending(false);
+      setMessageType("error");
+      setMessage("No pudimos conectar con el servidor. Intentá de nuevo.");
+      return;
+    }
+    const data = await readJson<{ cancelled?: boolean; unchanged?: boolean; cancelAt?: string | null; error?: string }>(response);
 
     if (!response.ok) {
       setCancellationPending(false);
