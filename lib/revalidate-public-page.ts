@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge";
+import { ensureFreshSession, readAccessTokenCookie } from "@/lib/insforge";
 
 /**
  * Tells the server to rebuild the cached public page of the signed-in owner's business.
@@ -6,11 +6,13 @@ import { insforge } from "@/lib/insforge";
  */
 export async function revalidatePublicPage() {
   try {
-    const { data: session } = await insforge.auth.refreshSession();
-    if (!session?.accessToken) return;
+    if (!(await ensureFreshSession())) return;
+    const accessToken = readAccessTokenCookie();
+    if (!accessToken) return;
     await fetch("/api/revalidate-public-page", {
       method: "POST",
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
+      credentials: "include",
       keepalive: true,
     });
   } catch {

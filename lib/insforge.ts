@@ -6,7 +6,7 @@ import { getInsforgePublicConfig } from "@/lib/insforge-config";
 // En Server Components y rutas usá lib/insforge-server.ts (con sesión) o lib/insforge-public.ts (anónimo).
 export const insforge = createBrowserClient(getInsforgePublicConfig());
 
-function readAccessTokenCookie() {
+export function readAccessTokenCookie() {
   if (typeof document === "undefined") return null;
   const name = `${getAccessTokenCookieName()}=`;
   const cookie = document.cookie.split(/;\s*/).find((part) => part.startsWith(name));
