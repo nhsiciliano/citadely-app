@@ -11,6 +11,7 @@ import { insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
 import { BUSINESS_SLUG_MAX_LENGTH, BUSINESS_SLUG_PATTERN, validateBusinessSlug } from "@/lib/business-slug";
+import { READ_ONLY_HINT } from "@/lib/business-access";
 import { getBusinessCategoryOptions } from "@/lib/business-categories";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
@@ -23,6 +24,8 @@ export function OnboardingForm() {
   const [category, setCategory] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
   const [existingBusinessId, setExistingBusinessId] = useState<string | null>(null);
+  // Datos guardados del negocio existente: permiten saltear el UPDATE cuando no hay cambios.
+  const [savedValues, setSavedValues] = useState<{ name: string; category: string } | null>(null);
   const [slugStatus, setSlugStatus] = useState<SlugStatus>({ state: "idle" });
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(true);
@@ -66,6 +69,7 @@ export function OnboardingForm() {
 
       if (business) {
         setExistingBusinessId(business.id);
+        setSavedValues({ name: business.name ?? "", category: business.category ?? "" });
         setName(business.name ?? "");
         setSlug(business.slug ?? "");
         setCategory(business.category ?? "");
@@ -160,18 +164,37 @@ export function OnboardingForm() {
       slug: businessSlug,
     };
 
-    const { data: savedBusiness, error: businessError } = existingBusinessId
-      ? await insforge.database
+    const unchanged = Boolean(existingBusinessId)
+      && savedValues?.name === businessName
+      && savedValues?.category === businessCategory;
+
+    let savedBusinessId = existingBusinessId;
+    let businessError: unknown = null;
+
+    if (existingBusinessId) {
+      // Con la suscripción vencida RLS rechaza la escritura: el UPDATE devuelve 0 filas en lugar de un error.
+      if (!unchanged) {
+        const { data: updated, error: updateError } = await insforge.database
           .from("businesses")
           .update(businessPayload)
           .eq("id", existingBusinessId)
-          .select("id")
-          .single()
-      : await insforge.database
-          .from("businesses")
-          .insert([businessPayload])
-          .select("id")
-          .single();
+          .select("id");
+        businessError = updateError;
+        if (!updateError && !updated?.length) {
+          setPending(false);
+          setError(READ_ONLY_HINT);
+          return;
+        }
+      }
+    } else {
+      const { data: inserted, error: insertError } = await insforge.database
+        .from("businesses")
+        .insert([businessPayload])
+        .select("id")
+        .single();
+      businessError = insertError;
+      savedBusinessId = inserted?.id ?? null;
+    }
 
     if (businessError) {
       setPending(false);
@@ -184,7 +207,7 @@ export function OnboardingForm() {
       return;
     }
 
-    const businessId = existingBusinessId ?? savedBusiness?.id;
+    const businessId = savedBusinessId;
 
     if (businessId) {
       const { error: notificationError } =
