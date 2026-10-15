@@ -34,7 +34,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-.local-run/
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -46,6 +45,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Design-review build artifacts (large PNGs; not part of the app)
+.impeccable/
 
 # InsForge & AI agent skills
 .insforge
