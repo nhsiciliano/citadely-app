@@ -1,5 +1,7 @@
 import type { UserSchema } from "@insforge/sdk";
 
+// "client" no tiene producto todavía: ni onboarding ni panel. Se mantiene hasta que el dueño del producto
+// decida si se construye el área de cliente (plan, 5.5). No borrar sin esa decisión.
 export type CitadelyRole = "business" | "client";
 
 export type CitadelyProfile = {

@@ -159,6 +159,5 @@ export async function POST(request: Request) {
     status: booking.status,
     amount_cents: booking.amount_cents,
     deposit_expires_at: booking.deposit_expires_at,
-    email_queued: true,
   });
 }
