@@ -172,7 +172,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   async function ensureHistoryFrom(from: Date) {
     if (!business || !historyStart || from.getTime() >= new Date(historyStart).getTime()) return;
-    const nextStart = from.toISOString();
+    // Se pide un mes más atrás de lo necesario para no consultar semana a semana al navegar.
+    const nextStart = new Date(from.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const [olderAppointments, olderSlots] = await Promise.all([
       loadRange<Appointment>("appointments", business.id, nextStart, historyStart),
       loadRange<ServiceAvailabilitySlot>("service_availability_slots", business.id, nextStart, historyStart),
