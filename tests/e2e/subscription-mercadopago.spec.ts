@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { adminRequest, updateBusiness } from "./support/backend";
 import { signIn } from "./support/dashboard";
+import { E2E_MERCADOPAGO_WEBHOOK_SECRET, E2E_VERCEL_BYPASS_SECRET } from "./support/constants";
 
 test("suscripción Mercado Pago: prueba, aprobación, duplicados, mora y reembolso", async ({ page, request }) => {
   const originalRows = await (await adminRequest("records/businesses?slug=eq.citadely-demo-ux&select=*&limit=1")).json() as Record<string, unknown>[];
@@ -40,12 +41,12 @@ test("suscripción Mercado Pago: prueba, aprobación, duplicados, mora y reembol
     const providerPreapprovalResponse = await request.get(`http://127.0.0.1:3010/preapproval/${pendingRows[0]?.subscription_external_id}`);
     const providerPreapproval = await providerPreapprovalResponse.json() as { notification_url: string; status: string };
     expect(providerPreapproval.status).toBe("authorized");
-    expect(new URL(providerPreapproval.notification_url).searchParams.get("x-vercel-protection-bypass")).toBe("e2e-vercel-bypass");
+    expect(new URL(providerPreapproval.notification_url).searchParams.get("x-vercel-protection-bypass")).toBe(E2E_VERCEL_BYPASS_SECRET);
 
     const preapprovalRequestId = "e2e-preapproval-request";
     const preapprovalTimestamp = String(Math.floor(Date.now() / 1000));
     const preapprovalDataId = String(pendingRows[0]?.subscription_external_id);
-    const preapprovalSignature = createHmac("sha256", "e2e-webhook-secret")
+    const preapprovalSignature = createHmac("sha256", E2E_MERCADOPAGO_WEBHOOK_SECRET)
       .update(`id:${preapprovalDataId};request-id:${preapprovalRequestId};ts:${preapprovalTimestamp};`)
       .digest("hex");
     const preapprovalWebhook = await request.post(`/api/mercadopago/webhook?data.id=${preapprovalDataId}`, {
@@ -66,7 +67,7 @@ test("suscripción Mercado Pago: prueba, aprobación, duplicados, mora y reembol
     };
     const webhookRequestId = "e2e-authorized-request";
     const timestamp = String(Math.floor(Date.now() / 1000));
-    const signature = createHmac("sha256", "e2e-webhook-secret")
+    const signature = createHmac("sha256", E2E_MERCADOPAGO_WEBHOOK_SECRET)
       .update(`id:${authorizedPaymentId};request-id:${webhookRequestId};ts:${timestamp};`)
       .digest("hex");
     const webhookOptions = {

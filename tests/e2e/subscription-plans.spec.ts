@@ -2,6 +2,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { adminRequest, updateBusiness } from "./support/backend";
 import { signIn } from "./support/dashboard";
+import { E2E_MERCADOPAGO_WEBHOOK_SECRET } from "./support/constants";
 
 test("permisos de prueba, Esencial, Pro y cambio pendiente", async ({ page, request }) => {
   const originalRows = await (await adminRequest("records/businesses?slug=eq.citadely-demo-ux&select=*&limit=1")).json() as Record<string, unknown>[];
@@ -79,7 +80,7 @@ test("permisos de prueba, Esencial, Pro y cambio pendiente", async ({ page, requ
 
     const simulatedBody = { id: "123456", type: "payment", date: "2021-11-01T02:02:02Z", data: { id: "123456" } };
     const timestamp = String(Math.floor(Date.now() / 1000));
-    const incompleteSignature = createHmac("sha256", "e2e-webhook-secret")
+    const incompleteSignature = createHmac("sha256", E2E_MERCADOPAGO_WEBHOOK_SECRET)
       .update(`id:123456;ts:${timestamp};`)
       .digest("hex");
     const incompleteWebhook = await request.post("/api/mercadopago/webhook?data.id=123456", {
@@ -89,7 +90,7 @@ test("permisos de prueba, Esencial, Pro y cambio pendiente", async ({ page, requ
     expect(incompleteWebhook.status()).toBe(401);
 
     const requestId = "e2e-signature-check";
-    const signature = createHmac("sha256", "e2e-webhook-secret")
+    const signature = createHmac("sha256", E2E_MERCADOPAGO_WEBHOOK_SECRET)
       .update(`id:123456;request-id:${requestId};ts:${timestamp};`)
       .digest("hex");
     const signedWebhook = await request.post("/api/mercadopago/webhook?data.id=123456", {

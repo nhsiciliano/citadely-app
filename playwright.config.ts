@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { E2E_CRON_SECRET, E2E_MERCADOPAGO_WEBHOOK_SECRET, E2E_VERCEL_BYPASS_SECRET } from "./tests/e2e/support/constants";
 import { loadE2eEnvironment } from "./tests/e2e/support/env";
 
 // The only place that reads .env.local / .insforge/project.json; specs read process.env.
@@ -30,12 +31,12 @@ export default defineConfig({
         MERCADOPAGO_ACCESS_TOKEN: "TEST-e2e-access-token",
         MERCADOPAGO_API_BASE_URL: "http://127.0.0.1:3010",
         MERCADOPAGO_PAYER_EMAIL: "payer@testuser.com",
-        MERCADOPAGO_WEBHOOK_SECRET: "e2e-webhook-secret",
-        VERCEL_AUTOMATION_BYPASS_SECRET: "e2e-vercel-bypass",
+        MERCADOPAGO_WEBHOOK_SECRET: E2E_MERCADOPAGO_WEBHOOK_SECRET,
+        VERCEL_AUTOMATION_BYPASS_SECRET: E2E_VERCEL_BYPASS_SECRET,
         RESEND_SKIP_DELIVERY: "true",
         // Specs write to the database directly; the public page must not serve cached data.
         PUBLIC_PAGE_REVALIDATE_SECONDS: "0",
-        CRON_SECRET: "e2e-cron-secret",
+        CRON_SECRET: E2E_CRON_SECRET,
       },
       url: "http://127.0.0.1:3002",
       reuseExistingServer: true,

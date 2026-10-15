@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { admin, env } from "./support/backend";
+import { E2E_CRON_SECRET } from "./support/constants";
 
 // Reconciliación con Mercado Pago (2.7) contra tests/fixtures/mercadopago-mock.mjs. Crea su propio negocio y
 // limita el cron con ?businessId=, así que no toca el negocio demo ni datos de otras corridas.
@@ -15,7 +16,7 @@ type Report = {
 };
 
 const MOCK_URL = process.env.E2E_MERCADOPAGO_MOCK_URL ?? "http://127.0.0.1:3010";
-const CRON_SECRET = process.env.CRON_SECRET ?? "e2e-cron-secret";
+const CRON_SECRET = E2E_CRON_SECRET;
 const DAY = 86_400_000;
 const runId = `${Date.now().toString(36)}-${randomUUID().slice(0, 6)}`;
 
