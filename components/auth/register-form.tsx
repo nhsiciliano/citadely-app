@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { getErrorMessage } from "@/lib/auth";
+import { getErrorMessage, storePendingProfileName } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
 import { getPasswordValidationError } from "@/lib/password";
 import { PasswordField } from "@/components/auth/password-field";
@@ -45,7 +45,8 @@ export function RegisterForm() {
     }
 
     if (data?.requireEmailVerification) {
-      const params = new URLSearchParams({ email, name });
+      storePendingProfileName(name);
+      const params = new URLSearchParams({ email });
       router.push(`/verificar-email?${params.toString()}`);
       return;
     }

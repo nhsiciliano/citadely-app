@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { getErrorMessage } from "@/lib/auth";
+import { clearPendingProfileName, getErrorMessage, readPendingProfileName } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
@@ -14,7 +14,7 @@ export function VerifyEmailForm() {
   const [pending, setPending] = useState(false);
 
   const defaultEmail = searchParams.get("email") ?? "";
-  const defaultName = searchParams.get("name") ?? "";
+  const [defaultName] = useState(readPendingProfileName);
 
   async function handleVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,6 +47,7 @@ export function VerifyEmailForm() {
       return;
     }
 
+    clearPendingProfileName();
     router.push("/onboarding");
   }
 
@@ -67,7 +68,7 @@ export function VerifyEmailForm() {
       return;
     }
 
-    setSuccess("Te enviamos un nuevo codigo de verificacion.");
+    setSuccess("Te enviamos un nuevo código de verificación.");
   }
 
   return (
@@ -76,7 +77,7 @@ export function VerifyEmailForm() {
       {success ? <FormMessage type="success">{success}</FormMessage> : null}
       <form className="grid gap-4" onSubmit={handleVerify}>
         <Field label="Email" name="email" type="email" defaultValue={defaultEmail} />
-        <Field label="Codigo de 6 digitos" name="otp" placeholder="123456" />
+        <Field label="Código de 6 dígitos" name="otp" placeholder="123456" />
         <SubmitButton pending={pending}>Verificar email</SubmitButton>
       </form>
       <button
@@ -85,7 +86,7 @@ export function VerifyEmailForm() {
         onClick={resendCode}
         type="button"
       >
-        Reenviar codigo
+        Reenviar código
       </button>
     </div>
   );

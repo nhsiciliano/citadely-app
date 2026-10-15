@@ -38,7 +38,7 @@ export function ResetPasswordForm() {
 
     setEmail(nextEmail);
     setStep("reset");
-    setSuccess("Te enviamos un codigo para cambiar tu contrasena.");
+    setSuccess("Te enviamos un código para cambiar tu contraseña.");
   }
 
   async function exchangeCode(event: FormEvent<HTMLFormElement>) {
@@ -62,7 +62,7 @@ export function ResetPasswordForm() {
     }
 
     setToken(data?.token ?? "");
-    setSuccess("Codigo validado. Ingresá tu nueva contrasena.");
+    setSuccess("Código validado. Ingresá tu nueva contraseña.");
   }
 
   async function resetPassword(event: FormEvent<HTMLFormElement>) {
@@ -92,7 +92,7 @@ export function ResetPasswordForm() {
       return;
     }
 
-    setSuccess("Contrasena actualizada. Ya podes ingresar.");
+    setSuccess("Contraseña actualizada. Ya podés ingresar.");
   }
 
   return (
@@ -102,7 +102,7 @@ export function ResetPasswordForm() {
       {step === "request" ? (
         <form className="grid gap-4" onSubmit={requestCode}>
           <Field label="Email" name="email" placeholder="tu@email.com" type="email" />
-          <SubmitButton pending={pending}>Enviar codigo</SubmitButton>
+          <SubmitButton pending={pending}>Enviar código</SubmitButton>
         </form>
       ) : token ? (
         <form className="grid gap-4" onSubmit={resetPassword}>
@@ -112,12 +112,12 @@ export function ResetPasswordForm() {
             placeholder="Creá una contraseña segura"
             requireStrongPassword
           />
-          <SubmitButton pending={pending}>Actualizar contrasena</SubmitButton>
+          <SubmitButton pending={pending}>Actualizar contraseña</SubmitButton>
         </form>
       ) : (
         <form className="grid gap-4" onSubmit={exchangeCode}>
-          <Field label="Codigo recibido" name="code" placeholder="123456" />
-          <SubmitButton pending={pending}>Validar codigo</SubmitButton>
+          <Field label="Código recibido" name="code" placeholder="123456" />
+          <SubmitButton pending={pending}>Validar código</SubmitButton>
         </form>
       )}
       <Link className="text-sm font-semibold text-[var(--reception)]" href="/login">

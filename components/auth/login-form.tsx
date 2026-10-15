@@ -81,7 +81,7 @@ export function LoginForm() {
       </button>
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--ink-soft)]">
         <Link className="font-semibold text-[var(--reception)]" href="/recuperar-password">
-          Olvide mi contraseña
+          Olvidé mi contraseña
         </Link>
         <span>
           ¿No tenés cuenta?{" "}
