@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isProduction } from "@/lib/env";
 import { getBusinessPublicUrl, getBusinessSubdomain, isMainAppHost } from "@/lib/urls";
 
 export function proxy(request: NextRequest) {
@@ -7,7 +8,8 @@ export function proxy(request: NextRequest) {
   const legacyBusiness = /^\/b\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/.exec(pathname);
   const subdomain = getBusinessSubdomain(host);
 
-  if (legacyBusiness && (isMainAppHost(host) || subdomain)) {
+  // Fuera de producción no hay subdominios de negocio: /b/<slug> se sirve directo y no se redirige.
+  if (isProduction && legacyBusiness && (isMainAppHost(host) || subdomain)) {
     const destination = new URL(getBusinessPublicUrl(legacyBusiness[1]));
     destination.search = request.nextUrl.search;
     return NextResponse.redirect(destination, 308);
