@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { BadgeDollarSign, Building2, CalendarClock, Check, Clock3, CreditCard, Globe2, LogOut, MessageCircle, ShieldCheck, TicketPercent, XCircle } from "lucide-react";
 import { Field, FormMessage, LoadingSpinner, SubmitButton } from "@/components/ui";
 import { getErrorMessage } from "@/lib/auth";
-import { getSubscriptionState } from "@/lib/citadely-db";
+import { READ_ONLY_HINT } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
 import { normalizeWhatsAppPhone } from "@/lib/public-profile";
 import { formatPlanPrice, SUBSCRIPTION_PLAN_DETAILS, type SubscriptionPlanId } from "@/lib/subscription-plans";
@@ -13,8 +13,7 @@ import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "../workspace-ui";
 
 export function SettingsScreen() {
-  const { business, refresh, signOut, userEmail } = useWorkspace();
-  const subscription = getSubscriptionState(business);
+  const { access: subscription, business, refresh, signOut, userEmail } = useWorkspace();
   const plans = useSubscriptionPlans();
   const [paymentPending, setPaymentPending] = useState(false);
   const [subscriptionPending, setSubscriptionPending] = useState(false);
@@ -142,7 +141,7 @@ export function SettingsScreen() {
 
   async function savePayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!subscription.hasAccess) return;
+    if (!subscription.hasDashboardAccess) return;
     const form = new FormData(event.currentTarget);
     setPaymentPending(true);
     setMessage(null);
@@ -273,8 +272,8 @@ export function SettingsScreen() {
             <div className="flex items-center gap-2 border-t border-[var(--color-line)] pt-4"><MessageCircle aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><h3 className="font-semibold">WhatsApp</h3></div>
             <Field defaultValue={business.whatsapp_phone ?? ""} label="WhatsApp de contacto" name="whatsapp_phone" placeholder="5491123456789" required={false} />
             <p className="text-xs leading-5 text-[var(--color-ink-muted)]">Ingresalo con código de país, sin +, espacios ni guiones.</p>
-            {!subscription.hasAccess ? <FormMessage type="error">Activá el plan mensual para modificar estos datos.</FormMessage> : null}
-            <SubmitButton disabled={!subscription.hasAccess} pending={paymentPending}>Guardar configuración</SubmitButton>
+            {!subscription.hasDashboardAccess ? <FormMessage type="error">{READ_ONLY_HINT}</FormMessage> : null}
+            <SubmitButton disabled={!subscription.hasDashboardAccess} pending={paymentPending}>Guardar configuración</SubmitButton>
           </form>
         </section>
 

@@ -111,26 +111,71 @@ export function Field({
   required = true,
   defaultValue,
   autoComplete,
+  id,
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  pattern,
+  inputMode,
+  minLength,
+  maxLength,
+  readOnly,
+  disabled,
+  title,
+  describedBy,
+  invalid,
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
   required?: boolean;
+  /** Uncontrolled initial value. Use `value` + `onChange` for state that loads asynchronously. */
   defaultValue?: string;
   autoComplete?: string;
+  id?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  pattern?: string;
+  inputMode?: "text" | "numeric" | "decimal" | "tel" | "email" | "url" | "search" | "none";
+  minLength?: number;
+  maxLength?: number;
+  readOnly?: boolean;
+  disabled?: boolean;
+  title?: string;
+  /** id of the element (hint or error) that describes this field. */
+  describedBy?: string;
+  invalid?: boolean;
 }) {
   return (
     <label className="form-label">
       {label}
       <input
         className="form-control"
+        id={id}
         name={name}
         type={type}
         placeholder={placeholder}
         required={required}
-        defaultValue={defaultValue}
+        {...(value !== undefined ? { value, onChange: (event: ChangeEvent<HTMLInputElement>) => onChange?.(event.target.value) } : { defaultValue })}
         autoComplete={autoComplete}
+        min={min}
+        max={max}
+        step={step}
+        pattern={pattern}
+        inputMode={inputMode}
+        minLength={minLength}
+        maxLength={maxLength}
+        readOnly={readOnly}
+        disabled={disabled}
+        title={title}
+        aria-describedby={describedBy}
+        aria-invalid={invalid || undefined}
       />
     </label>
   );
