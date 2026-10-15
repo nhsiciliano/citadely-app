@@ -1,3 +1,4 @@
+import "./production-env";
 import { expect, test } from "@playwright/test";
 import { NextRequest } from "next/server";
 import { proxy } from "../../proxy";
