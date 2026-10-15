@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
-import { CalendarClock, CheckCircle2, Clock3, CreditCard, Plus, Search, UserRound, X } from "lucide-react";
+import { CalendarClock, CheckCircle2, Clock3, CreditCard, MessageSquare, Plus, Search, UserRound, X } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { buildBookingSlots, formatAppointmentTime, formatCurrency, type Appointment, type Client } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
@@ -305,6 +305,12 @@ function ClientPickerDialog({ clients, onClose, onClosed, onSelect, open }: { cl
   );
 }
 
+const APPOINTMENT_SOURCE_LABELS: Record<Appointment["source"], string> = {
+  business: "Cargado por el negocio",
+  public_booking: "Reserva pública",
+  client: "Cliente",
+};
+
 export function AppointmentDetailDrawer({ appointment, onClose }: { appointment: Appointment | null; onClose: () => void }) {
   const { business, refresh } = useWorkspace();
   const [message, setMessage] = useState<string | null>(null);
@@ -355,6 +361,15 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
             <div className="grid grid-cols-[24px_1fr] gap-3">
               <CreditCard aria-hidden="true" className="text-[var(--color-primary)]" size={19} />
               <div><dt className="text-[var(--color-ink-muted)]">Seña</dt><dd className="mt-1 font-semibold">{appointment.deposit_amount_cents > 0 ? formatCurrency(appointment.deposit_amount_cents, business.currency) : "No requerida"}</dd></div>
+            </div>
+            <div className="grid grid-cols-[24px_1fr] gap-3">
+              <MessageSquare aria-hidden="true" className="text-[var(--color-primary)]" size={19} />
+              <div>
+                <dt className="text-[var(--color-ink-muted)]">Origen</dt>
+                <dd className="mt-1 font-semibold">{APPOINTMENT_SOURCE_LABELS[appointment.source] ?? "Desconocido"}</dd>
+                <dt className="mt-3 text-[var(--color-ink-muted)]">Mensaje del cliente</dt>
+                <dd className="mt-1 whitespace-pre-line text-[var(--color-ink-soft)]">{appointment.client_message?.trim() || "Sin mensaje."}</dd>
+              </div>
             </div>
           </dl>
 
