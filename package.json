@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "schema:diff": "node scripts/schema-diff.mjs",
     "seed:demo": "node scripts/seed-citadely-demo.mjs",
     "seed:barberia-luk": "node scripts/seed-barberia-luk.mjs",
     "seed:clinica-colon": "node scripts/seed-clinica-colon.mjs",
