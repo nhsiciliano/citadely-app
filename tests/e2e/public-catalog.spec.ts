@@ -68,7 +68,10 @@ test("catálogo público: explorar, cancelar, elegir y conservar horario", async
   await page.getByLabel("Email", { exact: true }).fill("prueba@example.com");
   await page.getByLabel("Teléfono").fill("1199887766");
   await page.getByRole("button", { name: "Confirmar reserva" }).click();
-  await expect(page.getByText(/Reserva confirmada\. Te enviamos/)).toBeVisible();
+  // El resultado de la reserva es un panel con heading; muestra el servicio y el horario elegidos.
+  const confirmation = page.locator('section[aria-labelledby="reserva-confirmada"]');
+  await expect(confirmation.getByRole("heading", { name: "Reserva confirmada", exact: true })).toBeVisible();
+  await expect(confirmation).toContainText("Control clínico");
   expect(submitted?.serviceId).toBeTruthy();
   expect(submitted?.startsAt).toBeTruthy();
 });
