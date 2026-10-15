@@ -198,6 +198,7 @@ textarea.form-control, textarea.form-input { padding-block: 0.75rem; line-height
 .calendar-month button small { color: var(--color-ink-muted); font-size: 0.55rem; text-transform: uppercase; }
 .calendar-month button span { position: absolute; right: 0.2rem; top: 0.2rem; display: flex; align-items: center; color: var(--color-success); font-size: 0.55rem; }
 .calendar-month button:hover, .calendar-month button.has-slots { border-color: #a9dcca; background: var(--color-success-soft); }
+.calendar-month button:disabled { cursor: not-allowed; opacity: 0.4; }
 .calendar-month button.is-selected { border-color: var(--color-primary); background: var(--color-primary); color: white; }
 .calendar-month button.is-selected small, .calendar-month button.is-selected span { color: white; }
 .time-chip { display: inline-flex; min-height: 2rem; align-items: center; gap: 0.4rem; border-radius: 999px; background: var(--color-primary-soft); padding: 0 0.65rem; color: var(--color-primary); font-family: var(--font-geist-mono); font-size: 0.75rem; font-weight: 700; }

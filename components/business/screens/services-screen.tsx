@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CalendarDays, Check, Clock3, Pencil, Plus, Power, Tag } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
-import { centsFromCurrency, formatCurrency, getSlotOccupancy, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { formatCurrency, getSlotOccupancy, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { READ_ONLY_HINT } from "@/lib/business-access";
 import { getErrorMessage } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
+import { readServiceForm, SERVICE_LIMITS, upsertServiceWithSlots } from "@/lib/service-form";
 import { addMonthsToMonthKey, formatDateKey, getDaysInMonth, getWeekdayOfDateKey, toDateKey, toMonthKey, toTimeKey, zonedTimeToUtc } from "@/lib/time";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader } from "../workspace-ui";
@@ -50,6 +51,7 @@ export function ServicesScreen() {
   const [selectedDate, setSelectedDate] = useState("");
   const selectedMonthLabel = formatDateKey(`${selectedMonth}-01`, { month: "long", year: "numeric" });
   const [draftTime, setDraftTime] = useState("");
+  const todayKey = toDateKey(new Date(), timeZone);
   const [dateTimes, setDateTimes] = useState<Record<string, Record<string, number>>>({});
 
   useEffect(() => {
@@ -102,6 +104,11 @@ export function ServicesScreen() {
       setMessage("Elegí un día y una hora para preparar la disponibilidad.");
       return;
     }
+    if (zonedTimeToUtc(selectedDate, draftTime, timeZone).getTime() <= Date.now()) {
+      setMessage("Ese horario ya pasó. Elegí un horario futuro.");
+      return;
+    }
+    setMessage(null);
     setDateTimes((current) => ({ ...current, [selectedDate]: { ...(current[selectedDate] ?? {}), [draftTime]: current[selectedDate]?.[draftTime] ?? 1 } }));
     setDraftTime("");
   }
@@ -124,11 +131,11 @@ export function ServicesScreen() {
     }));
   }
 
-  function requestedSlots(duration: number) {
-    return Object.entries(dateTimes).flatMap(([day, times]) => Object.entries(times).map(([time, capacity]) => {
-      const startsAt = zonedTimeToUtc(day, time, timeZone);
-      return { startsAt, endsAt: new Date(startsAt.getTime() + duration * 60000), capacity };
-    }));
+  function requestedSlots() {
+    return Object.entries(dateTimes).flatMap(([day, times]) => Object.entries(times).map(([time, capacity]) => ({
+      startsAt: zonedTimeToUtc(day, time, timeZone),
+      capacity,
+    })));
   }
 
   function validateSlots(slots: ReturnType<typeof requestedSlots>) {
@@ -139,169 +146,60 @@ export function ServicesScreen() {
     return null;
   }
 
-  async function addService(event: FormEvent<HTMLFormElement>) {
+  // Periodo editable: del primer día del primer mes al fin del último mes del selector.
+  const editableWindow = {
+    start: zonedTimeToUtc(`${options[0].key}-01`, "00:00", timeZone),
+    end: zonedTimeToUtc(`${addMonthsToMonthKey(options[options.length - 1].key, 1)}-01`, "00:00", timeZone),
+  };
+
+  async function saveService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!subscription.hasDashboardAccess) return;
     const formElement = event.currentTarget;
-    const form = new FormData(formElement);
-    const duration = Number(form.get("duration_minutes") ?? 30);
-    const price = centsFromCurrency(form.get("price"));
-    const depositType = String(form.get("deposit_type")) as Service["deposit_type"];
-    const slots = requestedSlots(duration);
 
+    const parsed = readServiceForm(new FormData(formElement));
+    if (parsed.input === null) { setMessage(parsed.error); return; }
+    const slots = requestedSlots();
     const slotError = validateSlots(slots);
-    if (slotError) {
-      setMessage(slotError);
-      return;
+    if (slotError) { setMessage(slotError); return; }
+
+    if (editingService) {
+      // Adelanto del chequeo de reservas vigentes; la base de datos lo vuelve a verificar de forma atómica.
+      const desiredByStart = new Map(slots.map((slot) => [slot.startsAt.toISOString(), slot]));
+      const duration = parsed.input.durationMinutes;
+      for (const slot of availabilitySlots.filter((item) => item.service_id === editingService.id)) {
+        const occupancy = getSlotOccupancy(slot, appointments);
+        if (!occupancy.booked) continue;
+        const desired = desiredByStart.get(new Date(slot.starts_at).toISOString());
+        const desiredEnd = desired ? new Date(desired.startsAt.getTime() + duration * 60000).toISOString() : null;
+        if ((!desired && slot.is_active) || (desired && (desired.capacity < occupancy.booked || desiredEnd !== new Date(slot.ends_at).toISOString()))) {
+          setMessage("Hay reservas vigentes en uno de esos horarios. Conservá el horario y un cupo suficiente para ellas.");
+          return;
+        }
+      }
     }
 
     setPending(true);
     setMessage(null);
-    const { data: created, error } = await insforge.database.from("services").insert([{
-      business_id: business.id,
-      name: String(form.get("name") ?? ""),
-      description: String(form.get("description") ?? ""),
-      image_url: String(form.get("image_url") ?? ""),
-      duration_minutes: duration,
-      price_cents: price,
-      requires_payment: depositType !== "free",
-      deposit_type: depositType,
-      deposit_value_cents: depositType === "full" ? price : centsFromCurrency(form.get("deposit_value")),
-    }]).select("*").single();
-
-    if (error || !created) {
-      setPending(false);
-      setMessage(getErrorMessage(error) || "No se pudo crear el servicio.");
-      return;
-    }
-
-    const createdService = created as Service;
-    const { error: slotsError } = await insforge.database.from("service_availability_slots").insert(slots.map(({ startsAt, endsAt, capacity }) => ({
-      business_id: business.id,
-      service_id: createdService.id,
-      starts_at: startsAt.toISOString(),
-      ends_at: endsAt.toISOString(),
-      capacity,
-      is_active: true,
-    })));
-
-    if (slotsError) {
-      await insforge.database.from("services").update({ is_active: false }).eq("id", createdService.id);
-      setPending(false);
-      setMessage(`El servicio quedó pausado porque no se pudo guardar la disponibilidad: ${getErrorMessage(slotsError)}`);
-      await refresh();
-      return;
-    }
-
+    const { error } = await upsertServiceWithSlots({
+      businessId: business.id,
+      serviceId: editingService?.id ?? null,
+      input: parsed.input,
+      slots,
+      windowStart: editableWindow.start,
+      windowEnd: editableWindow.end,
+    });
     setPending(false);
+
+    if (error) {
+      setMessage(getErrorMessage(error) || "No se pudo guardar el servicio.");
+      return;
+    }
+
     formElement.reset();
     setDateTimes({});
     setSelectedDate("");
     await refresh();
-    setDrawerOpen(false);
-  }
-
-  async function updateService(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!subscription.hasDashboardAccess || !editingService) return;
-
-    const form = new FormData(event.currentTarget);
-    const duration = Number(form.get("duration_minutes") ?? 30);
-    const price = centsFromCurrency(form.get("price"));
-    const depositType = String(form.get("deposit_type")) as Service["deposit_type"];
-    const desiredSlots = requestedSlots(duration);
-    const slotError = validateSlots(desiredSlots);
-    if (slotError) { setMessage(slotError); return; }
-
-    const desiredByStart = new Map(desiredSlots.map((slot) => [slot.startsAt.toISOString(), slot]));
-    for (const slot of availabilitySlots.filter((item) => item.service_id === editingService.id)) {
-      const occupancy = getSlotOccupancy(slot, appointments);
-      if (!occupancy.booked) continue;
-      const desired = desiredByStart.get(new Date(slot.starts_at).toISOString());
-      if ((!desired && slot.is_active) || (desired && (desired.capacity < occupancy.booked || desired.endsAt.toISOString() !== new Date(slot.ends_at).toISOString()))) {
-        setMessage("Hay reservas vigentes en uno de esos horarios. Conservá el horario y un cupo suficiente para ellas.");
-        return;
-      }
-    }
-
-    setPending(true);
-    setMessage(null);
-
-    const { error: serviceError } = await insforge.database.from("services").update({
-      name: String(form.get("name") ?? ""),
-      description: String(form.get("description") ?? ""),
-      image_url: String(form.get("image_url") ?? ""),
-      duration_minutes: duration,
-      price_cents: price,
-      requires_payment: depositType !== "free",
-      deposit_type: depositType,
-      deposit_value_cents: depositType === "full" ? price : centsFromCurrency(form.get("deposit_value")),
-    }).eq("id", editingService.id).eq("business_id", business.id);
-
-    if (serviceError) {
-      setPending(false);
-      setMessage(getErrorMessage(serviceError) || "No se pudo actualizar el servicio.");
-      return;
-    }
-
-    const editableMonths = new Set(options.map((option) => option.key));
-    const existingSlots = availabilitySlots.filter((slot) =>
-      slot.service_id === editingService.id && editableMonths.has(toMonthKey(slot.starts_at, timeZone)),
-    );
-    const existingByStart = new Map(existingSlots.map((slot) => [new Date(slot.starts_at).toISOString(), slot]));
-    const slotsToDeactivate = existingSlots.flatMap((slot) =>
-      slot.id && slot.is_active && !desiredByStart.has(new Date(slot.starts_at).toISOString()) ? [slot.id] : [],
-    );
-    const slotsToUpdate = existingSlots.flatMap((slot) => {
-      if (!slot.id) return [];
-      const desired = desiredByStart.get(new Date(slot.starts_at).toISOString());
-      if (!desired) return [];
-      const desiredEnd = desired.endsAt.toISOString();
-      if (slot.is_active && new Date(slot.ends_at).toISOString() === desiredEnd && slot.capacity === desired.capacity) return [];
-      return [{ id: slot.id, endsAt: desiredEnd, capacity: desired.capacity }];
-    });
-    const newSlots = [...desiredByStart.entries()]
-      .filter(([startsAt]) => !existingByStart.has(startsAt))
-      .map(([, slot]) => slot);
-    const { error: deactivateError } = slotsToDeactivate.length
-      ? await insforge.database
-          .from("service_availability_slots")
-          .update({ is_active: false })
-          .in("id", slotsToDeactivate)
-          .eq("business_id", business.id)
-      : { error: null };
-    let updateError = deactivateError;
-    if (!updateError) {
-      for (const slot of slotsToUpdate) {
-        const { error } = await insforge.database
-          .from("service_availability_slots")
-          .update({ ends_at: slot.endsAt, capacity: slot.capacity, is_active: true })
-          .eq("id", slot.id)
-          .eq("business_id", business.id);
-        if (error) {
-          updateError = error;
-          break;
-        }
-      }
-    }
-    const { error: insertError } = !updateError && newSlots.length
-      ? await insforge.database.from("service_availability_slots").upsert(newSlots.map(({ startsAt, endsAt, capacity }) => ({
-          business_id: business.id,
-          service_id: editingService.id,
-          starts_at: startsAt.toISOString(),
-          ends_at: endsAt.toISOString(),
-          capacity,
-          is_active: true,
-        })), { onConflict: "service_id,starts_at" })
-      : { error: null };
-
-    setPending(false);
-    await refresh();
-    if (updateError || insertError) {
-      setMessage(`Los datos se actualizaron, pero no toda la disponibilidad: ${getErrorMessage(updateError ?? insertError)}`);
-      return;
-    }
-
     setDrawerOpen(false);
     setEditingService(null);
   }
@@ -347,15 +245,15 @@ export function ServicesScreen() {
       </div>
 
       <Drawer description={editingService ? "Actualizá los datos y la disponibilidad de los próximos seis meses." : "Completá los datos y publicá al menos un horario mensual."} onClose={closeDrawer} open={drawerOpen} title={editingService ? "Editar servicio" : "Nuevo servicio"}>
-        <form method="post" className="grid gap-6" key={editingService?.id ?? "new-service"} onSubmit={editingService ? updateService : addService}>
+        <form method="post" className="grid gap-6" key={editingService?.id ?? "new-service"} onSubmit={saveService}>
           <section className="grid gap-4">
             <div className="flex items-center gap-2 border-b border-[var(--color-line)] pb-3"><Tag aria-hidden="true" className="text-[var(--color-primary)]" size={18} /><h3 className="font-semibold">Datos del servicio</h3></div>
-            <Field defaultValue={editingService?.name} label="Nombre" name="name" placeholder="Consulta clínica general" />
+            <Field defaultValue={editingService?.name} label="Nombre" maxLength={SERVICE_LIMITS.nameMax} name="name" placeholder="Consulta clínica general" />
             <Field defaultValue={editingService?.description ?? ""} label="Descripción" name="description" placeholder="Qué incluye o cómo prepararse" required={false} />
             <Field defaultValue={editingService?.image_url ?? ""} label="Imagen del servicio" name="image_url" placeholder="https://…" required={false} type="url" />
-            <div className="grid gap-4 sm:grid-cols-2"><Field defaultValue={editingService ? String(editingService.duration_minutes) : "30"} label="Duración en minutos" name="duration_minutes" type="number" /><Field defaultValue={editingService ? currencyInputValue(editingService.price_cents) : "0"} label="Precio" name="price" type="number" /></div>
+            <div className="grid gap-4 sm:grid-cols-2"><Field defaultValue={editingService ? String(editingService.duration_minutes) : "30"} inputMode="numeric" label="Duración en minutos" max={SERVICE_LIMITS.durationMax} min={SERVICE_LIMITS.durationMin} name="duration_minutes" step={1} type="number" /><Field defaultValue={editingService ? currencyInputValue(editingService.price_cents) : "0"} inputMode="decimal" label="Precio" min={0} name="price" step="0.01" type="number" /></div>
             <label className="form-label">Cobro al reservar<select className="form-control" defaultValue={editingService?.deposit_type ?? "free"} name="deposit_type"><option value="free">Reserva gratuita</option><option value="deposit">Seña configurable</option><option value="full">Seña del 100%</option></select></label>
-            <Field defaultValue={editingService ? currencyInputValue(editingService.deposit_value_cents) : "0"} label="Monto de seña" name="deposit_value" required={false} type="number" />
+            <Field defaultValue={editingService ? currencyInputValue(editingService.deposit_value_cents) : "0"} inputMode="decimal" label="Monto de seña" min={0} name="deposit_value" required={false} step="0.01" type="number" />
           </section>
 
           <section className="grid gap-4">
@@ -364,7 +262,7 @@ export function ServicesScreen() {
             <div className="calendar-month">
               {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map((day) => <span className="calendar-weekday" key={day}>{day}</span>)}
               {monthDays(selectedMonth).map((day) => day.blank ? <span key={day.key} /> : (
-                <button aria-pressed={selectedDate === day.key} className={selectedDate === day.key ? "is-selected" : Object.keys(dateTimes[day.key] ?? {}).length ? "has-slots" : ""} key={day.key} onClick={() => setSelectedDate(day.key)} type="button"><strong>{day.day}</strong><small>{day.weekday}</small>{Object.keys(dateTimes[day.key] ?? {}).length ? <span><Check aria-hidden="true" size={11} />{Object.keys(dateTimes[day.key]).length}</span> : null}</button>
+                <button aria-pressed={selectedDate === day.key} disabled={day.key < todayKey} title={day.key < todayKey ? "Este día ya pasó" : undefined} className={selectedDate === day.key ? "is-selected" : Object.keys(dateTimes[day.key] ?? {}).length ? "has-slots" : ""} key={day.key} onClick={() => setSelectedDate(day.key)} type="button"><strong>{day.day}</strong><small>{day.weekday}</small>{Object.keys(dateTimes[day.key] ?? {}).length ? <span><Check aria-hidden="true" size={11} />{Object.keys(dateTimes[day.key]).length}</span> : null}</button>
               ))}
             </div>
             <div className="border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-4">
