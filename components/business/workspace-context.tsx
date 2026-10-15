@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getErrorMessage, getPostAuthPath } from "@/lib/auth";
-import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Client, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { fetchBusinessAccessState, type BusinessAccessState } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
 import { AlertCircle, LoaderCircle } from "lucide-react";
@@ -12,7 +12,6 @@ export type WorkspaceContextValue = {
   business: Business;
   access: BusinessAccessState;
   services: Service[];
-  clients: Client[];
   appointments: Appointment[];
   availabilitySlots: ServiceAvailabilitySlot[];
   galleryImages: BusinessGalleryImage[];
@@ -20,29 +19,50 @@ export type WorkspaceContextValue = {
   userEmail: string;
   error: string | null;
   refresh: () => Promise<void>;
+  /** Appointments and slots are loaded from HISTORY_WINDOW_DAYS ago onward; call this to see further back. */
+  ensureHistoryFrom: (from: Date) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
-const AVAILABILITY_PAGE_SIZE = 500;
+const PAGE_SIZE = 500;
+// Past appointments grow without bound, so only recent history is loaded up front (everything from here on,
+// including all future appointments, which the slot occupancy depends on). 45 days covers the current month.
+const HISTORY_WINDOW_DAYS = 45;
+const APPOINTMENT_SELECT = "*, clients(name,email,phone), services(name,duration_minutes,price_cents)";
+const SLOT_SELECT = "id,business_id,service_id,starts_at,ends_at,is_active,capacity";
 
-async function loadAvailabilitySlots(businessId: string): Promise<ServiceAvailabilitySlot[]> {
-  const slots: ServiceAvailabilitySlot[] = [];
+function getHistoryStart() {
+  return new Date(Date.now() - HISTORY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
 
-  for (let offset = 0; ; offset += AVAILABILITY_PAGE_SIZE) {
-    const { data, error } = await insforge.database
-      .from("service_availability_slots")
-      .select("id,business_id,service_id,starts_at,ends_at,is_active,capacity")
+// Loads every row of a query in pages of PAGE_SIZE, within [from, to) on starts_at.
+async function loadRange<T>(table: "appointments" | "service_availability_slots", businessId: string, from: string, to?: string): Promise<T[]> {
+  const rows: T[] = [];
+
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    let query = insforge.database
+      .from(table)
+      .select(table === "appointments" ? APPOINTMENT_SELECT : SLOT_SELECT)
       .eq("business_id", businessId)
+      .gte("starts_at", from);
+    if (to) query = query.lt("starts_at", to);
+
+    const { data, error } = await query
       .order("starts_at", { ascending: true })
       .order("id", { ascending: true })
-      .range(offset, offset + AVAILABILITY_PAGE_SIZE - 1);
+      .range(offset, offset + PAGE_SIZE - 1);
 
     if (error) throw new Error(getErrorMessage(error));
-    const page = (data ?? []) as ServiceAvailabilitySlot[];
-    slots.push(...page);
-    if (page.length < AVAILABILITY_PAGE_SIZE) return slots;
+    const page = (data ?? []) as T[];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return rows;
   }
+}
+
+function mergeById<T extends { id?: string | null }>(current: T[], incoming: T[]) {
+  const known = new Set(current.map((row) => row.id));
+  return [...incoming.filter((row) => !known.has(row.id)), ...current];
 }
 
 export function useWorkspace() {
@@ -59,23 +79,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [business, setBusiness] = useState<Business | null>(null);
   const [access, setAccess] = useState<BusinessAccessState | null>(null);
   const [services, setServices] = useState<Service[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [availabilitySlots, setAvailabilitySlots] = useState<ServiceAvailabilitySlot[]>([]);
   const [galleryImages, setGalleryImages] = useState<BusinessGalleryImage[]>([]);
   const [faqs, setFaqs] = useState<BusinessFaq[]>([]);
+  // Start of the loaded appointment/slot window; moves earlier when the agenda navigates to the past.
+  const [historyStart, setHistoryStart] = useState<string | null>(null);
 
   async function loadBusinessData(businessId: string) {
-    const [accessState, servicesResult, clientsResult, appointmentsResult, availabilityRows, galleryResult, faqResult] = await Promise.all([
+    const windowStart = historyStart ?? getHistoryStart();
+    setHistoryStart(windowStart);
+    const [accessState, servicesResult, appointmentRows, availabilityRows, galleryResult, faqResult] = await Promise.all([
       fetchBusinessAccessState(insforge, businessId),
       insforge.database.from("services").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
-      insforge.database.from("clients").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
-      insforge.database
-        .from("appointments")
-        .select("*, clients(name,email,phone), services(name,duration_minutes,price_cents)")
-        .eq("business_id", businessId)
-        .order("starts_at", { ascending: true }),
-      loadAvailabilitySlots(businessId),
+      loadRange<Appointment>("appointments", businessId, windowStart),
+      loadRange<ServiceAvailabilitySlot>("service_availability_slots", businessId, windowStart),
       insforge.database
         .from("business_gallery_images")
         .select("id,business_id,image_url,image_key,sort_order")
@@ -90,13 +108,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         .limit(10),
     ]);
 
-    const workspaceError = servicesResult.error ?? clientsResult.error ?? appointmentsResult.error ?? galleryResult.error ?? faqResult.error;
+    const workspaceError = servicesResult.error ?? galleryResult.error ?? faqResult.error;
     if (workspaceError) throw new Error(getErrorMessage(workspaceError));
 
     setAccess(accessState);
     setServices((servicesResult.data ?? []) as Service[]);
-    setClients((clientsResult.data ?? []) as Client[]);
-    setAppointments((appointmentsResult.data ?? []) as Appointment[]);
+    setAppointments(appointmentRows);
     setAvailabilitySlots(availabilityRows);
     setGalleryImages((galleryResult.data ?? []) as BusinessGalleryImage[]);
     setFaqs((faqResult.data ?? []) as BusinessFaq[]);
@@ -153,6 +170,18 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function ensureHistoryFrom(from: Date) {
+    if (!business || !historyStart || from.getTime() >= new Date(historyStart).getTime()) return;
+    const nextStart = from.toISOString();
+    const [olderAppointments, olderSlots] = await Promise.all([
+      loadRange<Appointment>("appointments", business.id, nextStart, historyStart),
+      loadRange<ServiceAvailabilitySlot>("service_availability_slots", business.id, nextStart, historyStart),
+    ]);
+    setHistoryStart(nextStart);
+    setAppointments((current) => mergeById(current, olderAppointments));
+    setAvailabilitySlots((current) => mergeById(current, olderSlots));
+  }
+
   useEffect(() => {
     // La carga inicial sincroniza el proveedor persistente con la sesión remota.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -172,7 +201,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     business,
     access,
     services,
-    clients,
     appointments,
     availabilitySlots,
     galleryImages,
@@ -180,6 +208,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     userEmail,
     error,
     refresh,
+    ensureHistoryFrom,
     signOut,
   }) : null;
 

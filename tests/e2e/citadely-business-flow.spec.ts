@@ -324,7 +324,7 @@ test("cupos por horario: reservas públicas, email único, Agenda y liberación"
   const runId = Date.now().toString(36);
   const serviceName = `Curso grupal E2E ${runId}`;
   const date = new Date();
-  date.setMonth(date.getMonth() + 4, 10);
+  date.setMonth(date.getMonth() + 2, 10);
   date.setHours(18, 0, 0, 0);
   const monthValue = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
   const firstEmail = `grupo-a-${runId}@example.com`;
@@ -434,7 +434,7 @@ test("una seña vencida libera plaza y otro servicio superpuesto queda bloqueado
   const businessRows = await (await adminRequest("records/businesses?slug=eq.citadely-demo-ux&select=id&limit=1")).json() as { id: string }[];
   const businessId = businessRows[0].id;
   const date = new Date();
-  date.setMonth(date.getMonth() + 5, 22);
+  date.setMonth(date.getMonth() + 3, 22);
   date.setHours(20, 0, 0, 0);
   const endsAt = new Date(date.getTime() + 60 * 60_000);
   const primaryName = `Taller con seña E2E ${runId}`;

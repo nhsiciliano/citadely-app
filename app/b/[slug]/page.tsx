@@ -19,6 +19,7 @@ import {
 import { insforge } from "@/lib/insforge";
 import { formatWhatsAppPhone, getPublicAvailabilitySummary, getWhatsAppUrl } from "@/lib/public-profile";
 import { normalizePublicTheme, resolveSectionColors, sectionThemeStyle } from "@/lib/public-theme";
+import { getPublicBookingWindow, PUBLIC_SLOT_LIMIT } from "@/lib/booking-window";
 import { INDEX_ROBOTS, NO_INDEX_ROBOTS, SITE_ORIGIN, serializeJsonLd } from "@/lib/seo";
 import { getBusinessPublicUrl } from "@/lib/urls";
 
@@ -119,6 +120,7 @@ export default async function PublicBookingPage({ params, searchParams }: Public
   const business = await getPublicBusiness(slug);
   if (!business) notFound();
 
+  const bookingWindow = getPublicBookingWindow();
   const [bookable, { data: serviceRows }, { data: availabilityRows }, { data: galleryRows }, { data: faqRows }] = await Promise.all([
     getBookingAccess(business.id),
     insforge.database.from("services").select("*").eq("business_id", business.id).eq("is_active", true).order("created_at", { ascending: false }),
@@ -127,8 +129,10 @@ export default async function PublicBookingPage({ params, searchParams }: Public
       .select("*")
       .eq("business_id", business.id)
       .eq("is_active", true)
-      .gte("starts_at", new Date().toISOString())
-      .order("starts_at", { ascending: true }),
+      .gte("starts_at", bookingWindow.from)
+      .lt("starts_at", bookingWindow.to)
+      .order("starts_at", { ascending: true })
+      .limit(PUBLIC_SLOT_LIMIT),
     insforge.database
       .from("business_gallery_images")
       .select("id,business_id,image_url,image_key,sort_order")

@@ -1,27 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { CalendarClock, Mail, Phone, Plus, Search, UserRound } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { formatAppointmentTime, type Appointment, type Client } from "@/lib/citadely-db";
+import { insforge } from "@/lib/insforge";
 import { createClient } from "@/lib/clients";
 import { READ_ONLY_HINT } from "@/lib/business-access";
 import { getClientSaveErrorMessage } from "@/lib/client-errors";
+import { useClientSearch } from "../use-client-search";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
 
 const HISTORY_LIMIT = 10;
 
 export function ClientsScreen() {
-  const { access, appointments, business, clients, refresh } = useWorkspace();
+  const { access, business } = useWorkspace();
   const readOnly = !access.hasDashboardAccess;
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Client | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  // Referencia para separar turnos próximos y pasados; se fija al montar la pantalla.
-  const [referenceTime] = useState(() => Date.now());
+  const [history, setHistory] = useState<{ clientId: string; upcoming: Appointment | null; past: Appointment[] } | null>(null);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -30,25 +31,36 @@ export function ClientsScreen() {
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  const filteredClients = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("es");
-    if (!normalized) return clients;
-    return clients.filter((client) => [client.name, client.email, client.phone].some((value) => value?.toLocaleLowerCase("es").includes(normalized)));
-  }, [clients, query]);
+  const { clients: filteredClients, error: searchError, hasMore, loadMore, loading, reload, total } = useClientSearch({ businessId: business.id, query });
 
-  // Historial calculado con los turnos ya cargados en el workspace: próximo turno y últimos turnos pasados.
-  const clientHistory = useMemo(() => {
-    if (!selected) return { upcoming: null, past: [] as Appointment[] };
-    const now = referenceTime;
-    const own = appointments
-      .filter((appointment) => appointment.client_id === selected.id)
-      .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
-    const upcoming = own
-      .filter((appointment) => new Date(appointment.starts_at).getTime() >= now && appointment.status !== "cancelled")
-      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0] ?? null;
-    const past = own.filter((appointment) => new Date(appointment.starts_at).getTime() < now).slice(0, HISTORY_LIMIT);
-    return { upcoming, past };
-  }, [appointments, referenceTime, selected]);
+  // Historial de la ficha abierta: próximo turno y últimos pasados, consultados al abrirla
+  // (el workspace solo conserva los turnos recientes).
+  useEffect(() => {
+    if (!selected) return;
+    let cancelled = false;
+    const clientId = selected.id;
+    const nowIso = new Date().toISOString();
+    const columns = "*, clients(name,email,phone), services(name,duration_minutes,price_cents)";
+    void Promise.all([
+      insforge.database.from("appointments").select(columns).eq("business_id", business.id).eq("client_id", clientId)
+        .gte("starts_at", nowIso).neq("status", "cancelled").order("starts_at", { ascending: true }).limit(1),
+      insforge.database.from("appointments").select(columns).eq("business_id", business.id).eq("client_id", clientId)
+        .lt("starts_at", nowIso).order("starts_at", { ascending: false }).limit(HISTORY_LIMIT),
+    ]).then(([upcomingResult, pastResult]) => {
+      if (cancelled) return;
+      setHistory({
+        clientId,
+        upcoming: ((upcomingResult.data ?? []) as Appointment[])[0] ?? null,
+        past: (pastResult.data ?? []) as Appointment[],
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [business.id, selected]);
+
+  const historyLoading = Boolean(selected) && history?.clientId !== selected?.id;
+  const clientHistory = !historyLoading && history ? history : { upcoming: null as Appointment | null, past: [] as Appointment[] };
 
   async function addClient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,7 +80,7 @@ export function ClientsScreen() {
       return;
     }
     formElement.reset();
-    await refresh();
+    reload();
     setCreateOpen(false);
   }
 
@@ -96,6 +108,13 @@ export function ClientsScreen() {
             </div>
           )}
         </section>
+        {searchError ? <FormMessage type="error">{searchError}</FormMessage> : null}
+        {filteredClients.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--color-ink-soft)]">
+            <span>{total !== null ? `Mostrando ${filteredClients.length} de ${total}` : `Mostrando ${filteredClients.length}`}</span>
+            {hasMore ? <button className="button-secondary" disabled={loading} onClick={() => void loadMore()} type="button">{loading ? "Cargando…" : "Cargar más"}</button> : null}
+          </div>
+        ) : null}
       </div>
 
       <Drawer description="Datos de contacto e historial de turnos del cliente." onClose={() => setSelected(null)} open={Boolean(selected)} title="Ficha del cliente" width="medium">
@@ -120,7 +139,7 @@ export function ClientsScreen() {
                 </span>
                 <StatusBadge status={clientHistory.upcoming.status} />
               </div>
-            ) : <p className="text-sm text-[var(--color-ink-soft)]">Sin turnos próximos.</p>}
+            ) : <p className="text-sm text-[var(--color-ink-soft)]">{historyLoading ? "Cargando…" : "Sin turnos próximos."}</p>}
           </section>
 
           <section aria-labelledby="historial-cliente" className="grid gap-3">
@@ -137,7 +156,7 @@ export function ClientsScreen() {
                   </li>
                 ))}
               </ul>
-            ) : <p className="text-sm text-[var(--color-ink-soft)]">Todavía no tiene turnos pasados.</p>}
+            ) : <p className="text-sm text-[var(--color-ink-soft)]">{historyLoading ? "Cargando…" : "Todavía no tiene turnos pasados."}</p>}
           </section>
         </div> : null}
       </Drawer>

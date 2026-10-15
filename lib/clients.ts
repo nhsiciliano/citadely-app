@@ -1,3 +1,4 @@
+import type { Client } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
 
 export type NewClientInput = {
@@ -28,4 +29,40 @@ export async function createClient(input: NewClientInput) {
     .insert([{ business_id: input.businessId, ...normalized }])
     .select("id,business_id,user_id,name,email,phone,notes_summary")
     .single();
+}
+
+export const CLIENT_COLUMNS = "id,business_id,user_id,name,email,phone,notes_summary";
+export const CLIENT_PAGE_SIZE = 25;
+
+// PostgREST reserves these characters inside or() filters; they never matter for a name/email/phone search.
+function sanitizeSearchTerm(term: string) {
+  return term.replace(/[,()*%\\"]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/** Server-side paginated client search (name, email or phone), newest first. */
+export async function searchClients({
+  businessId,
+  query = "",
+  offset = 0,
+  limit = CLIENT_PAGE_SIZE,
+}: {
+  businessId: string;
+  query?: string;
+  offset?: number;
+  limit?: number;
+}) {
+  let request = insforge.database
+    .from("clients")
+    .select(CLIENT_COLUMNS, { count: "exact" })
+    .eq("business_id", businessId);
+
+  const term = sanitizeSearchTerm(query);
+  if (term) request = request.or(`name.ilike.*${term}*,email.ilike.*${term}*,phone.ilike.*${term}*`);
+
+  const { data, error, count } = await request
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: true })
+    .range(offset, offset + limit - 1);
+
+  return { data: (data ?? []) as Client[], total: count ?? null, error };
 }
