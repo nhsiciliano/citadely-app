@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { createHmac, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+import { assertBackendBranch, confirmSeedTarget, readLinkedProject } from "../../scripts/lib/seed-guard.mjs";
 
 test.setTimeout(90_000);
 
@@ -21,7 +22,9 @@ async function signIn(page: Page) {
 }
 
 function branchProject() {
-  const project = JSON.parse(readFileSync(".insforge/project.json", "utf8")) as { oss_host: string; api_key: string };
+  // Nunca apuntar estos tests al proyecto padre (producción): exige backend branch.
+  const project = readLinkedProject() as { project_name: string; oss_host: string; api_key: string };
+  assertBackendBranch(project);
   return project;
 }
 
@@ -44,10 +47,11 @@ async function updateBusiness(id: string, values: Record<string, unknown>) {
   await adminRequest(`records/businesses?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(values) });
 }
 
-test.beforeAll(() => {
+test.beforeAll(async () => {
+  const project = await confirmSeedTarget("tests/e2e/citadely-business-flow");
   execFileSync(process.execPath, ["scripts/seed-citadely-demo.mjs"], {
     cwd: process.cwd(),
-    env: { ...process.env, SEED_ALLOW_WRITE: "true" },
+    env: { ...process.env, SEED_CONFIRM_PROJECT: project.project_name },
     stdio: "pipe",
     timeout: 120_000,
   });

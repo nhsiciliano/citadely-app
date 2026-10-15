@@ -82,7 +82,8 @@ jobs:
 
       # The specs and seed scripts still read .env.local and .insforge/project.json from disk
       # (task 7.2 removes that). Recreate them from secrets and refuse to run against a project
-      # that is not a backend branch, so CI can never write to Production.
+      # that is not a backend branch, so CI can never write to Production. The confirmed branch
+      # name is exported as SEED_CONFIRM_PROJECT for the seed and E2E steps below.
       - name: Write E2E config and check backend branch
         env:
           INSFORGE_PROJECT_JSON: ${{ secrets.E2E_INSFORGE_PROJECT_JSON }}
@@ -93,6 +94,8 @@ jobs:
             const p = JSON.parse(require("fs").readFileSync(".insforge/project.json", "utf8"));
             if (!p.branched_from) { console.error("E2E_INSFORGE_PROJECT_JSON is not a backend branch (missing branched_from). Aborting."); process.exit(1); }
             console.log("E2E backend branch:", p.project_name, "(from " + p.branched_from.project_name + ")");
+            // Seeds and specs require explicit confirmation of the target name when there is no TTY.
+            require("fs").appendFileSync(process.env.GITHUB_ENV, "SEED_CONFIRM_PROJECT=" + p.project_name + "\n");
           '
           {
             echo "NEXT_PUBLIC_INSFORGE_BASE_URL=$NEXT_PUBLIC_INSFORGE_BASE_URL"

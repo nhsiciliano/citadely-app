@@ -3,14 +3,13 @@
 import fs from "node:fs";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@insforge/sdk";
+import { confirmSeedTarget } from "./lib/seed-guard.mjs";
 
 const EMAIL = "demo.ux@citadely.test";
 const BUSINESS_SLUG = "citadely-demo-ux";
 const ENV_PATH = ".env.local";
 
-if (process.env.SEED_ALLOW_WRITE !== "true") {
-  throw new Error("Set SEED_ALLOW_WRITE=true to write demo data to the linked InsForge project.");
-}
+await confirmSeedTarget("seed:demo");
 
 function readProjectConfig() {
   return JSON.parse(fs.readFileSync(".insforge/project.json", "utf8"));
