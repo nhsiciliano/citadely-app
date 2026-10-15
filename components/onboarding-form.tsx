@@ -38,6 +38,12 @@ export function OnboardingForm() {
         return;
       }
 
+      // Un negocio ya configurado no debe volver a pasar por el onboarding.
+      if (profile.onboarding_complete) {
+        router.replace("/negocio");
+        return;
+      }
+
       setName(profile.business_name ?? "");
       setSlug(profile.business_slug ?? "");
       setPending(false);

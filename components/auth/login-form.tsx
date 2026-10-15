@@ -42,7 +42,7 @@ export function LoginForm() {
     setPendingAction("google");
     setError(null);
 
-    const redirectTo = `${window.location.origin}/onboarding`;
+    const redirectTo = `${window.location.origin}/auth/callback`;
     const { error: oauthError } = await insforge.auth.signInWithOAuth({
       provider: "google",
       redirectTo,
