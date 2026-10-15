@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, lead-development]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm version comes from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      # Unit tests arrive with task 7.1 (script "test:unit"); until then this is a no-op.
+      - run: pnpm run --if-present test:unit
+
+      # Placeholders only: the build must not need real credentials or touch a backend.
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_INSFORGE_BASE_URL: https://ci.invalid
+          NEXT_PUBLIC_INSFORGE_ANON_KEY: ci-placeholder
+          NEXT_PUBLIC_APP_DOMAIN: citadely.com.ar
+
+  e2e:
+    name: E2E (Playwright, InsForge backend branch)
+    needs: checks
+    # Writes data to a dedicated InsForge backend branch, so it is opt-in: set the repository
+    # variable E2E_ENABLED=true and the secrets listed in docs/ci.md. Fork PRs never get secrets.
+    if: >-
+      vars.E2E_ENABLED == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # One run at a time: all runs share the same backend branch and demo data.
+    concurrency:
+      group: e2e-backend-branch
+      cancel-in-progress: false
+    env:
+      NEXT_PUBLIC_INSFORGE_BASE_URL: ${{ secrets.E2E_INSFORGE_BASE_URL }}
+      NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.E2E_INSFORGE_ANON_KEY }}
+      INSFORGE_API_KEY: ${{ secrets.E2E_INSFORGE_API_KEY }}
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD_HASH: ${{ secrets.E2E_ADMIN_PASSWORD_HASH }}
+      ADMIN_SESSION_SECRET: ${{ secrets.E2E_ADMIN_SESSION_SECRET }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      NEXT_PUBLIC_APP_DOMAIN: citadely.com.ar
+      RESEND_SKIP_DELIVERY: "true"
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # The specs and seed scripts still read .env.local and .insforge/project.json from disk
+      # (task 7.2 removes that). Recreate them from secrets and refuse to run against a project
+      # that is not a backend branch, so CI can never write to Production.
+      - name: Write E2E config and check backend branch
+        env:
+          INSFORGE_PROJECT_JSON: ${{ secrets.E2E_INSFORGE_PROJECT_JSON }}
+        run: |
+          mkdir -p .insforge
+          printf '%s' "$INSFORGE_PROJECT_JSON" > .insforge/project.json
+          node -e '
+            const p = JSON.parse(require("fs").readFileSync(".insforge/project.json", "utf8"));
+            if (!p.branched_from) { console.error("E2E_INSFORGE_PROJECT_JSON is not a backend branch (missing branched_from). Aborting."); process.exit(1); }
+            console.log("E2E backend branch:", p.project_name, "(from " + p.branched_from.project_name + ")");
+          '
+          {
+            echo "NEXT_PUBLIC_INSFORGE_BASE_URL=$NEXT_PUBLIC_INSFORGE_BASE_URL"
+            echo "NEXT_PUBLIC_INSFORGE_ANON_KEY=$NEXT_PUBLIC_INSFORGE_ANON_KEY"
+            echo "INSFORGE_API_KEY=$INSFORGE_API_KEY"
+          } > .env.local
+
+      - run: pnpm seed:demo
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

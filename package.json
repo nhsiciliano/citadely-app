@@ -11,6 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "seed:demo": "SEED_ALLOW_WRITE=true node scripts/seed-citadely-demo.mjs",
     "seed:barberia-luk": "SEED_ALLOW_WRITE=true node scripts/seed-barberia-luk.mjs",
     "seed:clinica-colon": "SEED_ALLOW_WRITE=true node scripts/seed-clinica-colon.mjs",
