@@ -266,48 +266,6 @@ export function getBookingPaymentLabel(service: Service, currency = "ARS") {
   return `Seña ${formatCurrency(amount, currency)}`;
 }
 
-export function getSubscriptionState(business: Business) {
-  const trialEndsAt = new Date(business.trial_ends_at);
-  const now = new Date();
-  const promotionStartsAt = business.promotion_starts_at ? new Date(business.promotion_starts_at) : null;
-  const promotionEndsAt = business.promotion_ends_at ? new Date(business.promotion_ends_at) : null;
-  const hasPromotion = Boolean(promotionStartsAt && promotionEndsAt && promotionStartsAt <= now && promotionEndsAt > now);
-  const promotionPending = Boolean(promotionStartsAt && promotionEndsAt && promotionStartsAt > now && promotionEndsAt > now);
-  const trialDaysLeft = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / 86400000));
-  const isTrialing = business.subscription_status === "trialing" && trialEndsAt > now;
-  const periodEndsAt = business.subscription_current_period_end ? new Date(business.subscription_current_period_end) : null;
-  const hasPaidPeriod = business.subscription_provider === "mercadopago"
-    ? Boolean(periodEndsAt && periodEndsAt > now && ["active", "past_due", "cancelled"].includes(business.subscription_status))
-    : business.subscription_status === "active";
-  const hasDashboardAccess = hasPaidPeriod || isTrialing || hasPromotion;
-  const currentPlan = business.subscription_plan ?? "pro";
-  const hasPublicPageAccess = hasPromotion || ((isTrialing || hasPaidPeriod) && currentPlan === "pro");
-
-  return {
-    hasAccess: hasDashboardAccess,
-    hasDashboardAccess,
-    hasPublicPageAccess,
-    currentPlan,
-    pendingPlan: business.pending_subscription_plan ?? null,
-    trialDaysLeft,
-    isTrialing,
-    hasPromotion,
-    promotionPending,
-    promotionStartsAt,
-    promotionEndsAt,
-    hasPaidPeriod,
-    periodEndsAt,
-    cancelAtPeriodEnd: Boolean(business.subscription_cancel_at_period_end),
-    isPastDue: business.subscription_status === "past_due",
-    awaitingFirstPayment: Boolean(
-      business.subscription_external_id
-      && business.pending_subscription_plan
-      && !hasPaidPeriod,
-    ),
-    needsPayment: !hasDashboardAccess,
-  };
-}
-
 function buildSlotLabels(startsAt: Date, timeZone: string) {
   return {
     dateKey: toDateKey(startsAt, timeZone),

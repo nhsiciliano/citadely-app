@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { CircleHelp, ExternalLink, Images, ImagePlus, LockKeyhole, MapPinned, Palette, Plus, Save, Trash2, Upload, Video } from "lucide-react";
 import { FormMessage, LoadingSpinner, TextArea } from "@/components/ui";
 import { VirtualPlatformIcon } from "@/components/virtual-platform-icon";
-import { getSubscriptionState, type BusinessFaq, type BusinessGalleryImage } from "@/lib/citadely-db";
+import type { BusinessFaq, BusinessGalleryImage } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { insforge } from "@/lib/insforge";
@@ -54,7 +54,7 @@ function FileUpload({ label, name, current, note }: { label: string; name: strin
 }
 
 export function PublicPageScreen() {
-  const { appointments, availabilitySlots, business, galleryImages, faqs, refresh, services } = useWorkspace();
+  const { access: subscription, appointments, availabilitySlots, business, galleryImages, faqs, refresh, services } = useWorkspace();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [description, setDescription] = useState(business.description ?? "");
@@ -69,7 +69,6 @@ export function PublicPageScreen() {
   const [draftFaqs, setDraftFaqs] = useState<DraftFaq[]>(
     faqs.map((faq) => ({ ...faq, localId: faq.id })),
   );
-  const subscription = getSubscriptionState(business);
   const publicUrl = getBusinessPublicUrl(business.slug);
   const visibleGalleryImages = savedGalleryImages.filter((image) => !removedGalleryIds.includes(image.id));
 
@@ -80,9 +79,9 @@ export function PublicPageScreen() {
         <div className="px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
           <section className="surface-section mx-auto max-w-3xl py-10 text-center sm:py-14">
             <span className="mx-auto grid h-12 w-12 place-items-center rounded-md bg-[var(--color-primary-soft)] text-[var(--color-primary)]"><LockKeyhole aria-hidden="true" size={23} /></span>
-            <h2 className="mt-5 text-2xl font-semibold tracking-[-0.03em]">La página pública está incluida en Pro</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--color-ink-soft)]">Personalizá tu marca, publicá servicios y permití que tus clientes reserven los turnos disponibles sin contactarte.</p>
-            <Link className="button-primary mt-7" href="/negocio/configuracion">Ver plan Pro</Link>
+            <h2 className="mt-5 text-2xl font-semibold tracking-[-0.03em]">{subscription.needsPayment && subscription.currentPlan === "pro" ? "Tu página pública está pausada" : "La página pública está incluida en Pro"}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--color-ink-soft)]">{subscription.needsPayment && subscription.currentPlan === "pro" ? "Tus clientes no pueden reservar online mientras la suscripción no esté activa. Activá el plan para volver a publicarla y editarla." : "Personalizá tu marca, publicá servicios y permití que tus clientes reserven los turnos disponibles sin contactarte."}</p>
+            <Link className="button-primary mt-7" href="/negocio/configuracion">{subscription.needsPayment && subscription.currentPlan === "pro" ? "Activar plan" : "Ver plan Pro"}</Link>
           </section>
         </div>
       </>

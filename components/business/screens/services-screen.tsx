@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CalendarDays, Check, Clock3, Pencil, Plus, Power, Tag } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
-import { centsFromCurrency, formatCurrency, getSlotOccupancy, getSubscriptionState, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { centsFromCurrency, formatCurrency, getSlotOccupancy, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { READ_ONLY_HINT } from "@/lib/business-access";
 import { getErrorMessage } from "@/lib/auth";
 import { insforge } from "@/lib/insforge";
 import { addMonthsToMonthKey, formatDateKey, getDaysInMonth, getWeekdayOfDateKey, toDateKey, toMonthKey, toTimeKey, zonedTimeToUtc } from "@/lib/time";
@@ -38,7 +39,7 @@ function currencyInputValue(cents: number) {
 }
 
 export function ServicesScreen() {
-  const { appointments, availabilitySlots, business, refresh, services } = useWorkspace();
+  const { access: subscription, appointments, availabilitySlots, business, refresh, services } = useWorkspace();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [pending, setPending] = useState(false);
@@ -50,7 +51,6 @@ export function ServicesScreen() {
   const selectedMonthLabel = formatDateKey(`${selectedMonth}-01`, { month: "long", year: "numeric" });
   const [draftTime, setDraftTime] = useState("");
   const [dateTimes, setDateTimes] = useState<Record<string, Record<string, number>>>({});
-  const subscription = getSubscriptionState(business);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -141,7 +141,7 @@ export function ServicesScreen() {
 
   async function addService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!subscription.hasAccess) return;
+    if (!subscription.hasDashboardAccess) return;
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const duration = Number(form.get("duration_minutes") ?? 30);
@@ -203,7 +203,7 @@ export function ServicesScreen() {
 
   async function updateService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!subscription.hasAccess || !editingService) return;
+    if (!subscription.hasDashboardAccess || !editingService) return;
 
     const form = new FormData(event.currentTarget);
     const duration = Number(form.get("duration_minutes") ?? 30);
@@ -307,7 +307,7 @@ export function ServicesScreen() {
   }
 
   async function toggleService(service: Service) {
-    if (!subscription.hasAccess) return;
+    if (!subscription.hasDashboardAccess) return;
     setPending(true);
     const { error } = await insforge.database.from("services").update({ is_active: !service.is_active }).eq("id", service.id);
     setPending(false);
@@ -317,13 +317,13 @@ export function ServicesScreen() {
 
   return (
     <>
-      <PageHeader actions={<button className="button-primary" disabled={!subscription.hasAccess} onClick={openNewService} type="button"><Plus aria-hidden="true" size={18} />Nuevo servicio</button>} description="Revisá estado, duración, precio, seña y disponibilidad sin abrir cada servicio." title="Servicios" />
+      <PageHeader actions={<button className="button-primary" disabled={!subscription.hasDashboardAccess} onClick={openNewService} title={subscription.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Plus aria-hidden="true" size={18} />Nuevo servicio</button>} description="Revisá estado, duración, precio, seña y disponibilidad sin abrir cada servicio." title="Servicios" />
 
       <div className="grid gap-5 px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
-        {!subscription.hasAccess ? <FormMessage type="error">Activá el plan mensual para crear, editar o cambiar el estado de servicios.</FormMessage> : null}
+        {!subscription.hasDashboardAccess ? <FormMessage type="error">{READ_ONLY_HINT}</FormMessage> : null}
         {message ? <FormMessage type="error">{message}</FormMessage> : null}
         <section className="overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)]">
-          {services.length === 0 ? <div className="p-6"><EmptyState action={<button className="button-primary" onClick={openNewService} type="button"><Plus aria-hidden="true" size={17} />Crear servicio</button>} text="Definí nombre, duración, precio, seña y los primeros horarios disponibles." title="Todavía no hay servicios" /></div> : (
+          {services.length === 0 ? <div className="p-6"><EmptyState action={<button className="button-primary" disabled={!subscription.hasDashboardAccess} onClick={openNewService} title={subscription.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Plus aria-hidden="true" size={17} />Crear servicio</button>} text="Definí nombre, duración, precio, seña y los primeros horarios disponibles." title="Todavía no hay servicios" /></div> : (
             <div className="overflow-x-auto">
               <table className="data-table min-w-[980px]">
                 <thead><tr><th>Servicio</th><th>Estado</th><th>Duración</th><th>Precio</th><th>Seña</th><th>Disponibilidad</th><th><span className="sr-only">Acciones</span></th></tr></thead>
@@ -336,7 +336,7 @@ export function ServicesScreen() {
                       <td className="font-mono font-semibold">{formatCurrency(service.price_cents, business.currency)}</td>
                       <td>{service.deposit_type === "free" ? "Sin seña" : service.deposit_type === "full" ? "100%" : formatCurrency(service.deposit_value_cents, business.currency)}</td>
                       <td><span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" size={16} />{slotCount(availabilitySlots, service.id, selectedMonth, timeZone)} horarios en {selectedMonthLabel}</span></td>
-                      <td><div className="flex justify-end gap-2"><button aria-label={`Editar ${service.name}`} className="button-secondary" disabled={pending || !subscription.hasAccess} onClick={() => openEditService(service)} type="button"><Pencil aria-hidden="true" size={16} />Editar</button><button aria-label={`${service.is_active ? "Pausar" : "Activar"} ${service.name}`} className="button-secondary" disabled={pending || !subscription.hasAccess} onClick={() => toggleService(service)} type="button"><Power aria-hidden="true" size={16} />{service.is_active ? "Pausar" : "Activar"}</button></div></td>
+                      <td><div className="flex justify-end gap-2"><button aria-label={`Editar ${service.name}`} className="button-secondary" disabled={pending || !subscription.hasDashboardAccess} onClick={() => openEditService(service)} title={subscription.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Pencil aria-hidden="true" size={16} />Editar</button><button aria-label={`${service.is_active ? "Pausar" : "Activar"} ${service.name}`} className="button-secondary" disabled={pending || !subscription.hasDashboardAccess} onClick={() => toggleService(service)} title={subscription.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Power aria-hidden="true" size={16} />{service.is_active ? "Pausar" : "Activar"}</button></div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -385,7 +385,7 @@ export function ServicesScreen() {
             </div>
           </section>
           {message ? <FormMessage type="error">{message}</FormMessage> : null}
-          <div className="sticky bottom-0 -mx-5 border-t border-[var(--color-line)] bg-white px-5 pt-5 sm:-mx-7 sm:px-7"><SubmitButton disabled={!subscription.hasAccess} pending={pending}>{editingService ? "Guardar cambios" : "Guardar servicio"}</SubmitButton></div>
+          <div className="sticky bottom-0 -mx-5 border-t border-[var(--color-line)] bg-white px-5 pt-5 sm:-mx-7 sm:px-7"><SubmitButton disabled={!subscription.hasDashboardAccess} pending={pending}>{editingService ? "Guardar cambios" : "Guardar servicio"}</SubmitButton></div>
         </form>
       </Drawer>
     </>

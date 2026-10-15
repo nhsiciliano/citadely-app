@@ -5,6 +5,7 @@ import { CalendarClock, Mail, Phone, Plus, Search, UserRound } from "lucide-reac
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { formatAppointmentTime, type Appointment, type Client } from "@/lib/citadely-db";
 import { createClient } from "@/lib/clients";
+import { READ_ONLY_HINT } from "@/lib/business-access";
 import { getClientSaveErrorMessage } from "@/lib/client-errors";
 import { useWorkspace } from "../workspace-context";
 import { Drawer, EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
@@ -12,7 +13,8 @@ import { Drawer, EmptyState, PageHeader, StatusBadge } from "../workspace-ui";
 const HISTORY_LIMIT = 10;
 
 export function ClientsScreen() {
-  const { appointments, business, clients, refresh } = useWorkspace();
+  const { access, appointments, business, clients, refresh } = useWorkspace();
+  const readOnly = !access.hasDashboardAccess;
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Client | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -72,7 +74,7 @@ export function ClientsScreen() {
 
   return (
     <>
-      <PageHeader actions={<button className="button-primary" onClick={() => setCreateOpen(true)} type="button"><Plus aria-hidden="true" size={18} />Nuevo cliente</button>} description="Encontrá una ficha por nombre, email o teléfono y consultá sus datos de contacto." title="Clientes" />
+      <PageHeader actions={<button className="button-primary" disabled={readOnly} onClick={() => setCreateOpen(true)} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><Plus aria-hidden="true" size={18} />Nuevo cliente</button>} description="Encontrá una ficha por nombre, email o teléfono y consultá sus datos de contacto." title="Clientes" />
       <div className="grid gap-5 px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
         <label className="flex min-h-12 max-w-xl items-center gap-3 rounded-md border border-[var(--color-line)] bg-white px-4 transition-[border-color,box-shadow] hover:border-[var(--color-line-strong)] focus-within:border-[var(--color-primary)] focus-within:shadow-[0_0_0_3px_rgba(9,87,217,0.1)]">
           <span className="sr-only">Buscar clientes</span>
@@ -81,7 +83,7 @@ export function ClientsScreen() {
         </label>
 
         <section className="overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-surface)]">
-          {filteredClients.length === 0 ? <div className="p-6"><EmptyState action={!query ? <button className="button-primary" onClick={() => setCreateOpen(true)} type="button"><Plus aria-hidden="true" size={17} />Agregar cliente</button> : undefined} text={query ? "Probá con otro nombre, email o teléfono." : "Las reservas públicas también crean fichas automáticamente."} title={query ? "No encontramos coincidencias" : "Todavía no hay clientes"} /></div> : (
+          {filteredClients.length === 0 ? <div className="p-6"><EmptyState action={!query ? <button className="button-primary" disabled={readOnly} onClick={() => setCreateOpen(true)} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><Plus aria-hidden="true" size={17} />Agregar cliente</button> : undefined} text={query ? "Probá con otro nombre, email o teléfono." : "Las reservas públicas también crean fichas automáticamente."} title={query ? "No encontramos coincidencias" : "Todavía no hay clientes"} /></div> : (
             <div className="divide-y divide-[var(--color-line)]">
               {filteredClients.map((client) => (
                 <button className="client-row" key={client.id} onClick={() => setSelected(client)} type="button">
@@ -146,8 +148,9 @@ export function ClientsScreen() {
           <Field label="Nombre" name="client_name" placeholder="Nombre y apellido" />
           <Field autoComplete="email" label="Email" name="client_email" placeholder="cliente@ejemplo.com" required={false} type="email" />
           <Field autoComplete="tel" label="Teléfono" name="client_phone" placeholder="11 2345 6789" required={false} />
+          {readOnly ? <FormMessage type="error">{READ_ONLY_HINT}</FormMessage> : null}
           {message ? <FormMessage type="error">{message}</FormMessage> : null}
-          <div className="sticky bottom-0 -mx-5 border-t border-[var(--color-line)] bg-white px-5 pt-5 sm:-mx-7 sm:px-7"><SubmitButton pending={pending}>Guardar cliente</SubmitButton></div>
+          <div className="sticky bottom-0 -mx-5 border-t border-[var(--color-line)] bg-white px-5 pt-5 sm:-mx-7 sm:px-7"><SubmitButton disabled={readOnly} pending={pending}>Guardar cliente</SubmitButton></div>
         </form>
       </Drawer>
     </>

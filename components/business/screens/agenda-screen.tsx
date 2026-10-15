@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarRange, ChevronLeft, ChevronRight, Clock3, Filter, List, Plus } from "lucide-react";
 import { getSlotOccupancy, type Appointment, type Service, type ServiceAvailabilitySlot } from "@/lib/citadely-db";
+import { READ_ONLY_HINT } from "@/lib/business-access";
 import { addDaysToDateKey, formatDateKey, formatInTimeZone, getMinutesOfDay, startOfWeekDateKey, toDateKey, toTimeKey } from "@/lib/time";
 import { AppointmentDetailDrawer, NewAppointmentDrawer, type SelectedAgendaSlot } from "../appointment-actions";
 import { useWorkspace } from "../workspace-context";
@@ -283,7 +284,8 @@ function AgendaDayColumn({
 }
 
 export function AgendaScreen() {
-  const { appointments, availabilitySlots, business, services } = useWorkspace();
+  const { access, appointments, availabilitySlots, business, services } = useWorkspace();
+  const readOnly = !access.hasDashboardAccess;
   const timeZone = business.timezone;
   const [view, setView] = useState<CalendarView>("week");
   const [anchorDate, setAnchorDate] = useState(() => toDateKey(new Date(), timeZone));
@@ -379,7 +381,7 @@ export function AgendaScreen() {
   return (
     <>
       <PageHeader
-        actions={<button className="button-primary" onClick={() => { setSelectedAgendaSlot(null); setCreateOpen(true); }} type="button"><Plus aria-hidden="true" size={18} />Nuevo turno</button>}
+        actions={<button className="button-primary" disabled={readOnly} onClick={() => { setSelectedAgendaSlot(null); setCreateOpen(true); }} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><Plus aria-hidden="true" size={18} />Nuevo turno</button>}
         description="Navegá por día o semana, filtrá la operación y abrí cada turno sin perder el contexto temporal."
         title="Agenda"
       />
@@ -422,7 +424,7 @@ export function AgendaScreen() {
           </div>
 
           {visibleAppointments.length === 0 && visibleAvailableSlots.length === 0 ? (
-            <div className="p-6"><EmptyState action={<button className="button-primary" onClick={() => setCreateOpen(true)} type="button"><Plus aria-hidden="true" size={17} />Crear turno</button>} text={filters.status === "available" ? "Publicá disponibilidad desde Servicios o probá otro período." : "Probá otro período o quitá los filtros. También podés cargar un turno manual."} title={filters.status === "available" ? "No hay turnos libres en esta vista" : "No hay turnos en esta vista"} /></div>
+            <div className="p-6"><EmptyState action={<button className="button-primary" disabled={readOnly} onClick={() => setCreateOpen(true)} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><Plus aria-hidden="true" size={17} />Crear turno</button>} text={filters.status === "available" ? "Publicá disponibilidad desde Servicios o probá otro período." : "Probá otro período o quitá los filtros. También podés cargar un turno manual."} title={filters.status === "available" ? "No hay turnos libres en esta vista" : "No hay turnos en esta vista"} /></div>
           ) : null}
 
           <div className="overflow-x-auto">
