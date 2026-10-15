@@ -194,8 +194,8 @@ export function PublicGalleryCarousel({ businessName, compact = false, images, t
               <button aria-label="Cerrar imagen completa" autoFocus className="public-gallery-dialog-button" onClick={() => dialogRef.current?.close()} type="button"><X aria-hidden="true" size={23} /></button>
             </div>
             <div className="public-gallery-dialog-stage">
-              {frame.previous ? <span aria-hidden="true" className="public-gallery-previous public-gallery-photo"><RemoteImage alt="" className="object-contain object-center" fill sizes="100vw" src={frame.previous.image_url} /></span> : null}
-              <span className={`public-gallery-photo ${frame.previous ? "public-gallery-current" : ""}`}><RemoteImage alt={`${businessName}, imagen ${displayedIndex + 1} de ${images.length}`} className="object-contain object-center" fill sizes="100vw" src={frame.current?.image_url ?? activeImage.image_url} /></span>
+              {frame.previous ? <span aria-hidden="true" className="public-gallery-previous public-gallery-photo"><RemoteImage alt="" className="object-contain object-center" fill sizes="(min-width: 1200px) 1200px, 100vw" src={frame.previous.image_url} /></span> : null}
+              <span className={`public-gallery-photo ${frame.previous ? "public-gallery-current" : ""}`}><RemoteImage alt={`${businessName}, imagen ${displayedIndex + 1} de ${images.length}`} className="object-contain object-center" fill sizes="(min-width: 1200px) 1200px, 100vw" src={frame.current?.image_url ?? activeImage.image_url} /></span>
               {hasMultipleImages ? (
                 <>
                   <button aria-label="Imagen anterior en pantalla completa" className="public-gallery-dialog-button public-gallery-dialog-prev" onClick={() => { if (Date.now() >= ignoreClickUntil.current) move(-1); }} type="button"><ChevronLeft aria-hidden="true" size={24} /></button>
