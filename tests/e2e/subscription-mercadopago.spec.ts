@@ -5,6 +5,8 @@ import { signIn } from "./support/dashboard";
 import { E2E_MERCADOPAGO_WEBHOOK_SECRET, E2E_VERCEL_BYPASS_SECRET } from "./support/constants";
 
 test("suscripción Mercado Pago: prueba, aprobación, duplicados, mora y reembolso", async ({ page, request }) => {
+  // Long end-to-end flow (checkout, webhooks, dashboard states): the default 90 s is tight on a cold dev server.
+  test.slow();
   const originalRows = await (await adminRequest("records/businesses?slug=eq.citadely-demo-ux&select=*&limit=1")).json() as Record<string, unknown>[];
   const original = originalRows[0];
   if (!original) throw new Error("Falta el negocio demo.");
