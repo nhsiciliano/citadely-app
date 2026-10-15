@@ -6,7 +6,7 @@ Workflow: `.github/workflows/ci.yml`. Runs on pull requests, pushes to `main` an
 
 `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm typecheck` → `pnpm run --if-present test:unit` → `pnpm build`.
 
-- The unit-test step does nothing until a `test:unit` script exists (task 7.1).
+- `pnpm test:unit` runs Vitest (`vitest.config.mts`) over `tests/unit/**/*.test.ts`. Unit tests never touch a backend: route handlers are tested with `@/lib/insforge-admin` mocked, env-dependent modules with `withEnv` from `tests/unit/helpers.ts`, and `server-only` is stubbed.
 - The build uses placeholder `NEXT_PUBLIC_*` values and never contacts a backend.
 - Make this job a **required status check** in the branch protection rule for `main` (Settings → Branches).
 

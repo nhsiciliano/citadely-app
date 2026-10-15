@@ -21,7 +21,7 @@ export function getProtectionBypassSecret() {
 }
 
 /** Problems that must never reach production. Empty outside production. */
-export function getProductionEnvProblems(env: NodeJS.ProcessEnv = process.env) {
+export function getProductionEnvProblems(env: Record<string, string | undefined> = process.env) {
   if (env.VERCEL_ENV !== "production") return [];
 
   const problems: string[] = [];
@@ -35,7 +35,7 @@ export function getProductionEnvProblems(env: NodeJS.ProcessEnv = process.env) {
   return problems;
 }
 
-export function assertProductionEnv(env: NodeJS.ProcessEnv = process.env) {
+export function assertProductionEnv(env: Record<string, string | undefined> = process.env) {
   const problems = getProductionEnvProblems(env);
   if (problems.length) {
     throw new Error(`Configuración de producción inválida:\n- ${problems.join("\n- ")}`);

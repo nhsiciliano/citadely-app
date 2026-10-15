@@ -12,6 +12,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "schema:diff": "node scripts/schema-diff.mjs",
     "seed:demo": "node scripts/seed-citadely-demo.mjs",
     "seed:barberia-luk": "node scripts/seed-barberia-luk.mjs",
@@ -50,6 +52,7 @@
     "resend-cli": "^2.21.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vercel": "^54.20.1"
+    "vercel": "^54.20.1",
+    "vitest": "^5.0.5"
   }
 }
