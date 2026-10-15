@@ -94,6 +94,7 @@ async function ensureBusiness(client, userId) {
     is_public: true,
     trial_ends_at: addDays(90, 23, 59).toISOString(),
     subscription_status: "trialing",
+    is_demo: true,
   };
   const existing = await client.database.from("businesses").select("*").eq("owner_id", userId).maybeSingle();
   if (existing.error) throw new Error(existing.error.message);

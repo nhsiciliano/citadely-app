@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -48,7 +48,19 @@ export function BusinessShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const subscription = getSubscriptionState(business);
   const publicUrl = getBusinessPublicUrl(business.slug);
-  const isDemoWorkspace = business.slug === "citadely-demo-ux" || userEmail.endsWith(".test");
+  const isDemoWorkspace = business.is_demo === true;
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setMobileOpen(false);
+      menuButtonRef.current?.focus();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen]);
 
   useEffect(() => {
     if (pathname !== "/negocio") return;
@@ -61,7 +73,10 @@ export function BusinessShell({ children }: { children: ReactNode }) {
       <a className="skip-link" href="#contenido-principal">Saltar al contenido</a>
 
       <button
+        aria-controls="navegacion-principal"
+        aria-expanded={mobileOpen}
         aria-label="Abrir navegación"
+        ref={menuButtonRef}
         className="fixed left-4 top-4 z-40 grid h-11 w-11 place-items-center rounded-md bg-[var(--color-navy)] text-white shadow-[var(--shadow-raised)] lg:hidden"
         onClick={() => setMobileOpen(true)}
         type="button"
@@ -71,7 +86,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
 
       {mobileOpen ? <button aria-label="Cerrar navegación" className="fixed inset-0 z-40 bg-[rgba(4,20,42,.48)] lg:hidden" onClick={() => setMobileOpen(false)} type="button" /> : null}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[286px] flex-col bg-[var(--color-navy)] text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[84px]" : "lg:w-[256px]"}`}>
+      <aside id="navegacion-principal" className={`fixed inset-y-0 left-0 z-50 flex w-[286px] flex-col bg-[var(--color-navy)] text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[84px]" : "lg:w-[256px]"}`}>
         <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
           <Link aria-label="Ir al inicio de Citadely" className="flex min-w-0 items-center gap-3" href="/negocio" onClick={() => setMobileOpen(false)}>
             <LogoSymbol />
@@ -132,7 +147,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
         </button>
       </aside>
 
-      <main className="min-w-0" id="contenido-principal">
+      <main className="min-w-0" id="contenido-principal" inert={mobileOpen}>
         {children}
       </main>
     </div>

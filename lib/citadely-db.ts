@@ -4,6 +4,8 @@ import type { PublicTheme } from "@/lib/public-theme";
 import { addDaysToDateKey, addMonthsToMonthKey, formatInTimeZone, resolveTimeZone, startOfDayInTimeZone, toDateKey, toMonthKey, zonedTimeToUtc } from "@/lib/time";
 
 export type Business = {
+  // Cuenta de demostración: se marca en la base, no por slug ni email.
+  is_demo?: boolean;
   id: string;
   owner_id: string;
   name: string;
