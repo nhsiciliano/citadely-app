@@ -1,6 +1,7 @@
 import "server-only";
 
 import { Resend } from "resend";
+import { assertProductionEnv } from "@/lib/env";
 import type { EmailOutboxRow, RenderedOutboxEmail } from "@/lib/email-outbox";
 
 let resendClient: Resend | null = null;
@@ -29,6 +30,7 @@ export function getResend() {
 }
 
 export async function sendOutboxEmail(row: EmailOutboxRow, email: RenderedOutboxEmail) {
+  assertProductionEnv();
   if (process.env.RESEND_SKIP_DELIVERY === "true") return { id: `skipped-${row.id}` };
 
   const from = process.env.RESEND_FROM_EMAIL || "notificaciones@citadely.com.ar";
