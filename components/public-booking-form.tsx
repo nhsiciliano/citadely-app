@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useRef, useState, type CSSProperties } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { PublicBookingCalendar } from "@/components/public-booking-calendar";
 import { PublicServiceCarousel } from "@/components/public-service-carousel";
 import {
@@ -19,6 +19,13 @@ import { WhatsAppIcon } from "@/components/public-business-info";
 import { TurnstileWidget } from "@/components/turnstile-widget";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 
+type BookingConfirmation = {
+  serviceName: string;
+  slotLabel: string;
+  amountCents: number;
+  depositDeadline: string | null;
+};
+
 export function PublicBookingForm({
   business,
   services,
@@ -34,7 +41,8 @@ export function PublicBookingForm({
   const [selectedSlot, setSelectedSlot] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null);
+  const confirmationRef = useRef<HTMLElement>(null);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
   const [localReservations, setLocalReservations] = useState<Record<string, number>>({});
@@ -49,6 +57,11 @@ export function PublicBookingForm({
     [selectedService, availabilitySlots, business.timezone, localReservations],
   );
   const selectedSlotData = slots.find((slot) => slot.startsAt === selectedSlot) ?? null;
+
+  // Al confirmar, el foco pasa al panel para que lectores de pantalla anuncien el resultado.
+  useEffect(() => {
+    if (confirmation) confirmationRef.current?.focus();
+  }, [confirmation]);
   const selectedAmountCents = selectedService ? getBookingAmountCents(selectedService) : 0;
   const whatsAppUrl = getWhatsAppUrl(
     business.whatsapp_phone,
@@ -65,7 +78,6 @@ export function PublicBookingForm({
     const formElement = event.currentTarget;
     setPending(true);
     setError(null);
-    setSuccess(null);
 
     if (!selectedService || !selectedSlot) {
       setPending(false);
@@ -75,6 +87,7 @@ export function PublicBookingForm({
 
     const form = new FormData(formElement);
     const startsAt = new Date(selectedSlot);
+    const slotLabel = selectedSlotData?.label ?? "";
     const response = await fetch("/api/public-booking", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -118,11 +131,7 @@ export function PublicBookingForm({
 
     setLocalReservations((current) => ({ ...current, [`${selectedService.id}:${selectedSlot}`]: (current[`${selectedService.id}:${selectedSlot}`] ?? 0) + 1 }));
     setPending(false);
-    setSuccess(
-      amountCents > 0
-        ? `Pre-reserva creada. Transferí ${formatCurrency(amountCents, business.currency)} antes del vencimiento y el negocio confirmará tu turno cuando reciba la seña.${depositDeadline ? ` Vence el ${depositDeadline}.` : " El plazo máximo es de 2 horas."}`
-        : "Reserva confirmada. Te enviamos los datos del turno por email y el negocio ya puede verla en su agenda.",
-    );
+    setConfirmation({ serviceName: selectedService.name, slotLabel, amountCents, depositDeadline });
     formElement.reset();
     setSelectedSlot("");
   }
@@ -145,10 +154,32 @@ export function PublicBookingForm({
       onSubmit={reserveAppointment}
       style={bookingStyle ?? { "--booking-brand": brandColor } as CSSProperties}
     >
-      {error || success ? <div className="lg:col-span-2">
-        {error ? <FormMessage type="error">{error}</FormMessage> : null}
-        {success ? <FormMessage type="success">{success}</FormMessage> : null}
+      {error ? <div className="lg:col-span-2">
+        <FormMessage type="error">{error}</FormMessage>
       </div> : null}
+
+      {confirmation ? (
+        <section aria-labelledby="reserva-confirmada" className="public-theme-card border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-surface)] sm:p-6 lg:col-span-2" ref={confirmationRef} tabIndex={-1}>
+          <h2 className="font-display text-2xl font-semibold tracking-[-0.03em]" id="reserva-confirmada">
+            {confirmation.amountCents > 0 ? "Pre-reserva creada" : "Reserva confirmada"}
+          </h2>
+          <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
+            <div><dt className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Servicio</dt><dd className="mt-1 font-semibold">{confirmation.serviceName}</dd></div>
+            <div><dt className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Horario</dt><dd className="mt-1 font-semibold">{confirmation.slotLabel || "Según tu selección"}</dd></div>
+            {confirmation.amountCents > 0 ? (
+              <>
+                <div><dt className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Seña a transferir</dt><dd className="mt-1 font-semibold">{formatCurrency(confirmation.amountCents, business.currency)}</dd></div>
+                <div><dt className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">Vence</dt><dd className="mt-1 font-semibold">{confirmation.depositDeadline ?? "En un máximo de 2 horas"}</dd></div>
+              </>
+            ) : null}
+          </dl>
+          <p className="mt-5 text-sm leading-6 text-[var(--color-ink-soft)]">
+            {confirmation.amountCents > 0
+              ? "Transferí la seña antes del vencimiento. El negocio confirmará tu turno cuando la reciba."
+              : "Te enviamos los datos del turno por email y el negocio ya puede verlo en su agenda."}
+          </p>
+        </section>
+      ) : null}
 
       <section className={`public-service-section min-w-0 lg:col-span-2 ${servicesStyle ? "public-theme-active public-theme-services" : ""}`} style={{ ...servicesStyle, "--booking-brand": servicesColors.accent, "--booking-brand-foreground": servicesColors.accentInk } as CSSProperties}>
         <div className="public-catalog-heading">
