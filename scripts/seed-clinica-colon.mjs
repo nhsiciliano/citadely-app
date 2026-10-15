@@ -4,7 +4,8 @@ import fs from "node:fs";
 import { createClient } from "@insforge/sdk";
 import { confirmSeedTarget } from "./lib/seed-guard.mjs";
 
-const EMAIL = process.env.SEED_CLINICA_COLON_EMAIL ?? "nhsiciliano@gmail.com";
+const EMAIL = process.env.SEED_CLINICA_COLON_EMAIL;
+if (!EMAIL) throw new Error("Set SEED_CLINICA_COLON_EMAIL to the seed owner email.");
 const PASSWORD = process.env.SEED_CLINICA_COLON_PASSWORD;
 const BUSINESS_NAME = "Clínica Colon";
 const BUSINESS_SLUG = "clinicacolon";

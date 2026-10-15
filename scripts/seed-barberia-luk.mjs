@@ -4,7 +4,8 @@ import fs from "node:fs";
 import { createClient } from "@insforge/sdk";
 import { confirmSeedTarget } from "./lib/seed-guard.mjs";
 
-const EMAIL = process.env.SEED_BARBERIA_LUK_EMAIL ?? "barberialuk@gmail.com";
+const EMAIL = process.env.SEED_BARBERIA_LUK_EMAIL;
+if (!EMAIL) throw new Error("Set SEED_BARBERIA_LUK_EMAIL to the seed owner email.");
 const PASSWORD = process.env.SEED_BARBERIA_LUK_PASSWORD;
 const BUSINESS_NAME = "Barberia Luk";
 const BUSINESS_SLUG = "barberia-luk";

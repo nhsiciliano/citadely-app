@@ -16,11 +16,10 @@
     "seed:demo": "node scripts/seed-citadely-demo.mjs",
     "seed:barberia-luk": "node scripts/seed-barberia-luk.mjs",
     "seed:clinica-colon": "node scripts/seed-clinica-colon.mjs",
-    "migrate:subscriptions:pro": "node scripts/migrate-subscriptions-to-pro.mjs",
     "email:dev": "email dev --dir emails --port 3001",
     "email:export": "email export --dir emails --outDir .react-email/dist",
     "resend:login": "resend login",
-    "test:resend": "node scripts/test-resend-booking-email.mjs",
+    "smoke:resend": "node scripts/test-resend-booking-email.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
