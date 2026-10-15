@@ -7,6 +7,7 @@ import type { BusinessAccessState } from "@/lib/business-access";
 import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
+import { useLiveAppointments } from "./use-live-appointments";
 import { loadRange, loadWorkspaceData, type InitialWorkspace } from "@/lib/workspace-data";
 
 export type WorkspaceContextValue = {
@@ -54,6 +55,9 @@ export function WorkspaceProvider({ children, initial }: { children: ReactNode; 
   // Start of the loaded appointment/slot window; moves earlier when the agenda navigates to the past.
   const [historyStart, setHistoryStart] = useState(initial.historyStart);
   const userEmail = initial.userEmail;
+
+  // Los turnos nuevos, cancelados o modificados por clientes o por el cron aparecen sin recargar.
+  useLiveAppointments({ businessId: business.id, historyStart, onAppointments: setAppointments });
 
   async function loadBusinessData(businessId: string) {
     const data = await loadWorkspaceData(insforge, businessId, historyStart);
