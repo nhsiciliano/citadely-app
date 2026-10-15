@@ -26,6 +26,7 @@ export default defineConfig({
         MERCADOPAGO_WEBHOOK_SECRET: "e2e-webhook-secret",
         VERCEL_AUTOMATION_BYPASS_SECRET: "e2e-vercel-bypass",
         RESEND_SKIP_DELIVERY: "true",
+        CRON_SECRET: "e2e-cron-secret",
       },
       url: "http://127.0.0.1:3002",
       reuseExistingServer: true,

@@ -7,5 +7,7 @@ export const config: VercelConfig = {
     { path: "/api/cron/transactional-email", schedule: "* * * * *" },
     { path: "/api/cron/cancel-expired-deposits", schedule: "*/10 * * * *" },
     { path: "/api/cron/failure-alerts", schedule: "*/15 * * * *" },
+    // Diario a las 06:00 UTC (03:00 en Argentina): re-sincroniza suscripciones y detecta huérfanas.
+    { path: "/api/cron/reconcile-subscriptions", schedule: "0 6 * * *" },
   ],
 };

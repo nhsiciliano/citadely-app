@@ -86,10 +86,19 @@ describe("calculateStats", () => {
       appointmentAt("2026-10-01T02:00:00.000Z"),
       appointmentAt("2026-10-15T15:00:00.000Z", "cancelled"),
     ];
-    const stats = calculateStats(appointments, [service], AR, now);
+    // Cuatro horarios publicados el 15 en Buenos Aires; el de las 00:30 del 16 ya es otro día aunque en UTC sea el mismo.
+    const slots = [
+      slotAt("2026-10-15", "09:00", AR),
+      slotAt("2026-10-15", "12:00", AR),
+      slotAt("2026-10-15", "19:00", AR),
+      slotAt("2026-10-15", "22:30", AR),
+      slotAt("2026-10-16", "00:30", AR),
+    ];
+    const stats = calculateStats(appointments, [service], AR, now, slots);
     expect(stats.todayAppointments).toBe(2);
     expect(stats.upcomingAppointments).toBe(2);
     expect(stats.monthlyRevenueCents).toBe(3 * service.price_cents);
-    expect(stats.occupancy).toBe(25);
+    expect(stats.publishedMinutes).toBe(4 * 60);
+    expect(stats.occupancy).toBe(50);
   });
 });
