@@ -77,11 +77,11 @@ pointing at Preview URLs). Anything else is drift: resolve it with a migration, 
       (Hobby only allows daily crons; a more frequent one makes the deploy fail).
 - [ ] InsForge secret `CRON_SECRET` exists in the parent and matches the Vercel Production `CRON_SECRET`
       (`npx -y @insforge/cli secrets list`).
-- [ ] In the parent, run `npx -y @insforge/cli schedules list` and check which of the three exist. Create the missing
-      ones (`Citadely transactional email`, `Citadely cancel expired deposits`, `Citadely failure alerts`; exact commands
-      in README → Crons). The `Citadely transactional email` schedule we have seen (id `6cc3b1f4`) lives in the backend
-      branch and points at production; it stays as it is until all three are active in the parent, and only then is it
-      deleted from the branch so executions are not duplicated.
+- [ ] `Citadely transactional email` (id `6cc3b1f4`) already exists in the parent and returns 200 every minute: do not
+      recreate it. In the parent create the two missing ones, `Citadely cancel expired deposits` and
+      `Citadely failure alerts` (exact commands in README → Crons).
+- [ ] The identical copy of `Citadely transactional email` in the backend branch is a duplicate (both fire against
+      production). Once the parent's one is confirmed with 200 in `schedules logs 6cc3b1f4`, delete the branch copy.
 - [ ] Verify the three in the parent: `npx -y @insforge/cli schedules list` shows them active with the right cron, URL
       (`https://www.citadely.com.ar/api/cron/<route>`) and `POST`, and `schedules logs <id>` shows a 200 run for each.
 - [ ] Smoke test: public booking page loads, a booking is created, the confirmation email is queued, login and the
