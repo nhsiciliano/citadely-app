@@ -50,7 +50,7 @@ How to read it (left = branch, right = parent):
 | `migrations` | **Must be applied to the parent before the deploy** | Parent has something the branch lacks: investigate | n/a |
 | `columns`, `constraints`, `indexes`, `functions`, `triggers`, `views` | Expected only for migrations listed above | Drift: someone changed the parent by hand | Definition drift |
 | `policies`, `row-level-security`, `table-grants`, `column-grants` | Same as above; **review security impact first** | Drift, possibly a hole | Verify which side is correct |
-| `schedules` | A cron that exists on the branch only | A cron in the parent that Vercel `vercel.ts` may now duplicate | Different URL/method/secret |
+| `schedules` | A cron that exists on the branch only (create it in the parent at release, step 4) | A cron in the parent that the branch lacks | Different URL/method/secret |
 
 The only acceptable differences are the pending migrations of this release (and Preview-only data such as schedules
 pointing at Preview URLs). Anything else is drift: resolve it with a migration, not a manual edit.
@@ -73,8 +73,14 @@ pointing at Preview URLs). Anything else is drift: resolve it with a migration, 
 - [ ] Production environment variables in Vercel match `.env.example` (`[Prod+Preview]` entries); Preview-only entries
       (`MERCADOPAGO_PAYER_EMAIL`, `VERCEL_AUTOMATION_BYPASS_SECRET`, `RESEND_SKIP_DELIVERY=true`) are absent from
       Production. `MERCADOPAGO_ACCESS_TOKEN` does not start with `TEST-` (the app refuses to start otherwise).
-- [ ] Deploy. In Vercel → Settings → Cron Jobs the crons from `vercel.ts` appear and their first runs return 200.
-- [ ] `npx -y @insforge/cli schedules list` on the parent shows no schedule that duplicates a Vercel cron.
+- [ ] Deploy. In Vercel → Settings → Cron Jobs only the daily cron from `vercel.ts` (`reconcile-subscriptions`) appears
+      (Hobby only allows daily crons; a more frequent one makes the deploy fail).
+- [ ] InsForge secret `CRON_SECRET` exists in the parent and matches the Vercel Production `CRON_SECRET`
+      (`npx -y @insforge/cli secrets list`).
+- [ ] Create the two missing schedules in the parent (`Citadely cancel expired deposits` and `Citadely failure alerts`;
+      exact commands in README → Crons). `Citadely transactional email` already exists there: do not delete it.
+- [ ] Verify the three: `npx -y @insforge/cli schedules list` shows them active with the right cron, URL
+      (`https://www.citadely.com.ar/api/cron/<route>`) and `POST`, and `schedules logs <id>` shows a 200 run for each.
 - [ ] Smoke test: public booking page loads, a booking is created, the confirmation email is queued, login and the
       dashboard load.
 - [ ] Check Sentry (if enabled) and the `failure-alerts` cron output for new `failed` rows.

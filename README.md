@@ -84,13 +84,39 @@ Los scripts de `scripts/archive/` son históricos y no se ejecutan.
 
 ## Crons
 
-Declarados en [`vercel.ts`](vercel.ts) y ejecutados por Vercel Cron con `Authorization: Bearer $CRON_SECRET`:
+Vercel Hobby solo permite crons diarios, así que los crons se reparten en dos lugares. Todas las rutas `/api/cron/*` aceptan GET y POST y exigen `Authorization: Bearer $CRON_SECRET`.
 
-- `/api/cron/transactional-email`: cada minuto. Envía la cola de emails (`email_outbox`).
-- `/api/cron/cancel-expired-deposits`: cada 10 minutos. Cancela reservas con seña vencida.
-- `/api/cron/failure-alerts`: cada 15 minutos. Registra fallas de email y de webhooks.
+**Vercel Cron** (declarado en [`vercel.ts`](vercel.ts), solo corre en producción):
 
-Si hay un schedule de InsForge que apunte a producción, es un duplicado de estos crons y hay que quitarlo.
+- `/api/cron/reconcile-subscriptions`: diario a las 06:00 UTC. Re-sincroniza suscripciones y detecta huérfanas.
+
+**Schedules de InsForge** (`POST` contra `https://www.citadely.com.ar/api/cron/<ruta>` con el header `Authorization: Bearer ${{secrets.CRON_SECRET}}`; el secreto `CRON_SECRET` tiene que existir en el proyecto de InsForge):
+
+| Nombre | Ruta | Frecuencia | Qué hace |
+|---|---|---|---|
+| `Citadely transactional email` | `/api/cron/transactional-email` | cada minuto (`* * * * *`) | Envía la cola de emails (`email_outbox`). |
+| `Citadely cancel expired deposits` | `/api/cron/cancel-expired-deposits` | cada 10 minutos (`*/10 * * * *`) | Cancela reservas con seña vencida. |
+| `Citadely failure alerts` | `/api/cron/failure-alerts` | cada 15 minutos (`*/15 * * * *`) | Registra fallas de email y de webhooks. |
+
+El primero ya existe. Para crear los otros dos (una sola vez, en el proyecto de producción):
+
+```bash
+npx -y @insforge/cli schedules create \
+  --name "Citadely cancel expired deposits" \
+  --cron "*/10 * * * *" \
+  --url "https://www.citadely.com.ar/api/cron/cancel-expired-deposits" \
+  --method POST \
+  --headers '{"Authorization": "Bearer ${{secrets.CRON_SECRET}}"}'
+
+npx -y @insforge/cli schedules create \
+  --name "Citadely failure alerts" \
+  --cron "*/15 * * * *" \
+  --url "https://www.citadely.com.ar/api/cron/failure-alerts" \
+  --method POST \
+  --headers '{"Authorization": "Bearer ${{secrets.CRON_SECRET}}"}'
+```
+
+Verificación: `npx -y @insforge/cli schedules list` muestra los tres activos y `schedules logs <id>` devuelve ejecuciones con 200. No dupliques estos tres en `vercel.ts` mientras el proyecto esté en Hobby. Si se pasa a Pro, se pueden mover a `vercel.ts` y borrar los schedules de InsForge, siempre en ese orden.
 
 ## Tests
 
