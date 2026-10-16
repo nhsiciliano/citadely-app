@@ -17,6 +17,26 @@ Limits are constants at the top of `register_public_booking_attempt`; change the
 Rate limiting is not part of the repo. Dashboard: Project → Firewall → Configure → New rule, or with the CLI
 (`npx vercel firewall`, project linked; rules are staged as a draft until `publish`):
 
+**Hobby plan** allows a single rate-limit rule per project (and 3 custom rules in total), so both endpoints go in one
+rule with two OR groups:
+
+```bash
+npx vercel firewall rules add "Rate limit reserva publica y canje de promo" \
+  --condition '{"type":"path","op":"eq","value":"/api/public-booking"}' \
+  --condition '{"type":"method","op":"eq","value":"POST"}' \
+  --or \
+  --condition '{"type":"path","op":"eq","value":"/api/promo-codes/redeem"}' \
+  --condition '{"type":"method","op":"eq","value":"POST"}' \
+  --action rate_limit --rate-limit-algo fixed_window \
+  --rate-limit-requests 10 --rate-limit-window 60 --rate-limit-keys ip \
+  --rate-limit-action deny --duration 5m
+
+npx vercel firewall diff      # review the draft
+npx vercel firewall publish   # make it live
+```
+
+**Pro plan** variant, one rule per endpoint (independent counters and descriptions):
+
 ```bash
 npx vercel firewall rules add "Rate limit public booking" \
   --condition '{"type":"path","op":"eq","value":"/api/public-booking"}' \
