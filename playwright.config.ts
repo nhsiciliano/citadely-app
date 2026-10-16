@@ -5,6 +5,16 @@ import { loadE2eEnvironment } from "./tests/e2e/support/env";
 // The only place that reads .env.local / .insforge/project.json; specs read process.env.
 loadE2eEnvironment();
 
+// These specs move the demo business through trialing, active and past_due (an overdue subscription is read-only by
+// RLS and hides its public page), so none of them may run while another spec uses that business, nor together.
+// Each one is its own project in a chain: `chromium` (everything else) runs first, then subscription-plans, then
+// subscription-mercadopago. If a spec fails Playwright reports the later projects as "did not run"; force one with
+// `playwright test --project=subscription-mercadopago --no-deps`.
+const SUBSCRIPTION_STATE_SPECS = [
+  { name: "subscription-plans", match: /subscription-plans\.spec\.ts$/ },
+  { name: "subscription-mercadopago", match: /subscription-mercadopago\.spec\.ts$/ },
+];
+
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 90_000,
@@ -48,7 +58,14 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: SUBSCRIPTION_STATE_SPECS.map((spec) => spec.match),
       use: { ...devices["Desktop Chrome"] },
     },
+    ...SUBSCRIPTION_STATE_SPECS.map((spec, index) => ({
+      name: spec.name,
+      testMatch: spec.match,
+      dependencies: [index === 0 ? "chromium" : SUBSCRIPTION_STATE_SPECS[index - 1].name],
+      use: { ...devices["Desktop Chrome"] },
+    })),
   ],
 });

@@ -55,6 +55,13 @@ Lifecycle: `support/global-setup.ts` checks the guard and runs the idempotent de
 deletes what the run created in the demo business (appointments, clients, availability and services tagged with the run id).
 Specs with their own users and businesses (`rls-matrix`, `ssr-auth`, `subscription-*`) clean up after themselves.
 
+Three Playwright projects in a chain: `chromium` (every spec except the next two), then `subscription-plans`, then
+`subscription-mercadopago`, each depending on the previous one so they run alone and one at a time. Those two specs move
+the demo business through trialing, active and past_due (an overdue subscription is read-only by RLS and hides the public
+page), which broke the specs running in parallel on the same business (`dashboard-crud`, `booking-capacity`). Playwright
+does not run a dependent project when its dependency has failures (it reports "did not run"); to run one anyway use
+`pnpm test:e2e --project=subscription-mercadopago --no-deps`.
+
 Specs are split by domain: `public-seo`, `public-contact`, `public-catalog`, `public-theme`, `dashboard-crud`,
 `dashboard-responsive`, `booking-capacity`, `availability-editor`, `manual-appointments-rpc`, `subscription-plans`,
 `subscription-mercadopago`, plus the isolated suites mentioned above.
