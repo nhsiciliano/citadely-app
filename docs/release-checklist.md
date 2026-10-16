@@ -78,10 +78,8 @@ pointing at Preview URLs). Anything else is drift: resolve it with a migration, 
 - [ ] InsForge secret `CRON_SECRET` exists in the parent and matches the Vercel Production `CRON_SECRET`
       (`npx -y @insforge/cli secrets list`).
 - [ ] `Citadely transactional email` (id `6cc3b1f4`) already exists in the parent and returns 200 every minute: do not
-      recreate it. In the parent create the two missing ones, `Citadely cancel expired deposits` and
+      recreate it (the duplicate copy that the backend branch inherited was deleted on 2026-10-16). In the parent create the two missing ones, `Citadely cancel expired deposits` and
       `Citadely failure alerts` (exact commands in README → Crons).
-- [ ] The identical copy of `Citadely transactional email` in the backend branch is a duplicate (both fire against
-      production). Once the parent's one is confirmed with 200 in `schedules logs 6cc3b1f4`, delete the branch copy.
 - [ ] Verify the three in the parent: `npx -y @insforge/cli schedules list` shows them active with the right cron, URL
       (`https://www.citadely.com.ar/api/cron/<route>`) and `POST`, and `schedules logs <id>` shows a 200 run for each.
 - [ ] Smoke test: public booking page loads, a booking is created, the confirmation email is queued, login and the

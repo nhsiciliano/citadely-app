@@ -98,7 +98,7 @@ Vercel Hobby solo permite crons diarios, así que los crons se reparten en dos l
 | `Citadely cancel expired deposits` | `/api/cron/cancel-expired-deposits` | cada 10 minutos (`*/10 * * * *`) | Cancela reservas con seña vencida. |
 | `Citadely failure alerts` | `/api/cron/failure-alerts` | cada 15 minutos (`*/15 * * * *`) | Registra fallas de email y de webhooks. |
 
-El schedule `Citadely transactional email` (id `6cc3b1f4`) ya existe en el proyecto padre (producción) y responde 200 cada minuto; hay una copia idéntica en el backend branch, que es un duplicado heredado de la bifurcación. En el release solo hay que crear los otros dos (una sola vez, en el padre):
+El schedule `Citadely transactional email` (id `6cc3b1f4`) ya existe en el proyecto padre (producción) y responde 200 cada minuto; la copia heredada que había en el backend branch se borró el 2026-10-16. En el release solo hay que crear los otros dos (una sola vez, en el padre):
 
 ```bash
 npx -y @insforge/cli schedules create \
@@ -116,7 +116,7 @@ npx -y @insforge/cli schedules create \
   --headers '{"Authorization": "Bearer ${{secrets.CRON_SECRET}}"}'
 ```
 
-Verificación: `npx -y @insforge/cli schedules list` muestra los tres activos y `schedules logs <id>` devuelve ejecuciones con 200. No dupliques estos tres en `vercel.ts` mientras el proyecto esté en Hobby. Si se pasa a Pro, se pueden mover a `vercel.ts` y borrar los schedules de InsForge, siempre en ese orden. La copia del schedule en el backend branch se borra una vez confirmado que la del padre responde 200, para no duplicar ejecuciones.
+Verificación: `npx -y @insforge/cli schedules list` muestra los tres activos y `schedules logs <id>` devuelve ejecuciones con 200. No dupliques estos tres en `vercel.ts` mientras el proyecto esté en Hobby. Si se pasa a Pro, se pueden mover a `vercel.ts` y borrar los schedules de InsForge, siempre en ese orden.
 
 ## Tests
 
