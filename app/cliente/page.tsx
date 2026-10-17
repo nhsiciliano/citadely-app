@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   robots: NO_INDEX_ROBOTS,
 };
 
+// Ruta reservada al área de cliente, que hoy no existe. Solo redirige. Se borra o construye según la
+// decisión pendiente sobre el rol "client" (plan, 5.5).
 export default function ClientPage() {
   redirect("/");
 }

@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { getErrorMessage } from "@/lib/auth";
-import { insforge } from "@/lib/insforge";
+import { exchangeResetPasswordTokenAction, resetPasswordAction, sendResetPasswordEmailAction } from "@/app/auth/actions";
 import { getPasswordValidationError } from "@/lib/password";
 import { PasswordField } from "@/components/auth/password-field";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
@@ -24,21 +23,18 @@ export function ResetPasswordForm() {
 
     const form = new FormData(event.currentTarget);
     const nextEmail = String(form.get("email") ?? "");
-    const { error: requestError } = await insforge.auth.sendResetPasswordEmail({
-      email: nextEmail,
-      redirectTo: `${window.location.origin}/recuperar-password`,
-    });
+    const requested = await sendResetPasswordEmailAction(nextEmail);
 
     setPending(false);
 
-    if (requestError) {
-      setError(getErrorMessage(requestError));
+    if (!requested.ok) {
+      setError(requested.error);
       return;
     }
 
     setEmail(nextEmail);
     setStep("reset");
-    setSuccess("Te enviamos un codigo para cambiar tu contrasena.");
+    setSuccess("Te enviamos un código para cambiar tu contraseña.");
   }
 
   async function exchangeCode(event: FormEvent<HTMLFormElement>) {
@@ -49,20 +45,17 @@ export function ResetPasswordForm() {
 
     const form = new FormData(event.currentTarget);
     const code = String(form.get("code") ?? "");
-    const { data, error: exchangeError } = await insforge.auth.exchangeResetPasswordToken({
-      email,
-      code,
-    });
+    const exchanged = await exchangeResetPasswordTokenAction({ email, code });
 
     setPending(false);
 
-    if (exchangeError) {
-      setError(getErrorMessage(exchangeError));
+    if (!exchanged.ok) {
+      setError(exchanged.error);
       return;
     }
 
-    setToken(data?.token ?? "");
-    setSuccess("Codigo validado. Ingresá tu nueva contrasena.");
+    setToken(exchanged.data.token);
+    setSuccess("Código validado. Ingresá tu nueva contraseña.");
   }
 
   async function resetPassword(event: FormEvent<HTMLFormElement>) {
@@ -80,19 +73,16 @@ export function ResetPasswordForm() {
     }
 
     setPending(true);
-    const { error: resetError } = await insforge.auth.resetPassword({
-      newPassword,
-      otp: token,
-    });
+    const reset = await resetPasswordAction({ newPassword, otp: token });
 
     setPending(false);
 
-    if (resetError) {
-      setError(getErrorMessage(resetError));
+    if (!reset.ok) {
+      setError(reset.error);
       return;
     }
 
-    setSuccess("Contrasena actualizada. Ya podes ingresar.");
+    setSuccess("Contraseña actualizada. Ya podés ingresar.");
   }
 
   return (
@@ -100,27 +90,27 @@ export function ResetPasswordForm() {
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
       {success ? <FormMessage type="success">{success}</FormMessage> : null}
       {step === "request" ? (
-        <form className="grid gap-4" onSubmit={requestCode}>
+        <form method="post" className="grid gap-4" onSubmit={requestCode}>
           <Field label="Email" name="email" placeholder="tu@email.com" type="email" />
-          <SubmitButton pending={pending}>Enviar codigo</SubmitButton>
+          <SubmitButton pending={pending}>Enviar código</SubmitButton>
         </form>
       ) : token ? (
-        <form className="grid gap-4" onSubmit={resetPassword}>
+        <form method="post" className="grid gap-4" onSubmit={resetPassword}>
           <PasswordField
             autoComplete="new-password"
             label="Nueva contraseña"
             placeholder="Creá una contraseña segura"
             requireStrongPassword
           />
-          <SubmitButton pending={pending}>Actualizar contrasena</SubmitButton>
+          <SubmitButton pending={pending}>Actualizar contraseña</SubmitButton>
         </form>
       ) : (
-        <form className="grid gap-4" onSubmit={exchangeCode}>
-          <Field label="Codigo recibido" name="code" placeholder="123456" />
-          <SubmitButton pending={pending}>Validar codigo</SubmitButton>
+        <form method="post" className="grid gap-4" onSubmit={exchangeCode}>
+          <Field label="Código recibido" name="code" placeholder="123456" />
+          <SubmitButton pending={pending}>Validar código</SubmitButton>
         </form>
       )}
-      <Link className="text-sm font-semibold text-[var(--reception)]" href="/login">
+      <Link className="text-sm font-semibold text-primary" href="/login">
         Volver a ingresar
       </Link>
     </div>

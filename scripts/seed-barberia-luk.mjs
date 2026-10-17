@@ -2,8 +2,10 @@
 
 import fs from "node:fs";
 import { createClient } from "@insforge/sdk";
+import { confirmSeedTarget } from "./lib/seed-guard.mjs";
 
-const EMAIL = process.env.SEED_BARBERIA_LUK_EMAIL ?? "barberialuk@gmail.com";
+const EMAIL = process.env.SEED_BARBERIA_LUK_EMAIL;
+if (!EMAIL) throw new Error("Set SEED_BARBERIA_LUK_EMAIL to the seed owner email.");
 const PASSWORD = process.env.SEED_BARBERIA_LUK_PASSWORD;
 const BUSINESS_NAME = "Barberia Luk";
 const BUSINESS_SLUG = "barberia-luk";
@@ -15,9 +17,7 @@ const BUSINESS_COVER_URL = "https://images.unsplash.com/photo-1621605815971-fbc9
 const BUSINESS_WHATSAPP = "5491123456789";
 const SEEDED_SERVICE_NAMES = ["Corte de pelo y barba", "Atencion Especial"];
 
-if (process.env.SEED_ALLOW_WRITE !== "true") {
-  throw new Error("Set SEED_ALLOW_WRITE=true to write seed data to the linked InsForge project.");
-}
+await confirmSeedTarget("seed:barberia-luk");
 
 if (!PASSWORD) {
   throw new Error("Set SEED_BARBERIA_LUK_PASSWORD to create or sign in as the seed user.");

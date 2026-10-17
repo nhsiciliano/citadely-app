@@ -105,7 +105,7 @@ export function CitadelyEmail({
               Este mensaje fue enviado por Citadely. Si se trata de un turno, podés responder este email para comunicarte con el negocio.
             </Text>
             <Text style={footer}>
-              <Link href="https://citadely.com.ar" style={footerLink}>citadely.com.ar</Link>
+              <Link href="https://www.citadely.com.ar" style={footerLink}>citadely.com.ar</Link>
             </Text>
           </Section>
         </Container>

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { DEFAULT_BRAND_COLOR } from "@/lib/public-theme";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -8,13 +9,23 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     background_color: "#f7f8fa",
-    theme_color: "#0957d9",
+    theme_color: DEFAULT_BRAND_COLOR,
     lang: "es-AR",
     icons: [
       {
         src: "/icon.svg",
         sizes: "any",
         type: "image/svg+xml",
+      },
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
       },
     ],
   };

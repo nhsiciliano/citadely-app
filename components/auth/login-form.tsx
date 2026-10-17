@@ -3,10 +3,15 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { getErrorMessage, getPostAuthPath } from "@/lib/auth";
-import { insforge } from "@/lib/insforge";
+import { signInWithPasswordAction, startGoogleSignInAction } from "@/app/auth/actions";
+import { syncSessionFromCookie } from "@/lib/insforge";
 import { Field, FormMessage, GoogleIcon, LoadingSpinner, SubmitButton } from "@/components/ui";
 import { PasswordField } from "@/components/auth/password-field";
+
+const OAUTH_ERRORS: Record<string, string> = {
+  oauth_failed: "No pudimos completar el ingreso con Google. Probá de nuevo.",
+  oauth_expired: "El ingreso con Google tardó demasiado. Probá de nuevo.",
+};
 
 export function LoginForm() {
   const router = useRouter();
@@ -23,33 +28,34 @@ export function LoginForm() {
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
 
-    const { data, error: signInError } = await insforge.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const result = await signInWithPasswordAction({ email, password });
 
-    setPendingAction(null);
-
-    if (signInError) {
-      setError(getErrorMessage(signInError));
+    if (!result.ok) {
+      setPendingAction(null);
+      setError(result.error);
       return;
     }
 
-    router.push(getPostAuthPath(data?.user ?? null));
+    syncSessionFromCookie();
+    // Volver a la página del panel que pidió el login (solo rutas internas de /negocio).
+    const next = searchParams.get("next");
+    const destination = result.data.redirectTo === "/negocio" && next && /^\/negocio(\/[a-z0-9-]*)*$/.test(next)
+      ? next
+      : result.data.redirectTo;
+
+    // La sesión ya está en cookies; refresh hace que el servidor vea al usuario al navegar.
+    router.replace(destination);
+    router.refresh();
   }
 
   async function handleGoogleLogin() {
     setPendingAction("google");
     setError(null);
 
-    const redirectTo = `${window.location.origin}/onboarding`;
-    const { error: oauthError } = await insforge.auth.signInWithOAuth({
-      provider: "google",
-      redirectTo,
-    });
-
+    // Si sale bien, la acción redirige a Google y esta página se descarga.
+    const result = await startGoogleSignInAction();
     setPendingAction(null);
-    if (oauthError) setError(getErrorMessage(oauthError));
+    if (!result.ok) setError(result.error);
   }
 
   return (
@@ -59,16 +65,19 @@ export function LoginForm() {
           Email verificado. Ya podés ingresar con tu cuenta.
         </FormMessage>
       ) : null}
+      {OAUTH_ERRORS[searchParams.get("error") ?? ""] && !error ? (
+        <FormMessage type="error">{OAUTH_ERRORS[searchParams.get("error") ?? ""]}</FormMessage>
+      ) : null}
       {error ? <FormMessage type="error">{error}</FormMessage> : null}
-      <form className="grid gap-4" onSubmit={handlePasswordLogin}>
+      <form method="post" className="grid gap-4" onSubmit={handlePasswordLogin}>
         <Field autoComplete="email" label="Email" name="email" placeholder="tu@email.com" type="email" />
         <PasswordField autoComplete="current-password" placeholder="Tu contraseña" />
         <SubmitButton disabled={pendingAction !== null} pending={pendingAction === "password"}>Ingresar</SubmitButton>
       </form>
-      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-        <span className="h-px flex-1 bg-[var(--line)]" />
+      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+        <span className="h-px flex-1 bg-line" />
         o 
-        <span className="h-px flex-1 bg-[var(--line)]" />
+        <span className="h-px flex-1 bg-line" />
       </div>
       <button
         className="button-secondary"
@@ -79,13 +88,13 @@ export function LoginForm() {
       >
         {pendingAction === "google" ? <LoadingSpinner label="Conectando con Google" /> : <><GoogleIcon />Continuar con Google</>}
       </button>
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--ink-soft)]">
-        <Link className="font-semibold text-[var(--reception)]" href="/recuperar-password">
-          Olvide mi contraseña
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft">
+        <Link className="font-semibold text-primary" href="/recuperar-password">
+          Olvidé mi contraseña
         </Link>
         <span>
           ¿No tenés cuenta?{" "}
-          <Link className="font-semibold text-[var(--reception)]" href="/registro">
+          <Link className="font-semibold text-primary" href="/registro">
             Crear cuenta
           </Link>
         </span>

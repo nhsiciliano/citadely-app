@@ -1,10 +1,5 @@
 import crypto from "node:crypto";
-
-export type MercadoPagoPreferenceResponse = {
-  id: string;
-  init_point?: string;
-  sandbox_init_point?: string;
-};
+import { assertProductionEnv } from "@/lib/env";
 
 export type MercadoPagoPaymentResponse = {
   id: number;
@@ -39,6 +34,7 @@ export type MercadoPagoPreapprovalResponse = {
   reason?: string;
   external_reference?: string;
   next_payment_date?: string;
+  date_created?: string;
   payer_email?: string;
   auto_recurring?: {
     frequency?: number;
@@ -60,6 +56,7 @@ type MercadoPagoError = {
 export function getMercadoPagoAccessToken() {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
   if (!token) throw new Error("Falta MERCADOPAGO_ACCESS_TOKEN en el entorno.");
+  assertProductionEnv();
   return token;
 }
 
@@ -84,13 +81,6 @@ async function mercadoPagoRequest<T>(path: string, init: RequestInit = {}) {
   return data;
 }
 
-export async function createMercadoPagoPreference(body: Record<string, unknown>) {
-  return mercadoPagoRequest<MercadoPagoPreferenceResponse>("/checkout/preferences", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-}
-
 export async function getMercadoPagoPayment(paymentId: string) {
   return mercadoPagoRequest<MercadoPagoPaymentResponse>(`/v1/payments/${encodeURIComponent(paymentId)}`);
 }
@@ -113,8 +103,36 @@ export async function updateMercadoPagoPreapproval(preapprovalId: string, body: 
   });
 }
 
+export type MercadoPagoSearchResponse<T> = {
+  paging?: { offset?: number; limit?: number; total?: number };
+  results?: T[];
+};
+
+export async function searchMercadoPagoPreapprovals({ status, offset, limit }: { status: string; offset: number; limit: number }) {
+  const params = new URLSearchParams({ status, offset: String(offset), limit: String(limit) });
+  return mercadoPagoRequest<MercadoPagoSearchResponse<MercadoPagoPreapprovalResponse>>(`/preapproval/search?${params}`);
+}
+
+export async function searchMercadoPagoAuthorizedPayments(preapprovalId: string, { offset = 0, limit = 50 } = {}) {
+  const params = new URLSearchParams({ preapproval_id: preapprovalId, offset: String(offset), limit: String(limit) });
+  return mercadoPagoRequest<MercadoPagoSearchResponse<MercadoPagoAuthorizedPaymentResponse>>(`/authorized_payments/search?${params}`);
+}
+
 export async function getMercadoPagoAuthorizedPayment(authorizedPaymentId: string) {
   return mercadoPagoRequest<MercadoPagoAuthorizedPaymentResponse>(`/authorized_payments/${encodeURIComponent(authorizedPaymentId)}`);
+}
+
+// Ventana para aceptar una firma. El webhook es idempotente (claim por evento y re-fetch del recurso
+// en Mercado Pago), así que un replay no causa daño. Rechazar un reintento legítimo sí: el pago no se
+// refleja hasta la reconciliación. Por eso la ventana es amplia.
+const MERCADOPAGO_SIGNATURE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+// ts llega como Unix en segundos (lo que usa el E2E) o en milisegundos; se normaliza antes de comparar.
+function isFreshSignatureTimestamp(timestamp: string, now = Date.now()) {
+  const value = Number(timestamp);
+  if (!Number.isFinite(value) || value <= 0) return false;
+  const signedAtMs = value < 1e12 ? value * 1000 : value;
+  return Math.abs(now - signedAtMs) <= MERCADOPAGO_SIGNATURE_MAX_AGE_MS;
 }
 
 export function verifyMercadoPagoSignature({
@@ -140,6 +158,7 @@ export function verifyMercadoPagoSignature({
   const timestamp = parts.ts;
   const hash = parts.v1;
   if (!timestamp || !hash || !/^[a-f0-9]{64}$/i.test(hash)) return false;
+  if (!isFreshSignatureTimestamp(timestamp)) return false;
 
   const manifestParts = [];
   if (dataId) manifestParts.push(`id:${dataId.toLowerCase()}`);

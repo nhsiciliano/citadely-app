@@ -241,15 +241,11 @@ export async function POST(request: NextRequest) {
       return Response.json({ received: true, ignored: "missing_external_reference" });
     }
 
-    const { error } = await insforgeAdmin.database.rpc("confirm_mercadopago_payment", {
-      p_payment_id: payment.external_reference,
-      p_external_id: String(payment.id),
-      p_status: payment.status,
-    });
-    if (error) throw new Error(error.message);
-
-    await finishWebhook(eventId, "processed");
-    return Response.json({ received: true });
+    // Pagos del checkout único antiguo: ya no hay tabla payments que confirmar. Se registran como ignorados
+    // y se loguean para que un pago legacy no pase desapercibido.
+    console.warn("mercadopago legacy payment ignored", { eventId, externalReference: payment.external_reference });
+    await finishWebhook(eventId, "ignored");
+    return Response.json({ received: true, ignored: "legacy_payment" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo procesar el webhook.";
     if (eventId) await finishWebhook(eventId, "failed", message);

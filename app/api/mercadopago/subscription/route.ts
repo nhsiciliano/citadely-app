@@ -1,13 +1,16 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@insforge/sdk";
+import { hasSameOrigin } from "@/lib/blog-admin-auth";
+import { createInsforgeTokenClient, getRequestAccessToken } from "@/lib/insforge-server";
+import { getPayerEmailOverride, getProtectionBypassSecret } from "@/lib/env";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 import {
   createMercadoPagoPreapproval,
   getMercadoPagoPreapproval,
   updateMercadoPagoPreapproval,
 } from "@/lib/mercadopago";
-import { getSubscriptionPlan, isSubscriptionPlanId, type SubscriptionPlanId } from "@/lib/subscription-plans";
-import { getBillingStartAt } from "@/lib/subscription-billing";
+import { isSubscriptionPlanId, type SubscriptionPlanId } from "@/lib/subscription-plans";
+import { requireSubscriptionPlans } from "@/lib/subscription-plans-server";
+import { fetchBusinessAccessState } from "@/lib/business-access";
 
 type SubscriptionBusiness = {
   id: string;
@@ -47,20 +50,20 @@ function getAppBaseUrl(request: NextRequest) {
 
 function getWebhookUrl(origin: string) {
   const webhookUrl = new URL("/api/mercadopago/webhook", origin);
-  const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const protectionBypass = getProtectionBypassSecret();
   if (protectionBypass) webhookUrl.searchParams.set("x-vercel-protection-bypass", protectionBypass);
   return webhookUrl.toString();
 }
 
 async function getOwnedBusiness(request: NextRequest, businessId: string) {
-  const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-  const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
+  const accessToken = getRequestAccessToken(request);
+  if (!accessToken) return { ok: false as const, error: "Sesion requerida.", status: 401 as const };
+  // Con la cookie de sesión (sin Bearer) se exige mismo origen, además de SameSite=Lax.
+  if (!request.headers.get("authorization") && !hasSameOrigin(request)) {
+    return { ok: false as const, error: "Solicitud no autorizada.", status: 403 as const };
+  }
 
-  if (!accessToken || !baseUrl) return { ok: false as const, error: "Sesion requerida.", status: 401 as const };
-
-  const userClient = createClient({ baseUrl, ...(anonKey ? { anonKey } : {}), isServerMode: true });
-  userClient.setAccessToken(accessToken);
+  const userClient = createInsforgeTokenClient(accessToken);
   const { data: authData, error: authError } = await userClient.auth.getCurrentUser();
   const user = authData?.user;
   if (authError || !user) return { ok: false as const, error: "Sesion invalida.", status: 401 as const };
@@ -166,12 +169,12 @@ export async function POST(request: NextRequest) {
       return Response.json(result);
     }
 
-    const plan = getSubscriptionPlan(body.plan);
+    const plan = (await requireSubscriptionPlans())[body.plan];
     const origin = getAppBaseUrl(request);
-    const payerEmail = process.env.MERCADOPAGO_PAYER_EMAIL ?? user.email;
+    const payerEmail = getPayerEmailOverride() ?? user.email;
     if (!payerEmail) throw new Error("La cuenta no tiene un email valido.");
 
-    const billingStartAt = getBillingStartAt(business);
+    const { billingStartAt } = await fetchBusinessAccessState(insforgeAdmin, business.id);
     const providerBody = {
       reason: `Citadely - Plan ${plan.name}`,
       external_reference: business.id,

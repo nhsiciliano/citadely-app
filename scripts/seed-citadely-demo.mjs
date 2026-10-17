@@ -3,14 +3,13 @@
 import fs from "node:fs";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@insforge/sdk";
+import { confirmSeedTarget } from "./lib/seed-guard.mjs";
 
 const EMAIL = "demo.ux@citadely.test";
 const BUSINESS_SLUG = "citadely-demo-ux";
 const ENV_PATH = ".env.local";
 
-if (process.env.SEED_ALLOW_WRITE !== "true") {
-  throw new Error("Set SEED_ALLOW_WRITE=true to write demo data to the linked InsForge project.");
-}
+await confirmSeedTarget("seed:demo");
 
 function readProjectConfig() {
   return JSON.parse(fs.readFileSync(".insforge/project.json", "utf8"));
@@ -29,8 +28,14 @@ function readLocalEnv() {
   );
 }
 
+// The environment wins over .env.local, so CI and E2E runs can provide the demo account without any file.
+// Missing values are generated once and appended to .env.local (local use).
 function ensureLocalCredentials() {
-  const env = readLocalEnv();
+  const env = {
+    ...readLocalEnv(),
+    ...(process.env.CITADELY_DEMO_EMAIL ? { CITADELY_DEMO_EMAIL: process.env.CITADELY_DEMO_EMAIL } : {}),
+    ...(process.env.CITADELY_DEMO_PASSWORD ? { CITADELY_DEMO_PASSWORD: process.env.CITADELY_DEMO_PASSWORD } : {}),
+  };
   const password = env.CITADELY_DEMO_PASSWORD || `Citadely-${randomBytes(12).toString("base64url")}9!`;
   const additions = [];
 
@@ -95,6 +100,13 @@ async function ensureBusiness(client, userId) {
     is_public: true,
     trial_ends_at: addDays(90, 23, 59).toISOString(),
     subscription_status: "trialing",
+    // Estado de suscripción y promo reseteados en cada corrida: si un test dejó el negocio vencido, vuelve a estar activo.
+    subscription_current_period_end: null,
+    subscription_cancel_at_period_end: false,
+    pending_subscription_plan: null,
+    promotion_starts_at: null,
+    promotion_ends_at: null,
+    is_demo: true,
   };
   const existing = await client.database.from("businesses").select("*").eq("owner_id", userId).maybeSingle();
   if (existing.error) throw new Error(existing.error.message);
@@ -147,9 +159,6 @@ async function seedDemoData(client, admin, business) {
       }
     }
   }
-  const slotsResult = await client.database.from("service_availability_slots").insert(slots);
-  if (slotsResult.error) throw new Error(slotsResult.error.message);
-
   const appointmentBlueprints = [
     [0, 9, 0, 0, 0, "confirmed", 0],
     [0, 10, 30, 1, 1, "confirmed", 0],
@@ -177,6 +186,16 @@ async function seedDemoData(client, admin, business) {
       deposit_expires_at: status === "pending_payment" ? addMinutes(new Date(), 90).toISOString() : null,
     };
   });
+  // The seat guard rejects future appointments without a published slot: publish any the grid above misses.
+  const slotKeys = new Set(slots.map((slot) => `${slot.service_id}|${slot.starts_at}`));
+  for (const appointment of appointments) {
+    if (appointment.status === "cancelled" || new Date(appointment.starts_at) <= new Date()) continue;
+    if (slotKeys.has(`${appointment.service_id}|${appointment.starts_at}`)) continue;
+    slots.push({ business_id: business.id, service_id: appointment.service_id, starts_at: appointment.starts_at, ends_at: appointment.ends_at, is_active: true });
+  }
+  const slotsResult = await client.database.from("service_availability_slots").insert(slots);
+  if (slotsResult.error) throw new Error(slotsResult.error.message);
+
   const appointmentResult = await admin.database.from("appointments").insert(appointments);
   if (appointmentResult.error) throw new Error(appointmentResult.error.message);
 
@@ -191,6 +210,9 @@ async function main() {
   const profileResult = await client.auth.setProfile({ name: "Equipo Citadely Demo", role: "business", onboarding_complete: true, business_name: "Consultorios Horizonte", business_category: "consultorio_clinico", business_slug: BUSINESS_SLUG });
   if (profileResult.error) throw new Error(profileResult.error.message);
   const business = await ensureBusiness(admin, user.id);
+  // Con la admin key: el rate limit de reservas por IP no debe bloquear correr el E2E otra vez desde localhost.
+  const attempts = await admin.database.from("public_booking_attempts").delete().eq("business_id", business.id);
+  if (attempts.error) throw new Error(`No se pudieron limpiar los intentos de reserva: ${attempts.error.message}`);
   await resetDemoData(client, business.id);
   const counts = await seedDemoData(client, admin, business);
   const notification = await client.database.from("business_notification_settings").upsert([{ business_id: business.id, email: credentials.email }], { onConflict: "business_id" });

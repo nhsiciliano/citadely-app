@@ -1,8 +1,11 @@
 import type { SubscriptionPlanId } from "@/lib/subscription-plans";
 import type { ServiceMode, VirtualPlatform } from "@/lib/virtual-service";
 import type { PublicTheme } from "@/lib/public-theme";
+import { addDaysToDateKey, addMonthsToMonthKey, formatInTimeZone, resolveTimeZone, startOfDayInTimeZone, toDateKey, toMonthKey, zonedTimeToUtc } from "@/lib/time";
 
 export type Business = {
+  // Cuenta de demostración: se marca en la base, no por slug ni email.
+  is_demo?: boolean;
   id: string;
   owner_id: string;
   name: string;
@@ -121,6 +124,7 @@ export type Appointment = {
   status: "pending_payment" | "confirmed" | "cancelled" | "completed" | "no_show";
   source: "business" | "public_booking" | "client";
   client_message: string | null;
+  cancellation_reason?: string | null;
   deposit_amount_cents: number;
   deposit_expires_at: string | null;
   deposit_confirmed_at: string | null;
@@ -219,7 +223,9 @@ export type BusinessStats = {
   todayAppointments: number;
   upcomingAppointments: number;
   monthlyRevenueCents: number;
+  // Porcentaje de los minutos publicados hoy (activos, con capacidad) que están ocupados.
   occupancy: number;
+  publishedMinutes: number;
 };
 
 export function centsFromCurrency(value: FormDataEntryValue | null) {
@@ -236,15 +242,15 @@ export function formatCurrency(cents: number, currency = "ARS") {
   }).format(cents / 100);
 }
 
-export function formatAppointmentTime(value: string) {
-  return new Intl.DateTimeFormat("es-AR", {
+export function formatAppointmentTime(value: string, timeZone: string | null | undefined) {
+  return formatInTimeZone(value, timeZone, {
     weekday: "short",
     day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-  }).format(new Date(value));
+  });
 }
 
 export function getBookingAmountCents(service: Service) {
@@ -261,98 +267,32 @@ export function getBookingPaymentLabel(service: Service, currency = "ARS") {
   return `Seña ${formatCurrency(amount, currency)}`;
 }
 
-export function getSubscriptionState(business: Business) {
-  const trialEndsAt = new Date(business.trial_ends_at);
-  const now = new Date();
-  const promotionStartsAt = business.promotion_starts_at ? new Date(business.promotion_starts_at) : null;
-  const promotionEndsAt = business.promotion_ends_at ? new Date(business.promotion_ends_at) : null;
-  const hasPromotion = Boolean(promotionStartsAt && promotionEndsAt && promotionStartsAt <= now && promotionEndsAt > now);
-  const promotionPending = Boolean(promotionStartsAt && promotionEndsAt && promotionStartsAt > now && promotionEndsAt > now);
-  const trialDaysLeft = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / 86400000));
-  const isTrialing = business.subscription_status === "trialing" && trialEndsAt > now;
-  const periodEndsAt = business.subscription_current_period_end ? new Date(business.subscription_current_period_end) : null;
-  const hasPaidPeriod = business.subscription_provider === "mercadopago"
-    ? Boolean(periodEndsAt && periodEndsAt > now && ["active", "past_due", "cancelled"].includes(business.subscription_status))
-    : business.subscription_status === "active";
-  const hasDashboardAccess = hasPaidPeriod || isTrialing || hasPromotion;
-  const currentPlan = business.subscription_plan ?? "pro";
-  const hasPublicPageAccess = hasPromotion || ((isTrialing || hasPaidPeriod) && currentPlan === "pro");
-
+function buildSlotLabels(startsAt: Date, timeZone: string) {
   return {
-    hasAccess: hasDashboardAccess,
-    hasDashboardAccess,
-    hasPublicPageAccess,
-    currentPlan,
-    pendingPlan: business.pending_subscription_plan ?? null,
-    trialDaysLeft,
-    isTrialing,
-    hasPromotion,
-    promotionPending,
-    promotionStartsAt,
-    promotionEndsAt,
-    hasPaidPeriod,
-    periodEndsAt,
-    cancelAtPeriodEnd: Boolean(business.subscription_cancel_at_period_end),
-    isPastDue: business.subscription_status === "past_due",
-    awaitingFirstPayment: Boolean(
-      business.subscription_external_id
-      && business.pending_subscription_plan
-      && !hasPaidPeriod,
-    ),
-    needsPayment: !hasDashboardAccess,
-  };
-}
-
-export const PUBLIC_BOOKING_TIME_ZONE = "America/Argentina/Buenos_Aires";
-
-export function formatPublicBookingDateKey(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function buildSlotLabels(startsAt: Date) {
-  return {
-    dateKey: formatPublicBookingDateKey(startsAt),
-    dateLabel: new Intl.DateTimeFormat("es-AR", {
-      day: "2-digit",
-      month: "short",
-      timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    }).format(startsAt),
-    weekdayLabel: new Intl.DateTimeFormat("es-AR", {
-      weekday: "short",
-      timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    }).format(startsAt),
-    timeLabel: new Intl.DateTimeFormat("es-AR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-      timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    }).format(startsAt),
-    label: new Intl.DateTimeFormat("es-AR", {
+    dateKey: toDateKey(startsAt, timeZone),
+    dateLabel: formatInTimeZone(startsAt, timeZone, { day: "2-digit", month: "short" }),
+    weekdayLabel: formatInTimeZone(startsAt, timeZone, { weekday: "short" }),
+    timeLabel: formatInTimeZone(startsAt, timeZone, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }),
+    label: formatInTimeZone(startsAt, timeZone, {
       weekday: "short",
       day: "2-digit",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
       hourCycle: "h23",
-      timeZone: PUBLIC_BOOKING_TIME_ZONE,
-    }).format(startsAt),
+    }),
   };
 }
 
 export function buildBookingSlots(
   appointments: Appointment[],
-  service?: Service | null,
-  availabilitySlots: ServiceAvailabilitySlot[] = [],
+  service: Service | null | undefined,
+  availabilitySlots: ServiceAvailabilitySlot[],
+  timeZone: string | null | undefined,
 ): PublicBookingSlot[] {
   if (!service) return [];
 
+  const zone = resolveTimeZone(timeZone);
   const slots: PublicBookingSlot[] = [];
   const now = new Date();
   const activeSlots = availabilitySlots
@@ -370,7 +310,7 @@ export function buildBookingSlots(
     slots.push({
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
-      ...buildSlotLabels(startsAt),
+      ...buildSlotLabels(startsAt, zone),
       available: occupancy.remaining > 0,
       capacity: occupancy.capacity,
       booked: occupancy.booked,
@@ -382,14 +322,19 @@ export function buildBookingSlots(
   return slots.slice(0, 120);
 }
 
-export function calculateStats(appointments: Appointment[], services: Service[]): BusinessStats {
-  const now = new Date();
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date(todayStart);
-  todayEnd.setDate(todayEnd.getDate() + 1);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+export function calculateStats(
+  appointments: Appointment[],
+  services: Service[],
+  timeZone: string | null | undefined,
+  now = new Date(),
+  availabilitySlots: ServiceAvailabilitySlot[] = [],
+): BusinessStats {
+  const todayKey = toDateKey(now, timeZone);
+  const todayStart = startOfDayInTimeZone(todayKey, timeZone);
+  const todayEnd = startOfDayInTimeZone(addDaysToDateKey(todayKey, 1), timeZone);
+  const currentMonth = toMonthKey(now, timeZone);
+  const monthStart = zonedTimeToUtc(`${currentMonth}-01`, "00:00", timeZone);
+  const monthEnd = zonedTimeToUtc(`${addMonthsToMonthKey(currentMonth, 1)}-01`, "00:00", timeZone);
 
   const todayAppointments = appointments.filter((appointment) => {
     const startsAt = new Date(appointment.starts_at);
@@ -417,10 +362,18 @@ export function calculateStats(appointments: Appointment[], services: Service[])
     return total + Math.max(0, new Date(appointment.ends_at).getTime() - startsAt.getTime()) / 60000;
   }, 0);
 
+  const publishedMinutes = availabilitySlots.reduce((total, slot) => {
+    const startsAt = new Date(slot.starts_at);
+    if (!slot.is_active || startsAt < todayStart || startsAt >= todayEnd) return total;
+    const slotMinutes = Math.max(0, new Date(slot.ends_at).getTime() - startsAt.getTime()) / 60000;
+    return total + slotMinutes * Math.max(1, slot.capacity ?? 1);
+  }, 0);
+
   return {
     todayAppointments,
     upcomingAppointments,
     monthlyRevenueCents,
-    occupancy: Math.min(100, Math.round((occupiedMinutes / (8 * 60)) * 100)),
+    occupancy: publishedMinutes > 0 ? Math.min(100, Math.round((occupiedMinutes / publishedMinutes) * 100)) : 0,
+    publishedMinutes,
   };
 }

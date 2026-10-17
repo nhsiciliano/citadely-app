@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -12,6 +12,7 @@ import {
   Globe2,
   LayoutDashboard,
   LockKeyhole,
+  TriangleAlert,
   LogOut,
   Menu,
   Settings,
@@ -20,8 +21,6 @@ import {
   X,
 } from "lucide-react";
 import { LogoSymbol } from "@/components/ui";
-import { getSubscriptionState } from "@/lib/citadely-db";
-import { getBusinessPublicUrl } from "@/lib/urls";
 import { useWorkspace } from "./workspace-context";
 
 const NAV_ITEMS = [
@@ -43,12 +42,22 @@ const LEGACY_HASHES: Record<string, string> = {
 export function BusinessShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { business, signOut, userEmail } = useWorkspace();
+  const { access: subscription, business, error, publicUrl, signOut, userEmail } = useWorkspace();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const subscription = getSubscriptionState(business);
-  const publicUrl = getBusinessPublicUrl(business.slug);
-  const isDemoWorkspace = business.slug === "citadely-demo-ux" || userEmail.endsWith(".test");
+  const isDemoWorkspace = business.is_demo === true;
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setMobileOpen(false);
+      menuButtonRef.current?.focus();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen]);
 
   useEffect(() => {
     if (pathname !== "/negocio") return;
@@ -57,12 +66,15 @@ export function BusinessShell({ children }: { children: ReactNode }) {
   }, [pathname, router]);
 
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-ink)] lg:grid lg:grid-cols-[auto_minmax(0,1fr)]" style={{ "--workspace-sidebar-width": collapsed ? "84px" : "256px" } as CSSProperties}>
+    <div className="min-h-screen bg-canvas text-ink lg:grid lg:grid-cols-[auto_minmax(0,1fr)]" style={{ "--workspace-sidebar-width": collapsed ? "84px" : "256px" } as CSSProperties}>
       <a className="skip-link" href="#contenido-principal">Saltar al contenido</a>
 
       <button
+        aria-controls="navegacion-principal"
+        aria-expanded={mobileOpen}
         aria-label="Abrir navegación"
-        className="fixed left-4 top-4 z-40 grid h-11 w-11 place-items-center rounded-md bg-[var(--color-navy)] text-white shadow-[var(--shadow-raised)] lg:hidden"
+        ref={menuButtonRef}
+        className="fixed left-4 top-4 z-40 grid h-11 w-11 place-items-center rounded-md bg-navy text-white shadow-raised lg:hidden"
         onClick={() => setMobileOpen(true)}
         type="button"
       >
@@ -71,7 +83,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
 
       {mobileOpen ? <button aria-label="Cerrar navegación" className="fixed inset-0 z-40 bg-[rgba(4,20,42,.48)] lg:hidden" onClick={() => setMobileOpen(false)} type="button" /> : null}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[286px] flex-col bg-[var(--color-navy)] text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[84px]" : "lg:w-[256px]"}`}>
+      <aside id="navegacion-principal" className={`fixed inset-y-0 left-0 z-50 flex w-[286px] flex-col bg-navy text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[84px]" : "lg:w-[256px]"}`}>
         <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
           <Link aria-label="Ir al inicio de Citadely" className="flex min-w-0 items-center gap-3" href="/negocio" onClick={() => setMobileOpen(false)}>
             <LogoSymbol />
@@ -84,7 +96,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
 
         <div className={`border-b border-white/10 px-5 py-4 ${collapsed ? "lg:px-3 lg:text-center" : ""}`}>
           <p className={`truncate text-sm font-semibold ${collapsed ? "lg:hidden" : ""}`}>{business.name}</p>
-          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : subscription.hasPromotion ? "Acceso Pro promocional" : subscription.isTrialing ? `${subscription.trialDaysLeft} días de prueba` : business.subscription_status === "active" ? "Plan activo" : "Acceso limitado"}</p>
+          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : subscription.hasPromotion ? "Acceso Pro promocional" : subscription.isTrialing ? `${subscription.trialDaysLeft} días de prueba` : subscription.hasPaidPeriod ? "Plan activo" : subscription.needsPayment ? "Solo lectura" : "Acceso limitado"}</p>
           {collapsed ? <span className="hidden text-sm font-bold lg:inline">{business.name.slice(0, 1).toUpperCase()}</span> : null}
         </div>
 
@@ -95,7 +107,7 @@ export function BusinessShell({ children }: { children: ReactNode }) {
             return (
               <Link
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors ${active ? "bg-[var(--color-primary)] text-white" : "text-white/68 hover:bg-white/8 hover:text-white"} ${collapsed ? "lg:justify-center lg:px-0" : ""}`}
+                className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors ${active ? "bg-primary text-white" : "text-white/68 hover:bg-white/8 hover:text-white"} ${collapsed ? "lg:justify-center lg:px-0" : ""}`}
                 href={href}
                 key={href}
                 onClick={() => setMobileOpen(false)}
@@ -127,12 +139,22 @@ export function BusinessShell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <button aria-label={collapsed ? "Expandir navegación" : "Contraer navegación"} className="absolute -right-3 top-24 hidden h-7 w-7 place-items-center rounded-full border border-[var(--color-line)] bg-white text-[var(--color-navy)] shadow-sm lg:grid" onClick={() => setCollapsed((value) => !value)} type="button">
+        <button aria-label={collapsed ? "Expandir navegación" : "Contraer navegación"} className="absolute -right-3 top-24 hidden h-7 w-7 place-items-center rounded-full border border-line bg-white text-navy shadow-sm lg:grid" onClick={() => setCollapsed((value) => !value)} type="button">
           {collapsed ? <ChevronRight aria-hidden="true" size={15} /> : <ChevronLeft aria-hidden="true" size={15} />}
         </button>
       </aside>
 
-      <main className="min-w-0" id="contenido-principal">
+      <main className="min-w-0" id="contenido-principal" inert={mobileOpen}>
+        {error ? <p className="border-b border-danger-line bg-danger-soft px-5 py-3 text-sm font-semibold text-danger" role="alert">{error}</p> : null}
+        {subscription.needsPayment ? (
+          <div className="flex flex-col gap-3 border-b border-warning bg-warning-soft px-5 py-3 pl-20 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pl-20 lg:px-10" role="status">
+            <p className="flex items-start gap-2 text-sm font-medium text-ink">
+              <TriangleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-warning" size={17} />
+              <span><strong className="font-semibold">Modo solo lectura.</strong> {subscription.isPastDue ? "El último cobro no se pudo procesar." : "Tu prueba o tu plan terminó."} Podés consultar tu agenda, clientes y servicios; para crear o modificar datos, activá un plan.</span>
+            </p>
+            {pathname !== "/negocio/configuracion" ? <Link className="button-primary shrink-0" href="/negocio/configuracion">Activar plan</Link> : null}
+          </div>
+        ) : null}
         {children}
       </main>
     </div>

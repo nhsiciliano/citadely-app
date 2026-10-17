@@ -3,8 +3,7 @@ import "server-only";
 import { render } from "@react-email/render";
 import { CitadelyEmail, type CitadelyEmailProps } from "@/emails/citadely-email";
 import { formatCurrency } from "@/lib/citadely-db";
-
-const DEFAULT_TIMEZONE = "America/Argentina/Buenos_Aires";
+import { formatInTimeZone } from "@/lib/time";
 
 type AppointmentPayload = {
   appointmentId: string;
@@ -54,8 +53,8 @@ export type RenderedOutboxEmail = {
   attachments?: Array<{ filename: string; content: string; contentType: string }>;
 };
 
-function formatDate(value: string, timezone = DEFAULT_TIMEZONE) {
-  return new Intl.DateTimeFormat("es-AR", {
+function formatDate(value: string, timezone: string | null | undefined) {
+  return formatInTimeZone(value, timezone, {
     weekday: "long",
     day: "2-digit",
     month: "long",
@@ -63,8 +62,7 @@ function formatDate(value: string, timezone = DEFAULT_TIMEZONE) {
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-    timeZone: timezone,
-  }).format(new Date(value));
+  });
 }
 
 function formatUtcForIcs(value: string) {
@@ -255,7 +253,7 @@ export async function renderOutboxEmail(row: EmailOutboxRow): Promise<RenderedOu
         { label: "3", value: "Compartí tu página pública" },
       ],
       actionLabel: "Configurar mi negocio",
-      actionUrl: `${(process.env.APP_BASE_URL || "https://citadely.com.ar").replace(/\/$/, "")}/onboarding`,
+      actionUrl: `${(process.env.APP_BASE_URL || "https://www.citadely.com.ar").replace(/\/$/, "")}/onboarding`,
     };
     const element = <CitadelyEmail {...props} />;
     return { subject: "Bienvenido a Citadely", html: await render(element), text: await render(element, { plainText: true }) };

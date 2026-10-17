@@ -2,45 +2,57 @@
   "name": "citadely-app",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:demo": "SEED_ALLOW_WRITE=true node scripts/seed-citadely-demo.mjs",
-    "seed:barberia-luk": "SEED_ALLOW_WRITE=true node scripts/seed-barberia-luk.mjs",
-    "seed:clinica-colon": "SEED_ALLOW_WRITE=true node scripts/seed-clinica-colon.mjs",
-    "migrate:subscriptions:pro": "node scripts/migrate-subscriptions-to-pro.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "schema:diff": "node scripts/schema-diff.mjs",
+    "seed:demo": "node scripts/seed-citadely-demo.mjs",
+    "seed:barberia-luk": "node scripts/seed-barberia-luk.mjs",
+    "seed:clinica-colon": "node scripts/seed-clinica-colon.mjs",
     "email:dev": "email dev --dir emails --port 3001",
     "email:export": "email export --dir emails --outDir .react-email/dist",
     "resend:login": "resend login",
-    "test:resend": "node scripts/test-resend-booking-email.mjs",
+    "smoke:resend": "node scripts/test-resend-booking-email.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@insforge/sdk": "^1.2.9",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
+    "@sentry/nextjs": "^11.8.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "lucide-react": "^1.40.0",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "resend": "^6.28.1",
-    "sharp": "^0.35.4",
-    "vercel": "^54.20.1"
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@insforge/cli": "^0.1.81",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vercel/config": "^0.12.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "react-email": "^6.9.5",
     "resend-cli": "^2.21.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vercel": "^54.20.1",
+    "vitest": "^5.0.5"
   }
 }

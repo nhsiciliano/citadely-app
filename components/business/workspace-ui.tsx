@@ -14,10 +14,10 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex flex-col gap-5 border-b border-[var(--color-line)] bg-white px-5 pb-6 pt-20 sm:px-8 sm:py-5 lg:flex-row lg:items-end lg:justify-between lg:px-10">
+    <header className="flex flex-col gap-5 border-b border-line bg-white px-5 pb-6 pt-20 sm:px-8 sm:py-5 lg:flex-row lg:items-end lg:justify-between lg:px-10">
       <div>
-        <h1 className="text-2xl font-semibold tracking-[-0.035em] text-[var(--color-ink)]">{title}</h1>
-        <p className="mt-1 max-w-2xl text-sm leading-5 text-[var(--color-ink-soft)]">{description}</p>
+        <h1 className="text-2xl font-semibold tracking-[-0.035em] text-ink">{title}</h1>
+        <p className="mt-1 max-w-2xl text-sm leading-5 text-ink-soft">{description}</p>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
@@ -54,7 +54,7 @@ export function Drawer({
     <dialog
       aria-describedby={description ? descriptionId : undefined}
       aria-labelledby={titleId}
-      className={`fixed inset-y-0 right-0 m-0 ml-auto h-dvh max-h-none w-full max-w-none border-0 bg-white p-0 text-[var(--color-ink)] shadow-[-18px_0_48px_rgba(8,31,63,.16)] backdrop:bg-[rgba(4,20,42,.12)] open:flex open:flex-col ${width === "wide" ? "drawer-wide sm:max-w-[480px]" : "drawer-medium sm:max-w-[420px]"}`}
+      className={`fixed inset-y-0 right-0 m-0 ml-auto h-dvh max-h-none w-full max-w-none border-0 bg-white p-0 text-ink shadow-[-18px_0_48px_rgba(8,31,63,.16)] backdrop:bg-[rgba(4,20,42,.12)] open:flex open:flex-col ${width === "wide" ? "drawer-wide sm:max-w-[480px]" : "drawer-medium sm:max-w-[420px]"}`}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -62,12 +62,12 @@ export function Drawer({
       onClose={onClose}
       ref={dialogRef}
     >
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line)] px-5 py-5 sm:px-7">
+      <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-5 sm:px-7">
         <div>
           <h2 className="text-xl font-semibold tracking-[-0.025em]" id={titleId}>{title}</h2>
-          {description ? <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]" id={descriptionId}>{description}</p> : null}
+          {description ? <p className="mt-1 text-sm leading-6 text-ink-soft" id={descriptionId}>{description}</p> : null}
         </div>
-        <button aria-label="Cerrar panel" className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-[var(--color-line)] text-[var(--color-ink-soft)] hover:border-[var(--color-line-strong)] hover:text-[var(--color-ink)]" onClick={onClose} type="button">
+        <button aria-label="Cerrar panel" className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-line text-ink-soft hover:border-line-strong hover:text-ink" onClick={onClose} type="button">
           <X aria-hidden="true" size={19} />
         </button>
       </div>
@@ -90,9 +90,9 @@ export function StatusBadge({ status }: { status: Appointment["status"] }) {
 
 export function EmptyState({ title, text, action }: { title: string; text: string; action?: ReactNode }) {
   return (
-    <div className="border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] px-5 py-8 text-center">
+    <div className="border border-dashed border-line-strong bg-surface-subtle px-5 py-8 text-center">
       <p className="font-semibold">{title}</p>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--color-ink-soft)]">{text}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-soft">{text}</p>
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   );

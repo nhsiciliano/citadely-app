@@ -16,7 +16,7 @@ export default function VerifyEmailPage() {
       subtitle="Ingresá el código de 6 dígitos que recibiste para activar tu cuenta y continuar."
       aside={<VerifyAside />}
     >
-      <Suspense fallback={<p className="text-sm text-[var(--ink-soft)]">Cargando verificacion...</p>}>
+      <Suspense fallback={<p className="text-sm text-ink-soft">Cargando verificacion...</p>}>
         <VerifyEmailForm />
       </Suspense>
     </AuthShell>

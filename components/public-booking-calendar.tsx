@@ -2,23 +2,24 @@
 
 import { useId, useState, type Ref } from "react";
 import { ChevronLeft, ChevronRight, UsersRound } from "lucide-react";
-import { formatPublicBookingDateKey, type PublicBookingSlot } from "@/lib/citadely-db";
+import type { PublicBookingSlot } from "@/lib/citadely-db";
+import { formatDateKey, getDaysInMonth, getWeekdayOfDateKey, toMonthKey } from "@/lib/time";
 
 const weekdays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 function monthLabel(monthKey: string) {
-  const [year, month] = monthKey.split("-").map(Number);
-  const label = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(new Date(year, month - 1, 1));
+  const label = formatDateKey(`${monthKey}-01`, { month: "long", year: "numeric" });
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 function dayLabel(dateKey: string) {
-  const label = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${dateKey}T12:00:00`));
+  const label = formatDateKey(dateKey, { weekday: "long", day: "numeric", month: "long" });
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export function PublicBookingCalendar({
   slots,
+  timeZone,
   serviceSelected,
   selectedDateKey,
   selectedSlot,
@@ -28,6 +29,7 @@ export function PublicBookingCalendar({
   compact = false,
 }: {
   slots: PublicBookingSlot[];
+  timeZone: string | null | undefined;
   serviceSelected: boolean;
   selectedDateKey: string;
   selectedSlot: string;
@@ -46,14 +48,13 @@ export function PublicBookingCalendar({
   const activeDateKey = selectedDateKey && slots.some((slot) => slot.dateKey === selectedDateKey)
     ? selectedDateKey
     : firstAvailableDate;
-  const fallbackMonth = slots[0]?.dateKey.slice(0, 7) ?? formatPublicBookingDateKey(new Date()).slice(0, 7);
+  const fallbackMonth = slots[0]?.dateKey.slice(0, 7) ?? toMonthKey(new Date(), timeZone);
   const currentMonth = monthCursor && monthKeys.includes(monthCursor)
     ? monthCursor
     : activeDateKey.slice(0, 7) || fallbackMonth;
   const currentMonthIndex = monthKeys.indexOf(currentMonth);
-  const [year, month] = currentMonth.split("-").map(Number);
-  const leadingDays = (new Date(year, month - 1, 1).getDay() + 6) % 7;
-  const daysInMonth = new Date(year, month, 0).getDate();
+  const leadingDays = (getWeekdayOfDateKey(`${currentMonth}-01`) + 6) % 7;
+  const daysInMonth = getDaysInMonth(currentMonth);
   const availableByDate = new Map<string, number>();
   const publishedByDate = new Map<string, number>();
   for (const slot of slots) publishedByDate.set(slot.dateKey, (publishedByDate.get(slot.dateKey) ?? 0) + 1);
@@ -75,9 +76,9 @@ export function PublicBookingCalendar({
         <Heading className="font-display text-2xl font-semibold tracking-[-0.03em] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--booking-brand)]" id={headingId} ref={headingRef} tabIndex={-1}>Elegí día y horario</Heading>
       </div>
       {!serviceSelected ? (
-        <p className="mt-6 border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] p-5 text-sm leading-6 text-[var(--color-ink-soft)]">Elegí un servicio para ver días y horarios disponibles.</p>
+        <p className="mt-6 border border-dashed border-line-strong bg-surface-subtle p-5 text-sm leading-6 text-ink-soft">Elegí un servicio para ver días y horarios disponibles.</p>
       ) : slots.length === 0 ? (
-        <p className="mt-6 border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-subtle)] p-5 text-sm leading-6 text-[var(--color-ink-soft)]">Este servicio no tiene horarios disponibles ahora. Probá otro servicio o volvé cuando el negocio publique nueva agenda.</p>
+        <p className="mt-6 border border-dashed border-line-strong bg-surface-subtle p-5 text-sm leading-6 text-ink-soft">Este servicio no tiene horarios disponibles ahora. Probá otro servicio o volvé cuando el negocio publique nueva agenda.</p>
       ) : (
         <div className="public-booking-calendar-layout">
           <div className="public-booking-month">
@@ -118,7 +119,7 @@ export function PublicBookingCalendar({
           </div>
           <div className="public-booking-times">
             <Subheading className="font-display text-lg font-semibold tracking-[-0.02em]">Horarios disponibles</Subheading>
-            <p aria-live="polite" className="mt-1 text-sm text-[var(--color-ink-soft)]">{activeDateKey ? dayLabel(activeDateKey) : "Elegí un día"}</p>
+            <p aria-live="polite" className="mt-1 text-sm text-ink-soft">{activeDateKey ? dayLabel(activeDateKey) : "Elegí un día"}</p>
             <div className="public-booking-time-grid">
               {selectedDaySlots.map((slot) => {
                 const selected = slot.startsAt === selectedSlot;

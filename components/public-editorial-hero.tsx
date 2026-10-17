@@ -2,6 +2,7 @@ import { ArrowDownRight, CalendarDays, MapPin, Video } from "lucide-react";
 import type { CSSProperties } from "react";
 import { getGoogleMapsSearchUrl, normalizePublicAddress } from "@/lib/public-profile";
 import { VIRTUAL_PLATFORM_OPTIONS, type ServiceMode, type VirtualPlatform } from "@/lib/virtual-service";
+import { RemoteImage } from "@/components/remote-image";
 
 export function PublicEditorialHero({
   businessName,
@@ -35,9 +36,11 @@ export function PublicEditorialHero({
     <section aria-label={`Presentación de ${businessName}`} className={`public-editorial-hero ${compact ? "public-editorial-hero-compact" : ""} ${themeStyle ? "public-theme-active public-theme-hero" : ""}`} style={themeStyle}>
       <div className={`public-editorial-media ${coverImageUrl ? "public-editorial-media-photo" : ""}`}>
         {coverImageUrl ? (
-          <span aria-label={`Imagen de portada de ${businessName}`} className="absolute inset-0 bg-cover bg-center" role="img" style={{ backgroundImage: `url(${coverImageUrl})` }} />
+          <RemoteImage alt={`Imagen de portada de ${businessName}`} className="object-cover object-center" fill preload={!compact} sizes="(min-width: 1024px) 52vw, 100vw" src={coverImageUrl} />
         ) : logoUrl ? (
-          <span aria-label={`Logo de ${businessName}`} className="public-editorial-fallback-logo" role="img" style={{ backgroundImage: `url(${logoUrl})` }} />
+          <span className="public-editorial-fallback-logo">
+            <RemoteImage alt={`Logo de ${businessName}`} className="object-contain object-center" fill sizes="(min-width: 1024px) 28vw, 60vw" src={logoUrl} />
+          </span>
         ) : (
           <span aria-hidden="true" className="public-editorial-monogram">{businessName.slice(0, 1).toUpperCase()}</span>
         )}

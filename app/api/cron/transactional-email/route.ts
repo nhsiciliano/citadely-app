@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server";
+import { isAuthorizedCronRequest } from "@/lib/cron-auth";
+import { mapWithConcurrency } from "@/lib/concurrency";
 import { renderOutboxEmail, type EmailOutboxRow } from "@/lib/email-outbox";
 import { insforgeAdmin } from "@/lib/insforge-admin";
 import { PermanentEmailError, sendOutboxEmail } from "@/lib/resend";
@@ -6,10 +8,8 @@ import { PermanentEmailError, sendOutboxEmail } from "@/lib/resend";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-function isAuthorized(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  return Boolean(secret && request.headers.get("authorization") === `Bearer ${secret}`);
-}
+// Resend limita las peticiones por segundo: enviar todo el lote a la vez provoca errores de rate limit.
+const EMAIL_SEND_CONCURRENCY = 3;
 
 async function processEmail(row: EmailOutboxRow) {
   if (!insforgeAdmin) throw new Error("InsForge admin no está configurado");
@@ -35,8 +35,8 @@ async function processEmail(row: EmailOutboxRow) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) return Response.json({ error: "No autorizado." }, { status: 401 });
+async function handle(request: NextRequest) {
+  if (!isAuthorizedCronRequest(request)) return Response.json({ error: "No autorizado." }, { status: 401 });
   if (!insforgeAdmin) return Response.json({ error: "InsForge admin no está configurado." }, { status: 500 });
 
   const cancellationResult = await insforgeAdmin.database.rpc("cancel_expired_deposit_bookings");
@@ -45,10 +45,13 @@ export async function POST(request: NextRequest) {
   }
 
   const { data, error } = await insforgeAdmin.database.rpc("claim_email_outbox", { p_limit: 20 });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("email outbox claim failed", { message: error.message });
+    return Response.json({ error: "No se pudo leer la cola de emails." }, { status: 500 });
+  }
 
   const rows = (data ?? []) as EmailOutboxRow[];
-  const results = await Promise.all(rows.map(processEmail));
+  const results = await mapWithConcurrency(rows, EMAIL_SEND_CONCURRENCY, processEmail);
   const sent = results.filter((result) => result.status === "sent").length;
   const failed = results.filter((result) => result.status === "failed").length;
 
@@ -60,3 +63,6 @@ export async function POST(request: NextRequest) {
     expiredBookingsCancelled: cancellationResult.data ?? 0,
   });
 }
+
+// Vercel Cron sends GET; POST is kept for manual and legacy scheduler calls.
+export { handle as GET, handle as POST };

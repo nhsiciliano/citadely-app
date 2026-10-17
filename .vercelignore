@@ -5,3 +5,8 @@
 .playwright-cli
 .vscode
 node_modules
+.impeccable
+agent
+playwright-report
+test-results
+scripts/archive

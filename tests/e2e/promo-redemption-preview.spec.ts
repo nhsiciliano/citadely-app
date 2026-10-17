@@ -1,22 +1,19 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { branchProject, env } from "./support/backend";
 
 test.skip(process.env.RUN_PROMO_REDEMPTION !== "1", "Prueba de escritura aislada: ejecutar solo contra InsForge Preview.");
 
-function readLocalCredential(name: string) {
-  const line = readFileSync(".env.local", "utf8").split(/\r?\n/).find((candidate) => candidate.startsWith(`${name}=`));
-  if (!line) throw new Error(`Falta ${name} en .env.local.`);
-  return line.slice(name.length + 1);
-}
-
 test("canje real tras prueba Pro, persistencia y limpieza de datos E2E", async ({ page, request }) => {
-  const project = JSON.parse(readFileSync(".insforge/project.json", "utf8")) as { project_name: string; oss_host: string; api_key: string };
-  if (project.project_name !== "feature-sections-page-saas" || process.env.NEXT_PUBLIC_INSFORGE_BASE_URL !== project.oss_host) {
-    throw new Error("La prueba solo puede ejecutarse en feature-sections-page-saas.");
+  // Opt-in (RUN_PROMO_REDEMPTION=1) because it changes the demo business trial. E2E_PROMO_BRANCH restricts the
+  // run to one named backend branch; the backend-branch guard in branchProject() always applies.
+  const target = branchProject();
+  const allowedBranch = process.env.E2E_PROMO_BRANCH;
+  if (allowedBranch && target.projectName !== allowedBranch) {
+    throw new Error(`La prueba solo puede ejecutarse en ${allowedBranch} (backend actual: ${target.projectName}).`);
   }
-  const adminPassword = process.env.E2E_ADMIN_PASSWORD;
-  if (!adminPassword) throw new Error("Falta E2E_ADMIN_PASSWORD.");
+  const project = { oss_host: target.ossHost, api_key: target.apiKey };
+  const adminPassword = env("E2E_ADMIN_PASSWORD");
 
   const headers = { Authorization: `Bearer ${project.api_key}`, "x-api-key": project.api_key, "Content-Type": "application/json" };
   const businessResponse = await fetch(`${project.oss_host}/api/database/records/businesses?slug=eq.citadely-demo-ux&select=id,trial_ends_at,promotion_ends_at`, { headers });
@@ -38,8 +35,8 @@ test("canje real tras prueba Pro, persistencia y limpieza de datos E2E", async (
     code = ((await created.json()) as { code: string }).code;
 
     await page.goto("/login");
-    await page.getByLabel("Email").fill(readLocalCredential("CITADELY_DEMO_EMAIL"));
-    await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(readLocalCredential("CITADELY_DEMO_PASSWORD"));
+    await page.getByLabel("Email").fill(env("CITADELY_DEMO_EMAIL"));
+    await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(env("CITADELY_DEMO_PASSWORD"));
     await page.getByRole("button", { name: "Ingresar" }).click();
     await expect(page).toHaveURL(/\/negocio/);
     await page.goto("/negocio/configuracion");

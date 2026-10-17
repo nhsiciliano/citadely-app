@@ -7,7 +7,7 @@ export function LogoSymbol({ className = "h-9 w-9" }: { className?: string }) {
     <svg
       aria-hidden="true"
       focusable="false"
-      className={`${className} shrink-0 text-[var(--color-primary)]`}
+      className={`${className} shrink-0 text-primary`}
       width="36"
       height="36"
       viewBox="0 0 36 36"
@@ -25,7 +25,7 @@ export function LogoMark({ linked = true }: { linked?: boolean }) {
   const content = (
     <>
       <LogoSymbol />
-      <span className="text-xl font-semibold tracking-[-0.035em] text-[var(--color-navy)]">Citadely</span>
+      <span className="text-xl font-semibold tracking-[-0.035em] text-navy">Citadely</span>
     </>
   );
 
@@ -79,22 +79,22 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-[var(--color-canvas)] px-5 py-6 sm:px-8">
+    <main className="min-h-screen bg-canvas px-5 py-6 sm:px-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <LogoMark />
-        <section className="grid overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-raised)] lg:grid-cols-[1fr_0.9fr]">
+        <section className="grid overflow-hidden border border-line bg-white shadow-raised lg:grid-cols-[1fr_0.9fr]">
           <div className="p-6 sm:p-10 lg:p-12">
             <div className="mb-9 max-w-xl">
-              <h1 className="font-display text-3xl font-semibold tracking-[-0.035em] text-[var(--color-navy)] sm:text-5xl">
+              <h1 className="font-display text-3xl font-semibold tracking-[-0.035em] text-navy sm:text-5xl">
                 {title}
               </h1>
-              <p className="mt-4 text-base leading-7 text-[var(--color-ink-soft)]">
+              <p className="mt-4 text-base leading-7 text-ink-soft">
                 {subtitle}
               </p>
             </div>
             {children}
           </div>
-          <aside className="border-t border-[var(--color-line)] bg-[var(--color-navy)] p-6 text-white sm:p-10 lg:border-l lg:border-t-0">
+          <aside className="border-t border-line bg-navy p-6 text-white sm:p-10 lg:border-l lg:border-t-0">
             {aside}
           </aside>
         </section>
@@ -111,26 +111,71 @@ export function Field({
   required = true,
   defaultValue,
   autoComplete,
+  id,
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  pattern,
+  inputMode,
+  minLength,
+  maxLength,
+  readOnly,
+  disabled,
+  title,
+  describedBy,
+  invalid,
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
   required?: boolean;
+  /** Uncontrolled initial value. Use `value` + `onChange` for state that loads asynchronously. */
   defaultValue?: string;
   autoComplete?: string;
+  id?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  pattern?: string;
+  inputMode?: "text" | "numeric" | "decimal" | "tel" | "email" | "url" | "search" | "none";
+  minLength?: number;
+  maxLength?: number;
+  readOnly?: boolean;
+  disabled?: boolean;
+  title?: string;
+  /** id of the element (hint or error) that describes this field. */
+  describedBy?: string;
+  invalid?: boolean;
 }) {
   return (
     <label className="form-label">
       {label}
       <input
         className="form-control"
+        id={id}
         name={name}
         type={type}
         placeholder={placeholder}
         required={required}
-        defaultValue={defaultValue}
+        {...(value !== undefined ? { value, onChange: (event: ChangeEvent<HTMLInputElement>) => onChange?.(event.target.value) } : { defaultValue })}
         autoComplete={autoComplete}
+        min={min}
+        max={max}
+        step={step}
+        pattern={pattern}
+        inputMode={inputMode}
+        minLength={minLength}
+        maxLength={maxLength}
+        readOnly={readOnly}
+        disabled={disabled}
+        title={title}
+        aria-describedby={describedBy}
+        aria-invalid={invalid || undefined}
       />
     </label>
   );
@@ -197,8 +242,8 @@ export function FormMessage({ type, children }: { type: "error" | "success"; chi
       aria-live={type === "error" ? "assertive" : "polite"}
       className={`border px-4 py-3 text-sm font-medium ${
         type === "error"
-          ? "border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
-          : "border-[#a9dcca] bg-[var(--color-success-soft)] text-[var(--color-success)]"
+          ? "border-danger-line bg-danger-soft text-danger"
+          : "border-success-line bg-success-soft text-success"
       }`}
     >
       {children}
