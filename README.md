@@ -54,6 +54,28 @@ Settings → Branches → regla para `main`:
 
 Detalle de CI y secretos en [`docs/ci.md`](docs/ci.md).
 
+## Landing (apps/landing)
+
+La landing pública es un sitio **Astro 7 estático** en `apps/landing`, un paquete más del workspace de pnpm. Se despliega como un **segundo proyecto de Vercel**, `citadely-landing`, con Root Directory `apps/landing`. La app Next.js no la importa ni la compila: `tsconfig.json`, ESLint y Tailwind excluyen `apps/`.
+
+Cómo se sirve: bajo `www.citadely.com.ar` la app Next.js reescribe estas rutas hacia `LANDING_ORIGIN` (la URL del proyecto `citadely-landing`):
+
+- `/`
+- `/politica-de-privacidad`
+- `/condiciones-del-servicio`
+- `/landing-assets/*`
+
+Sin `LANDING_ORIGIN`, `/` muestra un placeholder. El `sitemap.xml` y el `robots.txt` los sigue sirviendo Next, no Astro.
+
+| Comando | Qué hace |
+| --- | --- |
+| `pnpm landing:dev` | Servidor de desarrollo de Astro |
+| `pnpm landing:build` | Build estático en `apps/landing/dist/` |
+| `pnpm landing:check` | `astro check` (tipos y contenido) |
+| `pnpm landing:preview` | Sirve el build localmente (puerto 4321) |
+
+El Preview de Next apunta a la landing de **producción**, porque los Previews del proyecto `citadely-landing` están protegidos y no se pueden consumir desde otro proyecto. Un cambio de la landing solo se ve con un deploy de `citadely-landing`.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -139,3 +161,5 @@ Límites de reservas, rate limit y decisiones de seguridad están en [`docs/anti
 Push a `main` (vía PR) despliega Production; las ramas despliegan Preview. Antes de promover a Production, aplicar las migraciones al padre y correr el checklist de [`docs/release-checklist.md`](docs/release-checklist.md).
 
 Dominio: el apex `citadely.com.ar` redirige con 308 a `https://www.citadely.com.ar`, que es el host canónico. Los subdominios `<negocio>.citadely.com.ar` son las páginas públicas en producción; fuera de producción se usa `/b/<slug>`.
+
+Bajo `www`, **Astro** (proyecto `citadely-landing`) sirve `/`, `/politica-de-privacidad`, `/condiciones-del-servicio` y `/landing-assets/*`. **Next.js** sirve todo lo demás: la app (`/login`, `/registro`, `/negocio`, ...), la API, el blog, `sitemap.xml` y `robots.txt`. Ver [Landing (apps/landing)](#landing-appslanding).

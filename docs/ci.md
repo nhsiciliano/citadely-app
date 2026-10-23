@@ -10,6 +10,14 @@ Workflow: `.github/workflows/ci.yml`. Runs on pull requests, pushes to `main` an
 - The build uses placeholder `NEXT_PUBLIC_*` values and never contacts a backend.
 - Make this job a **required status check** in the branch protection rule for `main` (Settings → Branches).
 
+## `landing` job (always)
+
+`pnpm install --frozen-lockfile` → `pnpm --filter landing check` → `pnpm --filter landing build`.
+
+It type-checks and builds the Astro package in `apps/landing`. The Next.js `checks` job never sees that package
+(`tsconfig.json`, ESLint and Tailwind exclude `apps/`), so this job is the only gate on it. Make it a **required status
+check** next to `checks`.
+
 ## `e2e` job (opt-in)
 
 Playwright against a dedicated InsForge **backend branch**. It writes data, so it only runs when the repository
@@ -27,6 +35,10 @@ Settings → Secrets and variables → Actions:
 | Secret | `E2E_ADMIN_PASSWORD` | Plain password the blog-editor spec types into the admin panel |
 | Secret | `E2E_ADMIN_PASSWORD_HASH` | scrypt hash of that password (`ADMIN_PASSWORD_HASH` format, see `lib/blog-admin-auth.ts`) |
 | Secret | `E2E_ADMIN_SESSION_SECRET` | Any random string (≥ 32 chars) |
+
+The job also builds the landing (`pnpm --filter landing build`) and starts `astro preview` on port 4321, with
+`LANDING_ORIGIN=http://localhost:4321` for the Next server, so the rewrites for `/`, `/politica-de-privacidad`,
+`/condiciones-del-servicio` and `/landing-assets/*` resolve to the real landing during the specs.
 
 Never use credentials of the parent (Production) project. Resend delivery is forced off (`RESEND_SKIP_DELIVERY=true`)
 and Mercado Pago runs against the local mock in `tests/fixtures`.

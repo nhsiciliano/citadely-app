@@ -97,4 +97,4 @@ only as a last resort (`backups restore` overwrites database **and** storage).
 `apply_mercadopago_subscription_payment`). To change a price, in one migration: set the current row of that `code` to
 `is_active = false` and insert a new active row with the new `amount_cents`. Keep the old row: subscribers still
 paying the old preapproval amount keep being recognised. Existing Mercado Pago preapprovals are not updated
-automatically; new checkouts and plan changes use the new price. The landing page refreshes within 5 minutes.
+automatically; new checkouts and plan changes use the new price. The landing is static; changes ship with the `citadely-landing` project deploy.
