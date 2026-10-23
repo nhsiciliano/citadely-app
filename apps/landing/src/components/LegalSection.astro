@@ -1,0 +1,15 @@
+---
+// Port of LegalSection from components/legal-page-layout.tsx in the Next app as of 3dcd1a4.
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<section class="border-b border-line py-7 last:border-b-0 sm:py-8">
+  <h2 class="font-display text-2xl font-semibold tracking-[-0.03em] text-navy">{title}</h2>
+  <div class="mt-4 space-y-4 text-[0.9375rem] leading-7 text-ink-soft [&_a]:font-semibold [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_li]:pl-1 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
+    <slot />
+  </div>
+</section>

@@ -1,0 +1,57 @@
+---
+import LegalLayout from "../components/LegalLayout.astro";
+import LegalSection from "../components/LegalSection.astro";
+import { LEGAL_PATHS } from "../lib/site";
+---
+
+<LegalLayout
+  title="Política de privacidad"
+  metaDescription="Política de privacidad de Citadely: datos utilizados para cuentas, agendas y reservas."
+  description="Cómo se utilizan los datos necesarios para administrar negocios, organizar turnos y recibir reservas mediante Citadely."
+  path={LEGAL_PATHS.privacy}
+  updatedAt="2026-10-23"
+>
+  <LegalSection title="Quién trata los datos">
+    <p>Citadely es el nombre público de la plataforma de agenda y reservas.</p>
+    <ul>
+      <li><strong>Identificación del titular:</strong> Desarrollado por OnionDEV.</li>
+      <li><strong>Domicilio legal:</strong> Av. Diaz Velez 4762, CABA, Buenos Aires, Argentina.</li>
+      <li><strong>CUIT:</strong> 20-33740915-7.</li>
+      <li><strong>Canal de contacto:</strong> <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</li>
+    </ul>
+    <p>Los negocios que usan Citadely cargan y administran datos de sus clientes. Cada negocio también decide qué información y servicios muestra en su página pública.</p>
+  </LegalSection>
+
+  <LegalSection title="Datos que se utilizan">
+    <ul>
+      <li>Para crear y administrar una cuenta: nombre, correo electrónico, credenciales de acceso y datos del negocio.</li>
+      <li>Para la agenda y las reservas: nombre, correo electrónico y teléfono del cliente, servicio, fecha, hora y estado del turno.</li>
+      <li>Para la página pública: nombre y descripción del negocio, datos de contacto, ubicación o modalidad virtual, servicios, imágenes y preguntas frecuentes que el negocio decida publicar.</li>
+      <li>Para los aportes voluntarios: importe, estado del pago e identificadores necesarios para vincular las notificaciones de Mercado Pago con la cuenta. Citadely no solicita datos de tarjeta en sus formularios.</li>
+    </ul>
+  </LegalSection>
+
+  <LegalSection title="Para qué se utilizan">
+    <p>Los datos permiten autenticar usuarios, mantener la agenda, gestionar clientes y servicios, crear reservas y enviar correos vinculados con los turnos. Los datos de contacto de quien reserva se comparten con el negocio correspondiente para gestionar su turno.</p>
+    <p>Algunas funciones usan información técnica de la sesión para mantener el acceso y proteger las operaciones de la cuenta.</p>
+  </LegalSection>
+
+  <LegalSection title="Servicios que intervienen">
+    <p>Citadely utiliza InsForge para autenticación, base de datos y almacenamiento; Resend para correos transaccionales; y Mercado Pago para procesar los aportes voluntarios de los negocios. El acceso con Google es opcional. Cuando un negocio publica una dirección física, su página puede mostrar un mapa de Google Maps.</p>
+    <p>Cada proveedor trata la información necesaria para prestar su servicio conforme a sus propias condiciones y políticas. Una reserva pública no implica un cobro a través de Mercado Pago: las señas que configure el negocio se gestionan con sus propios datos de transferencia.</p>
+  </LegalSection>
+
+  <LegalSection title="Conservación y seguridad">
+    <p>Los datos se conservan mientras sean necesarios para la cuenta, las reservas y las obligaciones aplicables.</p>
+    <p>La plataforma limita el acceso a la información según el tipo de usuario y utiliza medidas técnicas para proteger cuentas, datos y operaciones. Ningún sistema puede garantizar seguridad absoluta.</p>
+  </LegalSection>
+
+  <LegalSection title="Derechos sobre los datos">
+    <p>Las personas pueden solicitar acceso, actualización, rectificación o supresión de sus datos conforme a la normativa aplicable escribiendo a <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>. Si los datos fueron proporcionados al hacer una reserva, el negocio correspondiente también puede atender consultas sobre esa reserva.</p>
+    <p>La <a href="https://www.argentina.gob.ar/aaip/datospersonales" rel="noreferrer" target="_blank">Agencia de Acceso a la Información Pública</a> informa sobre la protección de datos personales en Argentina.</p>
+  </LegalSection>
+
+  <LegalSection title="Cambios en esta política">
+    <p>Cuando el contenido se actualice, se indicará una nueva fecha de revisión en esta página. Los cambios relevantes para usuarios y negocios se comunicarán por los medios disponibles en la plataforma.</p>
+  </LegalSection>
+</LegalLayout>
