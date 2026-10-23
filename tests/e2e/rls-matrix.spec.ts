@@ -4,12 +4,12 @@ import { expect, test } from "@playwright/test";
 import { admin, env } from "./support/backend";
 
 // Matriz de acceso (7.3): qué puede hacer cada actor sobre cada tabla y RPC del esquema public.
-// Actores: anon (anon key), owner (dueño del negocio A, en prueba), other (dueño de B, intenta tocar A) y
-// expired (dueño de C con la suscripción vencida, solo lectura). Datos propios por corrida, se borran al final.
+// Actores: anon (anon key), owner (dueño del negocio A, público) y other (dueño de B, privado, intenta tocar A).
+// Datos propios por corrida, se borran al final.
 // Las escrituras bloqueadas por USING no fallan: afectan 0 filas, así que se verifican contra la base con admin.
 
 type Row = Record<string, unknown> & { id: string };
-type Actor = "anon" | "owner" | "other" | "expired";
+type Actor = "anon" | "owner" | "other";
 type SelectOutcome = "rows" | "none";
 
 const runId = `${Date.now().toString(36)}-${randomUUID().slice(0, 6)}`;
@@ -19,9 +19,9 @@ const userIds: string[] = [];
 const businessIds: string[] = [];
 const clients: Partial<Record<Actor, InsForgeClient>> = {};
 
-// Filas del negocio A (y C para las pruebas de solo lectura), creadas en beforeAll.
+// Filas del negocio A y del negocio privado B, creadas en beforeAll.
 const A: Record<string, string> = {};
-const C: Record<string, string> = {};
+const B: Record<string, string> = {};
 
 async function adminRows(path: string) {
   return await (await admin(`database/records/${path}`)).json() as Row[];
@@ -124,20 +124,22 @@ test.beforeAll(async () => {
   test.setTimeout(120_000);
   const owner = await createOwner("owner");
   const other = await createOwner("other");
-  const expired = await createOwner("expired");
   clients.anon = await sdk();
   clients.owner = owner.client;
   clients.other = other.client;
-  clients.expired = expired.client;
 
   await seedBusiness(owner.client, owner.userId, "a", A);
-  const otherBusiness = must(await other.client.database.from("businesses")
-    .insert([{ owner_id: other.userId, name: `RLS b ${runId}`, slug: `rls-matrix-b-${runId}` }]).select("id").single(), "negocio b") as Row;
-  businessIds.push(otherBusiness.id);
-  await seedBusiness(expired.client, expired.userId, "c", C);
-  await admin(`database/records/businesses?id=eq.${C.business}`, {
-    method: "PATCH",
-    body: JSON.stringify({ subscription_status: "expired", trial_ends_at: new Date(Date.now() - DAY).toISOString() }),
+  await seedBusiness(other.client, other.userId, "b", B);
+  await admin(`database/records/businesses?id=eq.${B.business}`, { method: "PATCH", body: JSON.stringify({ is_public: false }) });
+
+  // Los aportes solo los escribe el servidor (checkout y webhook): se crea uno de A con la key de servidor.
+  A.contribution = randomUUID();
+  await admin("database/records/contributions", {
+    method: "POST",
+    body: JSON.stringify([{
+      id: A.contribution, business_id: A.business, user_id: owner.userId, amount_cents: 500_000,
+      external_reference: A.contribution, option_code: "small", payer_email: `pagador-${runId}@citadely.test`,
+    }]),
   });
 });
 
@@ -151,10 +153,10 @@ async function selectOutcome(actor: Actor, table: string, column: string, value:
   return !error && (data?.length ?? 0) > 0 ? "rows" : "none";
 }
 
-// Lecturas: anon / owner / other sobre filas del negocio A (público, en prueba, plan Pro).
-const READS: { table: string; column: string; key: string; columns?: string; expected: Record<"anon" | "owner" | "other", SelectOutcome> }[] = [
+// Lecturas: anon / owner / other sobre filas del negocio A (público).
+const READS: { table: string; column: string; key: string; columns?: string; expected: Record<Actor, SelectOutcome> }[] = [
   { table: "businesses", column: "id", key: "business", columns: "id,name,slug", expected: { anon: "rows", owner: "rows", other: "none" } },
-  { table: "businesses", column: "id", key: "business", columns: "id,subscription_status,subscription_external_id", expected: { anon: "none", owner: "rows", other: "none" } },
+  { table: "businesses", column: "id", key: "business", columns: "id,owner_id", expected: { anon: "none", owner: "rows", other: "none" } },
   { table: "services", column: "id", key: "service", expected: { anon: "rows", owner: "rows", other: "rows" } },
   { table: "services", column: "id", key: "hiddenService", expected: { anon: "none", owner: "rows", other: "none" } },
   { table: "service_availability_slots", column: "id", key: "slot", expected: { anon: "rows", owner: "rows", other: "rows" } },
@@ -167,7 +169,7 @@ const READS: { table: string; column: string; key: string; columns?: string; exp
   { table: "working_hours", column: "id", key: "workingHours", expected: { anon: "rows", owner: "rows", other: "rows" } },
   { table: "time_off", column: "id", key: "timeOff", expected: { anon: "none", owner: "rows", other: "none" } },
   { table: "appointment_notes", column: "id", key: "note", expected: { anon: "none", owner: "rows", other: "none" } },
-  { table: "subscription_payments", column: "business_id", key: "business", expected: { anon: "none", owner: "none", other: "none" } },
+  { table: "contributions", column: "business_id", key: "business", columns: "id,status,amount_cents", expected: { anon: "none", owner: "rows", other: "none" } },
 ];
 
 test("lecturas por tabla: anon, dueño y otro dueño", async () => {
@@ -183,9 +185,7 @@ test("lecturas por tabla: anon, dueño y otro dueño", async () => {
 
 test("tablas internas: ni anon ni usuarios autenticados leen o escriben", async () => {
   const internal = [
-    "email_outbox", "email_webhook_events", "promo_codes", "promo_redemptions", "promo_redemption_attempts",
-    "public_booking_attempts", "subscription_operations", "subscription_payments", "subscription_webhook_events",
-    "blog_admin_login_attempts",
+    "email_outbox", "email_webhook_events", "public_booking_attempts", "mercadopago_webhook_events", "blog_admin_login_attempts",
   ];
   const failures: string[] = [];
   for (const table of internal) {
@@ -207,16 +207,30 @@ test("contenido público: el blog solo expone lo publicado y nadie escribe", asy
   }
 });
 
-test("planes de suscripción: precios activos públicos, solo las columnas expuestas", async () => {
-  const active = await adminRows("subscription_plans?is_active=eq.true&select=code");
-  for (const actor of ["anon", "owner"] as const) {
-    const plans = await clients[actor]!.database.from("subscription_plans").select("code,amount_cents,currency");
-    expect(plans.error, `${actor}: ${JSON.stringify(plans.error)}`).toBeNull();
-    // La política filtra los planes inactivos (precios viejos que siguen valiendo para suscriptores existentes).
-    expect((plans.data as { code: string }[]).map((plan) => plan.code).sort(), actor).toEqual(active.map((plan) => plan.code).sort());
-    expect((await clients[actor]!.database.from("subscription_plans").select("id,is_active")).error, `${actor} columnas internas`).not.toBeNull();
+test("aportes: importes sugeridos solo para usuarios logueados y aportes escritos solo por el servidor", async () => {
+  // La landing es estática: anon no lee los importes.
+  expect((await clients.anon!.database.from("contribution_options").select("code")).error, "anon contribution_options").not.toBeNull();
+  const active = await adminRows("contribution_options?is_active=eq.true&select=code");
+  for (const actor of ["owner", "other"] as const) {
+    const db = clients[actor]!.database;
+    const options = await db.from("contribution_options").select("code,label,amount_cents,currency,sort_order");
+    expect(options.error, `${actor}: ${JSON.stringify(options.error)}`).toBeNull();
+    expect((options.data as { code: string }[]).map((option) => option.code).sort(), actor).toEqual(active.map((option) => option.code).sort());
+    expect((await db.from("contribution_options").select("id,is_active")).error, `${actor} columnas internas`).not.toBeNull();
+    expect((await db.from("contribution_options").update({ amount_cents: 1 }).eq("code", "small").select("code")).data ?? [], actor).toHaveLength(0);
   }
-  expect((await clients.owner!.database.from("subscription_plans").update({ amount_cents: 1 }).eq("code", "pro").select("code")).data ?? []).toHaveLength(0);
+
+  // El dueño lee sus aportes, pero no el email del pagador ni nada que lo modifique.
+  const db = clients.owner!.database;
+  const [before] = await adminRows(`contributions?id=eq.${A.contribution}&select=*`);
+  expect((await db.from("contributions").select("id,payer_email").eq("id", A.contribution)).error, "payer_email").not.toBeNull();
+  const inserted = await db.from("contributions").insert([{ id: randomUUID(), business_id: A.business, amount_cents: 500_000 }]).select("id");
+  expect(!inserted.error && (inserted.data?.length ?? 0) > 0, "el dueño inserta aportes").toBe(false);
+  const updated = await db.from("contributions").update({ status: "approved" }).eq("id", A.contribution).select("id");
+  expect(!updated.error && (updated.data?.length ?? 0) > 0, "el dueño edita aportes").toBe(false);
+  const deleted = await db.from("contributions").delete().eq("id", A.contribution).select("id");
+  expect(!deleted.error && (deleted.data?.length ?? 0) > 0, "el dueño borra aportes").toBe(false);
+  expect(await adminRows(`contributions?id=eq.${A.contribution}&select=*`)).toEqual([before]);
 });
 
 // Escrituras de otro dueño (B) y de anon sobre filas de A: nunca afectan nada.
@@ -231,6 +245,7 @@ const FOREIGN_WRITES: { table: string; key: string; values: Record<string, unkno
   { table: "appointment_notes", key: "note", values: { note: "ajeno" }, insert: { note: "ajeno" } },
   { table: "business_gallery_images", key: "business", values: { sort_order: 9 }, insert: { image_url: "https://example.com/x.png", image_key: "x" } },
   { table: "business_faqs", key: "business", values: { answer: "ajeno" }, insert: { question: "x", answer: "x" } },
+  { table: "contributions", key: "contribution", values: { status: "approved" }, insert: { amount_cents: 500_000 } },
 ];
 
 test("otro dueño y anon no insertan, editan ni borran filas de un negocio ajeno", async () => {
@@ -264,12 +279,13 @@ test("otro dueño y anon no insertan, editan ni borran filas de un negocio ajeno
   expect(failures).toEqual([]);
 });
 
-test("el dueño no toca columnas de facturación ni inserta turnos sin pasar por la RPC", async () => {
+test("el dueño no toca columnas fuera de su grant ni inserta turnos sin pasar por la RPC", async () => {
   const db = clients.owner!.database;
-  const billing = await db.from("businesses").update({ subscription_status: "active", subscription_current_period_end: new Date(Date.now() + 365 * DAY).toISOString() }).eq("id", A.business);
-  expect(billing.error).not.toBeNull();
-  const [business] = await adminRows(`businesses?id=eq.${A.business}&select=subscription_status`);
-  expect(business.subscription_status).toBe("trialing");
+  // is_demo marca la cuenta demo pública (bloquea aportes en producción); owner_id define la propiedad.
+  expect((await db.from("businesses").update({ is_demo: true }).eq("id", A.business)).error, "is_demo").not.toBeNull();
+  expect((await db.from("businesses").update({ owner_id: randomUUID() }).eq("id", A.business)).error, "owner_id").not.toBeNull();
+  const [business] = await adminRows(`businesses?id=eq.${A.business}&select=is_demo,owner_id`);
+  expect(business).toEqual({ is_demo: false, owner_id: userIds[0] });
 
   const direct = await db.from("appointments").insert([{
     business_id: A.business, client_id: A.client, service_id: A.service,
@@ -278,31 +294,8 @@ test("el dueño no toca columnas de facturación ni inserta turnos sin pasar por
   expect(direct.error).not.toBeNull();
 });
 
-test("con la suscripción vencida el dueño lee pero no escribe en ninguna tabla del negocio", async () => {
-  const db = clients.expired!.database;
-  const failures: string[] = [];
-  for (const [table, key, values] of [
-    ["employees", "employee", { name: "editado" }],
-    ["working_hours", "workingHours", { is_active: false }],
-    ["time_off", "timeOff", { reason: "editado" }],
-    ["appointment_notes", "note", { note: "editado" }],
-    ["clients", "client", { name: "editado" }],
-    ["services", "service", { name: "editado" }],
-  ] as const) {
-    if ((await selectOutcome("expired", table, "id", C[key])) !== "rows") failures.push(`${table}: no lee`);
-    const updated = await db.from(table).update(values).eq("id", C[key]).select("id");
-    if (!updated.error && (updated.data?.length ?? 0) > 0) failures.push(`${table}: edita`);
-    const deleted = await db.from(table).delete().eq("id", C[key]).select("id");
-    if (!deleted.error && (deleted.data?.length ?? 0) > 0) failures.push(`${table}: borra`);
-  }
-  const settings = await db.from("business_notification_settings").update({ email: `nuevo-${runId}@citadely.test` }).eq("business_id", C.business).select("business_id");
-  if (!settings.error && (settings.data?.length ?? 0) > 0) failures.push("business_notification_settings: edita");
-  if (!(await db.from("employees").insert([{ business_id: C.business, name: "nuevo" }])).error) failures.push("employees: inserta");
-  expect(failures).toEqual([]);
-});
-
 // RPC expuestas: quién puede ejecutarlas y sobre qué negocio.
-test("RPC de escritura: anon nunca; otro dueño nunca sobre un negocio ajeno; vencido nunca", async () => {
+test("RPC de escritura: anon nunca; otro dueño nunca sobre un negocio ajeno", async () => {
   const futureSlot = new Date(Math.ceil((Date.now() + 6 * DAY) / 3_600_000) * 3_600_000).toISOString();
   const upsertArgs = (businessId: string, serviceId: string) => ({
     p_business_id: businessId, p_service_id: serviceId, p_name: "Editado por RPC", p_description: "", p_image_url: "",
@@ -316,20 +309,19 @@ test("RPC de escritura: anon nunca; otro dueño nunca sobre un negocio ajeno; ve
     { name: "update_appointment_status", args: (t) => ({ p_appointment_id: t.appointment, p_status: "cancelled", p_reason: "rls" }) },
     { name: "confirm_appointment_deposit", args: (t) => ({ p_appointment_id: t.appointment }) },
     { name: "sync_business_public_sections", args: (t) => ({ p_business_id: t.business, p_gallery_images: [], p_faqs: [] }) },
-    { name: "get_business_access_state", args: (t) => ({ p_business_id: t.business }) },
   ];
   const failures: string[] = [];
   for (const call of calls) {
-    for (const [actor, target] of [["anon", A], ["other", A], ["expired", C]] as const) {
-      if (actor === "expired" && call.name === "get_business_access_state") continue;
-      const { error } = await clients[actor]!.database.rpc(call.name, call.args(target));
+    for (const actor of ["anon", "other"] as const) {
+      const { error } = await clients[actor]!.database.rpc(call.name, call.args(A));
       if (!error) failures.push(`${call.name} ${actor}: se ejecutó`);
     }
   }
   const [appointment] = await adminRows(`appointments?id=eq.${A.appointment}&select=status`);
   expect(appointment.status).toBe("confirmed");
-  const [service] = await adminRows(`services?id=eq.${C.service}&select=name`);
+  const [service] = await adminRows(`services?id=eq.${A.service}&select=name`);
   expect(service.name).toBe("Servicio activo");
+  expect(await adminRows(`business_faqs?business_id=eq.${A.business}&select=id`)).toHaveLength(1);
   expect(failures).toEqual([]);
 
   // El dueño con acceso sí puede (control positivo), conservando el horario que ya tiene una reserva.
@@ -339,7 +331,25 @@ test("RPC de escritura: anon nunca; otro dueño nunca sobre un negocio ajeno; ve
   expect(error, JSON.stringify(error)).toBeNull();
 });
 
-test("RPC internas: la reserva pública y su rate limit solo corren con la key de servidor", async () => {
+test("RPC internas: la reserva pública, los aportes, los webhooks y los crons solo corren con la key de servidor", async () => {
+  // Argumentos válidos: el único motivo para fallar tiene que ser el permiso (un error de firma no prueba nada).
+  const internal: { name: string; args: Record<string, unknown> }[] = [
+    { name: "apply_contribution_payment", args: { p_contribution_id: A.contribution, p_provider_payment_id: `rls-${runId}`, p_status: "approved", p_amount_cents: 500_000, p_currency: "ARS" } },
+    { name: "claim_mercadopago_webhook_event", args: { p_event_key: `rls:${runId}`, p_event_type: "payment", p_action: null, p_resource_id: null, p_request_id: null } },
+    { name: "finish_mercadopago_webhook_event", args: { p_event_id: randomUUID(), p_status: "processed" } },
+    { name: "cancel_expired_deposit_bookings", args: {} },
+    { name: "claim_email_outbox", args: { p_limit: 1 } },
+  ];
+  for (const actor of ["anon", "owner"] as const) {
+    for (const call of internal) {
+      const { error } = await clients[actor]!.database.rpc(call.name, call.args);
+      expect(JSON.stringify(error), `${call.name} ${actor}`).toMatch(/permission denied/i);
+    }
+  }
+  const [contribution] = await adminRows(`contributions?id=eq.${A.contribution}&select=status`);
+  expect(contribution.status).toBe("pending");
+  expect(await adminRows(`mercadopago_webhook_events?event_key=eq.rls:${runId}&select=id`)).toEqual([]);
+
   for (const actor of ["anon", "owner"] as const) {
     const booking = await clients[actor]!.database.rpc("create_public_booking", {
       p_business_id: A.business, p_service_id: A.service, p_starts_at: A.slotStartsAt,
@@ -350,18 +360,15 @@ test("RPC internas: la reserva pública y su rate limit solo corren con la key d
       p_business_id: A.business, p_email: `x-${runId}@citadely.test`, p_phone: "1100000000",
     });
     expect(attempt.error, `register_public_booking_attempt ${actor}`).not.toBeNull();
-    for (const name of ["apply_mercadopago_subscription_payment", "sync_business_subscription_status", "redeem_promo_code", "cancel_expired_deposit_bookings", "claim_email_outbox"]) {
-      expect((await clients[actor]!.database.rpc(name, {})).error, `${name} ${actor}`).not.toBeNull();
-    }
   }
   expect(await adminRows(`public_booking_attempts?business_id=eq.${A.business}&select=id`)).toEqual([]);
 });
 
-test("RPC públicas de lectura: la ocupación solo se informa para negocios con reservas habilitadas", async () => {
+test("RPC públicas de lectura: la ocupación solo se informa para negocios públicos", async () => {
   const visible = await clients.anon!.database.rpc("get_public_slot_occupancy", { p_business_id: A.business, p_slot_ids: [A.slot] });
   expect(visible.error).toBeNull();
   expect((visible.data as unknown[]).length).toBe(1);
-  const hidden = await clients.anon!.database.rpc("get_public_slot_occupancy", { p_business_id: C.business, p_slot_ids: [C.slot] });
+  const hidden = await clients.anon!.database.rpc("get_public_slot_occupancy", { p_business_id: B.business, p_slot_ids: [B.slot] });
   expect(hidden.error).toBeNull();
   expect(hidden.data ?? []).toEqual([]);
 });

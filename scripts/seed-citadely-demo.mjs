@@ -98,14 +98,6 @@ async function ensureBusiness(client, userId) {
     whatsapp_phone: "5491123456789",
     public_address: "Av. Corrientes 1234, Ciudad Autónoma de Buenos Aires",
     is_public: true,
-    trial_ends_at: addDays(90, 23, 59).toISOString(),
-    subscription_status: "trialing",
-    // Estado de suscripción y promo reseteados en cada corrida: si un test dejó el negocio vencido, vuelve a estar activo.
-    subscription_current_period_end: null,
-    subscription_cancel_at_period_end: false,
-    pending_subscription_plan: null,
-    promotion_starts_at: null,
-    promotion_ends_at: null,
     is_demo: true,
   };
   const existing = await client.database.from("businesses").select("*").eq("owner_id", userId).maybeSingle();
@@ -213,6 +205,9 @@ async function main() {
   // Con la admin key: el rate limit de reservas por IP no debe bloquear correr el E2E otra vez desde localhost.
   const attempts = await admin.database.from("public_booking_attempts").delete().eq("business_id", business.id);
   if (attempts.error) throw new Error(`No se pudieron limpiar los intentos de reserva: ${attempts.error.message}`);
+  // Los aportes solo se escriben con la admin key; el E2E de aportes usa este negocio.
+  const contributions = await admin.database.from("contributions").delete().eq("business_id", business.id);
+  if (contributions.error) throw new Error(`No se pudieron limpiar los aportes: ${contributions.error.message}`);
   await resetDemoData(client, business.id);
   const counts = await seedDemoData(client, admin, business);
   const notification = await client.database.from("business_notification_settings").upsert([{ business_id: business.id, email: credentials.email }], { onConflict: "business_id" });
