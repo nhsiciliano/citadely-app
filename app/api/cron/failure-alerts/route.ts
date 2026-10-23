@@ -10,7 +10,7 @@ const SAMPLE_LIMIT = 50;
 
 const WATCHED_TABLES = [
   { table: "email_outbox", errorColumn: "last_error" },
-  { table: "subscription_webhook_events", errorColumn: "error_message" },
+  { table: "mercadopago_webhook_events", errorColumn: "error_message" },
 ] as const;
 
 async function handle(request: NextRequest) {

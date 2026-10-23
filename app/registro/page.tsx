@@ -5,7 +5,7 @@ import { NO_INDEX_ROBOTS } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Crear cuenta",
-  description: "Creá tu cuenta de Citadely y probá la gestión de turnos durante 7 días.",
+  description: "Creá tu cuenta gratis de Citadely y organizá los turnos de tu negocio.",
   robots: NO_INDEX_ROBOTS,
 };
 

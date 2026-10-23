@@ -65,8 +65,7 @@ async function loadPublicPageData(slug: string): Promise<PublicPageData | null> 
   if (!business) return null;
 
   const bookingWindow = getPublicBookingWindow();
-  const [access, services, slots, gallery, faqs] = await Promise.all([
-    insforge.database.rpc("business_has_booking_access", { target_business_id: business.id }),
+  const [services, slots, gallery, faqs] = await Promise.all([
     insforge.database.from("services").select("*").eq("business_id", business.id).eq("is_active", true).order("created_at", { ascending: false }),
     insforge.database
       .from("service_availability_slots")
@@ -91,7 +90,7 @@ async function loadPublicPageData(slug: string): Promise<PublicPageData | null> 
       .limit(10),
   ]);
 
-  const failed = access.error ?? services.error ?? slots.error ?? gallery.error ?? faqs.error;
+  const failed = services.error ?? slots.error ?? gallery.error ?? faqs.error;
   if (failed) throw new Error(`Public page data failed: ${failed.message}`);
 
   const rawSlots = (slots.data ?? []) as ServiceAvailabilitySlot[];
@@ -111,8 +110,8 @@ async function loadPublicPageData(slug: string): Promise<PublicPageData | null> 
 
   return {
     business,
-    // Closed by default: only an explicit true opens bookings.
-    bookable: access.data === true,
+    // Citadely es gratuito: toda página publicada (loadPublicBusiness ya filtra is_public) acepta reservas.
+    bookable: true,
     services: (services.data ?? []) as Service[],
     availabilitySlots,
     galleryImages: (gallery.data ?? []) as BusinessGalleryImage[],

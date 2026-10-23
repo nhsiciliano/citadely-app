@@ -5,7 +5,6 @@ import { UserRound } from "lucide-react";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { buildBookingSlots, formatAppointmentTime, type Client } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
-import { READ_ONLY_HINT } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
 import { Drawer } from "../workspace-ui";
 import { useWorkspace } from "../workspace-context";
@@ -15,8 +14,7 @@ import { ClientPickerDialog } from "./client-picker-dialog";
 export type SelectedAgendaSlot = { startsAt: string; serviceId?: string };
 
 export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boolean; onClose: () => void; initialSlot?: SelectedAgendaSlot | null }) {
-  const { access, appointments, availabilitySlots, business, services, refresh } = useWorkspace();
-  const readOnly = !access.hasDashboardAccess;
+  const { appointments, availabilitySlots, business, services, refresh } = useWorkspace();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -177,14 +175,12 @@ export function NewAppointmentDrawer({ open, onClose, initialSlot }: { open: boo
             </div>
           ) : null}
         </fieldset>
-
-        {readOnly ? <FormMessage type="error">{READ_ONLY_HINT}</FormMessage> : null}
         {activeServices.length === 0 ? (
           <FormMessage type="error">Necesitás un servicio activo con horarios disponibles antes de crear el turno.</FormMessage>
         ) : null}
         {message ? <FormMessage type="error">{message}</FormMessage> : null}
         <div className="sticky bottom-0 -mx-5 mt-3 border-t border-line bg-white px-5 pt-5 sm:-mx-7 sm:px-7">
-          <SubmitButton disabled={readOnly || !selectedClient || serviceOptions.length === 0 || !startsAtValue} pending={pending}>Guardar turno</SubmitButton>
+          <SubmitButton disabled={!selectedClient || serviceOptions.length === 0 || !startsAtValue} pending={pending}>Guardar turno</SubmitButton>
         </div>
       </form>
     </Drawer>

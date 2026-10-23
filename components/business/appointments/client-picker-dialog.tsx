@@ -6,12 +6,11 @@ import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { type Client } from "@/lib/citadely-db";
 import { getClientSaveErrorMessage } from "@/lib/client-errors";
 import { createClient } from "@/lib/clients";
-import { READ_ONLY_HINT } from "@/lib/business-access";
 import { useClientSearch } from "../use-client-search";
 import { useWorkspace } from "../workspace-context";
 
 export function ClientPickerDialog({ onClose, onClosed, onSelect, open }: { onClose: () => void; onClosed: () => void; onSelect: (client: Client) => void; open: boolean }) {
-  const { access, business } = useWorkspace();
+  const { business } = useWorkspace();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
@@ -114,7 +113,7 @@ export function ClientPickerDialog({ onClose, onClosed, onSelect, open }: { onCl
           {filteredClients.length > 0 ? <p className="text-xs text-ink-muted sm:hidden">Deslizá la tabla para ver todos los datos de contacto.</p> : null}
           {searchError ? <FormMessage type="error">{searchError}</FormMessage> : null}
           {hasMore ? <button className="button-secondary w-full sm:w-fit" disabled={searching} onClick={() => void loadMore()} type="button">{searching ? "Cargando…" : "Cargar más clientes"}</button> : null}
-          <button className="button-secondary w-full sm:w-fit" disabled={!access.hasDashboardAccess} onClick={() => { setCreating(true); setMessage(null); }} title={access.hasDashboardAccess ? undefined : READ_ONLY_HINT} type="button"><Plus aria-hidden="true" size={18} />Crear nuevo cliente</button>
+          <button className="button-secondary w-full sm:w-fit" onClick={() => { setCreating(true); setMessage(null); }} type="button"><Plus aria-hidden="true" size={18} />Crear nuevo cliente</button>
         </div>
       )}
     </dialog>

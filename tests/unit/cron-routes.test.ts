@@ -41,7 +41,7 @@ describe("cron routes", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const response = await call(route.GET, "Bearer s3cret");
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ failures: { email_outbox: 2, subscription_webhook_events: 0 } });
+    expect(await response.json()).toEqual({ failures: { email_outbox: 2, mercadopago_webhook_events: 0 } });
   });
 
   it("transactional-email rechaza sin secreto antes de tocar la base", async () => {

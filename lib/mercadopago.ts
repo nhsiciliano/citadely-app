@@ -1,48 +1,23 @@
 import crypto from "node:crypto";
-import { assertProductionEnv } from "@/lib/env";
+import type { NextRequest } from "next/server";
+import { assertProductionEnv, getProtectionBypassSecret } from "@/lib/env";
+
+export type MercadoPagoPreferenceResponse = {
+  id: string;
+  init_point?: string;
+  sandbox_init_point?: string;
+};
 
 export type MercadoPagoPaymentResponse = {
   id: number;
   status: string;
+  status_detail?: string;
   external_reference?: string;
-  preapproval_id?: string;
   transaction_amount?: number;
   currency_id?: string;
   date_approved?: string;
-};
-
-export type MercadoPagoAuthorizedPaymentResponse = {
-  id: number;
-  status: string;
-  payment?: {
-    id?: number;
-    status?: string;
-    status_detail?: string;
-  };
-  external_reference?: string;
-  preapproval_id?: string;
-  transaction_amount?: number;
-  currency_id?: string;
-  date_created?: string;
-  date_approved?: string;
-};
-
-export type MercadoPagoPreapprovalResponse = {
-  id: string;
-  status: string;
-  init_point?: string;
-  reason?: string;
-  external_reference?: string;
-  next_payment_date?: string;
-  date_created?: string;
-  payer_email?: string;
-  auto_recurring?: {
-    frequency?: number;
-    frequency_type?: string;
-    start_date?: string;
-    transaction_amount?: number;
-    currency_id?: string;
-  };
+  payer?: { email?: string };
+  metadata?: Record<string, unknown>;
 };
 
 const MERCADOPAGO_API = process.env.MERCADOPAGO_API_BASE_URL ?? "https://api.mercadopago.com";
@@ -81,50 +56,42 @@ async function mercadoPagoRequest<T>(path: string, init: RequestInit = {}) {
   return data;
 }
 
-export async function getMercadoPagoPayment(paymentId: string) {
-  return mercadoPagoRequest<MercadoPagoPaymentResponse>(`/v1/payments/${encodeURIComponent(paymentId)}`);
-}
-
-export async function createMercadoPagoPreapproval(body: Record<string, unknown>) {
-  return mercadoPagoRequest<MercadoPagoPreapprovalResponse>("/preapproval", {
+export async function createMercadoPagoPreference(body: Record<string, unknown>) {
+  return mercadoPagoRequest<MercadoPagoPreferenceResponse>("/checkout/preferences", {
     method: "POST",
     body: JSON.stringify(body),
   });
 }
 
-export async function getMercadoPagoPreapproval(preapprovalId: string) {
-  return mercadoPagoRequest<MercadoPagoPreapprovalResponse>(`/preapproval/${encodeURIComponent(preapprovalId)}`);
+export async function getMercadoPagoPayment(paymentId: string) {
+  return mercadoPagoRequest<MercadoPagoPaymentResponse>(`/v1/payments/${encodeURIComponent(paymentId)}`);
 }
 
-export async function updateMercadoPagoPreapproval(preapprovalId: string, body: Record<string, unknown>) {
-  return mercadoPagoRequest<MercadoPagoPreapprovalResponse>(`/preapproval/${encodeURIComponent(preapprovalId)}`, {
-    method: "PUT",
-    body: JSON.stringify(body),
-  });
+/** Origen público de la app para back_urls y notification_url (APP_BASE_URL, si no el host de la request). */
+export function getAppBaseUrl(request: NextRequest) {
+  const configuredUrl = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
+  if (configuredUrl) {
+    const url = new URL(configuredUrl);
+    if (url.hostname === "citadely.com.ar") url.hostname = "www.citadely.com.ar";
+    return url.origin;
+  }
+
+  const forwardedHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
+  return forwardedHost ? `${forwardedProto}://${forwardedHost}` : request.nextUrl.origin;
 }
 
-export type MercadoPagoSearchResponse<T> = {
-  paging?: { offset?: number; limit?: number; total?: number };
-  results?: T[];
-};
-
-export async function searchMercadoPagoPreapprovals({ status, offset, limit }: { status: string; offset: number; limit: number }) {
-  const params = new URLSearchParams({ status, offset: String(offset), limit: String(limit) });
-  return mercadoPagoRequest<MercadoPagoSearchResponse<MercadoPagoPreapprovalResponse>>(`/preapproval/search?${params}`);
-}
-
-export async function searchMercadoPagoAuthorizedPayments(preapprovalId: string, { offset = 0, limit = 50 } = {}) {
-  const params = new URLSearchParams({ preapproval_id: preapprovalId, offset: String(offset), limit: String(limit) });
-  return mercadoPagoRequest<MercadoPagoSearchResponse<MercadoPagoAuthorizedPaymentResponse>>(`/authorized_payments/search?${params}`);
-}
-
-export async function getMercadoPagoAuthorizedPayment(authorizedPaymentId: string) {
-  return mercadoPagoRequest<MercadoPagoAuthorizedPaymentResponse>(`/authorized_payments/${encodeURIComponent(authorizedPaymentId)}`);
+/** URL del webhook; en Preview lleva el bypass de Deployment Protection. */
+export function getWebhookUrl(origin: string) {
+  const webhookUrl = new URL("/api/mercadopago/webhook", origin);
+  const protectionBypass = getProtectionBypassSecret();
+  if (protectionBypass) webhookUrl.searchParams.set("x-vercel-protection-bypass", protectionBypass);
+  return webhookUrl.toString();
 }
 
 // Ventana para aceptar una firma. El webhook es idempotente (claim por evento y re-fetch del recurso
-// en Mercado Pago), así que un replay no causa daño. Rechazar un reintento legítimo sí: el pago no se
-// refleja hasta la reconciliación. Por eso la ventana es amplia.
+// en Mercado Pago), así que un replay no causa daño. Rechazar un reintento legítimo sí: el aporte queda
+// pendiente para siempre. Por eso la ventana es amplia.
 const MERCADOPAGO_SIGNATURE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 // ts llega como Unix en segundos (lo que usa el E2E) o en milisegundos; se normaliza antes de comparar.

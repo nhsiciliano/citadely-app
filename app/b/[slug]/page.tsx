@@ -2,7 +2,6 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PaymentStatusBanner } from "@/components/payment-status-banner";
 import { PublicBookingForm } from "@/components/public-booking-form";
 import { PublicBusinessInfo, WhatsAppIcon } from "@/components/public-business-info";
 import { PublicEditorialHero } from "@/components/public-editorial-hero";
@@ -23,8 +22,7 @@ type PublicPageProps = {
 
 // The page is rendered once and cached (ISR) for 60 s; prices, slots and occupancy come from the
 // per-business data cache tagged in lib/public-page-data.ts. force-static is required: without it
-// the route renders on every request. Nothing here reads cookies or headers, and the ?pago banner
-// is read in the browser (PaymentStatusBanner).
+// the route renders on every request. Nothing here reads cookies, headers or search params.
 export const revalidate = 60;
 export const dynamic = "force-static";
 
@@ -171,8 +169,6 @@ export default async function PublicBookingPage({ params }: PublicPageProps) {
       />
 
       <section className="bg-white"><div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:px-10 lg:py-14">
-          <PaymentStatusBanner />
-
         <div id="reservar">
           {bookable ? (
             <PublicBookingForm availabilitySlots={availabilitySlots} business={business} services={services} />
