@@ -1,0 +1,57 @@
+---
+import { Font } from "astro:assets";
+import Analytics from "@vercel/analytics/astro";
+import SpeedInsights from "@vercel/speed-insights/astro";
+import { SITE_NAME, SITE_ORIGIN } from "../lib/site";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  ogImageAlt?: string;
+}
+
+const { title, description, path, ogImageAlt = "Citadely — Agenda y turnos online para negocios" } = Astro.props;
+// Canonical URLs never carry a trailing slash (the home is the bare origin), matching Next.
+const canonical = `${SITE_ORIGIN}${path === "/" ? "" : path.replace(/\/+$/, "")}`;
+const ogImage = `${SITE_ORIGIN}/opengraph-image`;
+const googleSiteVerification = import.meta.env.GOOGLE_SITE_VERIFICATION;
+---
+
+<html lang="es-AR" data-scroll-behavior="smooth" class="h-full antialiased">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    {googleSiteVerification && <meta name="google-site-verification" content={googleSiteVerification} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <!-- Served by the Next app on the same host. -->
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <Font cssVariable="--font-geist-sans" preload />
+    <Font cssVariable="--font-geist-mono" preload />
+    <Font cssVariable="--font-funnel-display" preload />
+    <slot name="head" />
+    <Analytics />
+  </head>
+  <body class="min-h-full bg-canvas text-ink">
+    <slot />
+    <SpeedInsights />
+  </body>
+</html>
