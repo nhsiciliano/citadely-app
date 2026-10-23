@@ -1,0 +1,35 @@
+---
+import CalendarDays from "@lucide/astro/icons/calendar-days";
+import CreditCard from "@lucide/astro/icons/credit-card";
+import Earth from "@lucide/astro/icons/earth";
+import Sparkles from "@lucide/astro/icons/sparkles";
+import UsersRound from "@lucide/astro/icons/users-round";
+
+const CAPABILITIES = [
+  { icon: CalendarDays, title: "Agenda precisa", text: "Vista diaria y semanal, filtros por servicio y estado, y cada turno en su lugar." },
+  { icon: Sparkles, title: "Servicios y disponibilidad", text: "Duración, precio, seña y horarios mensuales administrados desde un mismo flujo." },
+  { icon: UsersRound, title: "Clientes accesibles", text: "Búsqueda local y fichas claras para crear turnos sin volver a pedir los mismos datos." },
+  { icon: CreditCard, title: "Señas bajo control", text: "Estados pendientes y confirmados con alias, CBU o CVU propio de cada negocio." },
+  { icon: Earth, title: "Reservas públicas", text: "Una página con la marca del negocio para elegir servicio, fecha, hora y confirmar." },
+];
+---
+
+<section class="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="funciones">
+  <div class="grid gap-12 lg:grid-cols-[.72fr_1.28fr]">
+    <div>
+      <h2 class="font-display text-4xl font-semibold tracking-[-0.035em] text-navy sm:text-5xl">Todo lo necesario para mantener el ritmo.</h2>
+      <p class="mt-5 max-w-md leading-7 text-ink-soft">Cada módulo responde una pregunta concreta de la operación, sin sumar complejidad innecesaria.</p>
+    </div>
+    <div class="border-t border-line">
+      {
+        CAPABILITIES.map(({ icon: Icon, title, text }) => (
+          <article class="grid gap-4 border-b border-line py-6 sm:grid-cols-[40px_190px_1fr] sm:items-start">
+            <span class="grid h-9 w-9 place-items-center rounded-md bg-primary-soft text-primary"><Icon aria-hidden="true" size={19} /></span>
+            <h3 class="font-semibold">{title}</h3>
+            <p class="text-sm leading-6 text-ink-soft">{text}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>

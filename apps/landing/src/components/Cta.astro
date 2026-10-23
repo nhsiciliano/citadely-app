@@ -1,0 +1,20 @@
+---
+import { Image } from "astro:assets";
+import instagramQr from "../assets/citadely-instagram-qr.webp";
+---
+
+<section class="bg-navy text-white">
+  <div class="mx-auto flex max-w-[1440px] flex-col gap-7 px-5 py-18 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12">
+    <div>
+      <h2 class="font-display max-w-3xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Tu próxima jornada puede empezar más ordenada.</h2>
+      <p class="mt-4 text-white/65">Creá tu cuenta gratis.</p>
+    </div>
+    <figure class="w-44 shrink-0">
+      <figcaption class="mb-3 text-sm font-semibold leading-5">Escanea y seguinos en Instagram.</figcaption>
+      <a aria-label="Abrir Instagram de Citadely (@citadely.ar)" class="inline-block rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" href="https://www.instagram.com/citadely.ar/" rel="noopener noreferrer" target="_blank">
+        <!-- Always 176px wide (w-44); the 2x and 3x candidates keep the QR sharp on dense screens. -->
+        <Image alt="Código QR de Instagram de Citadely" class="h-auto w-full rounded-md" src={instagramQr} width={176} densities={[2, 3]} />
+      </a>
+    </figure>
+  </div>
+</section>

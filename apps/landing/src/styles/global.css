@@ -84,6 +84,22 @@ summary:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 3px;
 }
+button {
+  min-width: 24px;
+  min-height: 24px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 .font-display {
   font-family: var(--font-funnel-display), var(--font-geist-sans), sans-serif;
 }
