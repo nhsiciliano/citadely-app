@@ -180,8 +180,13 @@ export function OnboardingForm({ publicOrigin, user }: { publicOrigin: string; u
     }
 
     if (businessError) {
-      setPending(false);
       const message = getErrorMessage(businessError);
+      // El dueño ya tiene negocio (un envío anterior lo guardó): no es una URL en uso, va directo al panel.
+      if (/businesses_single_owner/i.test(message)) {
+        router.push("/negocio");
+        return;
+      }
+      setPending(false);
       setError(/businesses_slug_key|duplicate key|unique constraint/i.test(message)
         ? "Esa URL ya está en uso. Elegí otra para continuar."
         : /businesses_slug_not_reserved/i.test(message)
@@ -211,16 +216,16 @@ export function OnboardingForm({ publicOrigin, user }: { publicOrigin: string; u
       business_slug: businessSlug,
     });
 
-    setPending(false);
-
     if (!profile.ok) {
+      setPending(false);
       setError(profile.error);
       return;
     }
 
+    // `pending` queda en true mientras se navega, así no se puede reenviar el formulario.
     void revalidatePublicPage();
+    // Sin router.refresh(): en Next 16 navega a la URL actual y cancela este push; /negocio es dinámico.
     router.push("/negocio");
-    router.refresh();
   }
 
   const publicUrl = getBusinessPublicUrl(slug || "tu-negocio", publicOrigin);
