@@ -25,7 +25,7 @@ El producto se usa principalmente durante la jornada laboral, con consultas frec
 ## Capabilities and Constraints
 
 - Mantener autenticación, registro, recuperación, verificación y onboarding existentes.
-- Mantener las operaciones actuales para negocios, servicios, disponibilidad, clientes, turnos, estados, señas, marca pública, transferencia, WhatsApp y suscripción.
+- Mantener las operaciones actuales para negocios, servicios, disponibilidad, clientes, turnos, estados, señas, marca pública, transferencia, WhatsApp y aportes voluntarios.
 - Mantener el flujo de reserva pública servicio → fecha/hora → datos → confirmación.
 - Mantener consultas, RPC, rutas API, tablas, reglas de InsForge y contratos persistidos sin migraciones para esta etapa.
 - No incorporar empleados, permisos, horarios laborales, ausencias, notas ni recordatorios nuevos, aunque exista soporte parcial en el esquema.
@@ -49,7 +49,7 @@ El producto se usa principalmente durante la jornada laboral, con consultas frec
 - Referencia de landing proporcionada por el usuario: `/Users/nhsiciliano/Desktop/Captura de pantalla 2026-09-04 a la(s) 2.07.43 p. m..png`.
 - Referencia de dashboard proporcionada por el usuario: `/Users/nhsiciliano/Desktop/Captura de pantalla 2026-09-04 a la(s) 2.10.09 p. m..png`.
 - No hay testimonios, empresas, resultados comerciales ni otras pruebas externas aprobadas; no deben inventarse.
-- El precio, el período de prueba y las condiciones vigentes deben conservarse desde la implementación actual.
+- Citadely es gratuito; no hay precios ni período de prueba. Los aportes son voluntarios y no condicionan funciones.
 
 ## Product Principles
 

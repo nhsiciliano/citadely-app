@@ -21,11 +21,11 @@ Rate limiting is not part of the repo. Dashboard: Project → Firewall → Confi
 rule with two OR groups:
 
 ```bash
-npx vercel firewall rules add "Rate limit reserva publica y canje de promo" \
+npx vercel firewall rules add "Rate limit reserva publica y aportes" \
   --condition '{"type":"path","op":"eq","value":"/api/public-booking"}' \
   --condition '{"type":"method","op":"eq","value":"POST"}' \
   --or \
-  --condition '{"type":"path","op":"eq","value":"/api/promo-codes/redeem"}' \
+  --condition '{"type":"path","op":"eq","value":"/api/contributions/checkout"}' \
   --condition '{"type":"method","op":"eq","value":"POST"}' \
   --action rate_limit --rate-limit-algo fixed_window \
   --rate-limit-requests 10 --rate-limit-window 60 --rate-limit-keys ip \
@@ -46,13 +46,13 @@ npx vercel firewall rules add "Rate limit public booking" \
   --rate-limit-action deny --duration 5m \
   --description "Max 10 booking attempts per minute per IP"
 
-npx vercel firewall rules add "Rate limit promo redeem" \
-  --condition '{"type":"path","op":"eq","value":"/api/promo-codes/redeem"}' \
+npx vercel firewall rules add "Rate limit contributions checkout" \
+  --condition '{"type":"path","op":"eq","value":"/api/contributions/checkout"}' \
   --condition '{"type":"method","op":"eq","value":"POST"}' \
   --action rate_limit --rate-limit-algo fixed_window \
   --rate-limit-window 60 --rate-limit-requests 10 --rate-limit-keys ip \
   --rate-limit-action deny --duration 5m \
-  --description "Max 10 promo redemptions per minute per IP"
+  --description "Max 10 contribution checkouts per minute per IP"
 
 npx vercel firewall diff      # review the draft
 npx vercel firewall publish   # make it live

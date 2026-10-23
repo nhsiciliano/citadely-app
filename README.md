@@ -1,12 +1,12 @@
 # Citadely
 
-Central de turnos para negocios: agenda, servicios, clientes, página pública de reservas y suscripción mensual.
+Central de turnos para negocios: agenda, servicios, clientes, página pública de reservas. Gratis, con aportes voluntarios.
 
 ## Stack
 
 - **Next.js 16** (App Router) sobre Node 24, desplegado en **Vercel**.
 - **InsForge** como backend: Postgres con RLS, auth, storage y funciones. El proyecto enlazado está en `.insforge/project.json` (no se commitea).
-- **Mercado Pago** para la suscripción de los negocios y **Resend** para emails transaccionales.
+- **Mercado Pago** para los aportes voluntarios y **Resend** para emails transaccionales.
 - **pnpm** es el único gestor de paquetes (`packageManager` en `package.json`). No usar npm ni yarn.
 
 ## Puesta en marcha
@@ -106,11 +106,7 @@ Los scripts de `scripts/archive/` son históricos y no se ejecutan.
 
 ## Crons
 
-Vercel Hobby solo permite crons diarios, así que los crons se reparten en dos lugares. Todas las rutas `/api/cron/*` aceptan GET y POST y exigen `Authorization: Bearer $CRON_SECRET`.
-
-**Vercel Cron** (declarado en [`vercel.ts`](vercel.ts), solo corre en producción):
-
-- `/api/cron/reconcile-subscriptions`: diario a las 06:00 UTC. Re-sincroniza suscripciones y detecta huérfanas.
+Vercel Hobby solo permite crons diarios y ninguno de los que necesita la app lo es, así que no queda ningún cron en [`vercel.ts`](vercel.ts) (`crons: []`): todos corren como schedules de InsForge. Todas las rutas `/api/cron/*` aceptan GET y POST y exigen `Authorization: Bearer $CRON_SECRET`.
 
 **Schedules de InsForge** (`POST` contra `https://www.citadely.com.ar/api/cron/<ruta>` con el header `Authorization: Bearer ${{secrets.CRON_SECRET}}`; el secreto `CRON_SECRET` tiene que existir en el proyecto de InsForge):
 
@@ -142,7 +138,7 @@ Verificación: `npx -y @insforge/cli schedules list` muestra los tres activos y 
 
 ## Tests
 
-- `pnpm test:e2e` usa Playwright. El E2E corre contra `next dev` en el puerto 3002 y un mock de Mercado Pago. Requiere las variables de `[Local]` y `SEED_CONFIRM_PROJECT`.
+- `pnpm test:e2e` usa Playwright. El E2E corre contra `next dev` en el puerto 3002 y un mock de Mercado Pago que simula Checkout Pro. Requiere las variables de `[Local]` y `SEED_CONFIRM_PROJECT`.
 - Política de tests unitarios y de RLS: ver los tickets de la fase 7 del plan.
 
 ## Seguridad y anti-abuso
