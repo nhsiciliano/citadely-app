@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { signOutAction } from "@/app/auth/actions";
 import { getErrorMessage } from "@/lib/auth";
-import type { BusinessAccessState } from "@/lib/business-access";
 import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
 import { insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
@@ -12,7 +11,6 @@ import { loadRange, loadWorkspaceData, type InitialWorkspace } from "@/lib/works
 
 export type WorkspaceContextValue = {
   business: Business;
-  access: BusinessAccessState;
   services: Service[];
   appointments: Appointment[];
   availabilitySlots: ServiceAvailabilitySlot[];
@@ -46,7 +44,6 @@ export function useWorkspace() {
 export function WorkspaceProvider({ children, initial }: { children: ReactNode; initial: InitialWorkspace }) {
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<Business>(initial.business);
-  const [access, setAccess] = useState<BusinessAccessState>(initial.access);
   const [services, setServices] = useState<Service[]>(initial.services);
   const [appointments, setAppointments] = useState<Appointment[]>(initial.appointments);
   const [availabilitySlots, setAvailabilitySlots] = useState<ServiceAvailabilitySlot[]>(initial.availabilitySlots);
@@ -61,7 +58,6 @@ export function WorkspaceProvider({ children, initial }: { children: ReactNode; 
 
   async function loadBusinessData(businessId: string) {
     const data = await loadWorkspaceData(insforge, businessId, historyStart);
-    setAccess(data.access);
     setServices(data.services);
     setAppointments(data.appointments);
     setAvailabilitySlots(data.availabilitySlots);
@@ -110,7 +106,6 @@ export function WorkspaceProvider({ children, initial }: { children: ReactNode; 
 
   const value: WorkspaceContextValue = {
     business,
-    access,
     services,
     appointments,
     availabilitySlots,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { ExternalLink, LockKeyhole, Palette, Save } from "lucide-react";
+import { ExternalLink, Palette, Save } from "lucide-react";
 import { FormMessage, LoadingSpinner } from "@/components/ui";
 import type { BusinessFaq, BusinessGalleryImage } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
@@ -22,7 +22,7 @@ import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "../workspace-ui";
 
 export function PublicPageScreen() {
-  const { access: subscription, appointments, availabilitySlots, business, galleryImages, faqs, publicUrl, refresh, services } = useWorkspace();
+  const { appointments, availabilitySlots, business, galleryImages, faqs, publicUrl, refresh, services } = useWorkspace();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [description, setDescription] = useState(business.description ?? "");
@@ -40,25 +40,8 @@ export function PublicPageScreen() {
   );
   const visibleGalleryImages = savedGalleryImages.filter((image) => !removedGalleryIds.includes(image.id));
 
-  if (!subscription.hasPublicPageAccess) {
-    return (
-      <>
-        <PageHeader description="Publicá una página personalizable y recibí reservas online con el plan Pro." title="Página pública" />
-        <div className="px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
-          <section className="surface-section mx-auto max-w-3xl py-10 text-center sm:py-14">
-            <span className="mx-auto grid h-12 w-12 place-items-center rounded-md bg-primary-soft text-primary"><LockKeyhole aria-hidden="true" size={23} /></span>
-            <h2 className="mt-5 text-2xl font-semibold tracking-[-0.03em]">{subscription.needsPayment && subscription.currentPlan === "pro" ? "Tu página pública está pausada" : "La página pública está incluida en Pro"}</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-soft">{subscription.needsPayment && subscription.currentPlan === "pro" ? "Tus clientes no pueden reservar online mientras la suscripción no esté activa. Activá el plan para volver a publicarla y editarla." : "Personalizá tu marca, publicá servicios y permití que tus clientes reserven los turnos disponibles sin contactarte."}</p>
-            <Link className="button-primary mt-7" href="/negocio/configuracion">{subscription.needsPayment && subscription.currentPlan === "pro" ? "Activar plan" : "Ver plan Pro"}</Link>
-          </section>
-        </div>
-      </>
-    );
-  }
-
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!subscription.hasPublicPageAccess) return;
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const logo = getFormFile(form, "logo_file");

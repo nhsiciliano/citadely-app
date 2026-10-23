@@ -11,8 +11,6 @@ import {
   ExternalLink,
   Globe2,
   LayoutDashboard,
-  LockKeyhole,
-  TriangleAlert,
   LogOut,
   Menu,
   Settings,
@@ -42,7 +40,7 @@ const LEGACY_HASHES: Record<string, string> = {
 export function BusinessShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { access: subscription, business, error, publicUrl, signOut, userEmail } = useWorkspace();
+  const { business, error, publicUrl, signOut, userEmail } = useWorkspace();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isDemoWorkspace = business.is_demo === true;
@@ -96,14 +94,13 @@ export function BusinessShell({ children }: { children: ReactNode }) {
 
         <div className={`border-b border-white/10 px-5 py-4 ${collapsed ? "lg:px-3 lg:text-center" : ""}`}>
           <p className={`truncate text-sm font-semibold ${collapsed ? "lg:hidden" : ""}`}>{business.name}</p>
-          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : subscription.hasPromotion ? "Acceso Pro promocional" : subscription.isTrialing ? `${subscription.trialDaysLeft} días de prueba` : subscription.hasPaidPeriod ? "Plan activo" : subscription.needsPayment ? "Solo lectura" : "Acceso limitado"}</p>
+          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : "Plan gratuito"}</p>
           {collapsed ? <span className="hidden text-sm font-bold lg:inline">{business.name.slice(0, 1).toUpperCase()}</span> : null}
         </div>
 
         <nav aria-label="Navegación del negocio" className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
             const active = href === "/negocio" ? pathname === href : pathname.startsWith(href);
-            const locked = href === "/negocio/pagina-publica" && !subscription.hasPublicPageAccess;
             return (
               <Link
                 aria-current={active ? "page" : undefined}
@@ -111,18 +108,17 @@ export function BusinessShell({ children }: { children: ReactNode }) {
                 href={href}
                 key={href}
                 onClick={() => setMobileOpen(false)}
-                title={collapsed ? (locked ? `${label} · Plan Pro` : label) : undefined}
+                title={collapsed ? label : undefined}
               >
                 <Icon aria-hidden="true" size={19} strokeWidth={1.8} />
                 <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
-                {locked ? <LockKeyhole aria-label="Disponible con Pro" className={`ml-auto text-white/55 ${collapsed ? "lg:hidden" : ""}`} size={15} /> : null}
               </Link>
             );
           })}
         </nav>
 
         <div className="border-t border-white/10 p-3">
-          {subscription.hasPublicPageAccess ? <Link className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-3 text-sm font-medium text-white/68 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${collapsed ? "lg:justify-center lg:px-0" : ""}`} href={publicUrl} target="_blank">
+          {business.is_public ? <Link className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-3 text-sm font-medium text-white/68 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${collapsed ? "lg:justify-center lg:px-0" : ""}`} href={publicUrl} target="_blank">
             <ExternalLink aria-hidden="true" size={18} />
             <span className={collapsed ? "lg:hidden" : ""}>Abrir página pública</span>
           </Link> : null}
@@ -146,15 +142,6 @@ export function BusinessShell({ children }: { children: ReactNode }) {
 
       <main className="min-w-0" id="contenido-principal" inert={mobileOpen}>
         {error ? <p className="border-b border-danger-line bg-danger-soft px-5 py-3 text-sm font-semibold text-danger" role="alert">{error}</p> : null}
-        {subscription.needsPayment ? (
-          <div className="flex flex-col gap-3 border-b border-warning bg-warning-soft px-5 py-3 pl-20 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pl-20 lg:px-10" role="status">
-            <p className="flex items-start gap-2 text-sm font-medium text-ink">
-              <TriangleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-warning" size={17} />
-              <span><strong className="font-semibold">Modo solo lectura.</strong> {subscription.isPastDue ? "El último cobro no se pudo procesar." : "Tu prueba o tu plan terminó."} Podés consultar tu agenda, clientes y servicios; para crear o modificar datos, activá un plan.</span>
-            </p>
-            {pathname !== "/negocio/configuracion" ? <Link className="button-primary shrink-0" href="/negocio/configuracion">Activar plan</Link> : null}
-          </div>
-        ) : null}
         {children}
       </main>
     </div>

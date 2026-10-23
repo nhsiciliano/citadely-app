@@ -64,6 +64,13 @@ export function parseContributionAmount(input: ContributionAmountInput, options:
   return { ok: true, amountCents, optionCode: null };
 }
 
+/** Resultado con el que Mercado Pago vuelve a /negocio/configuracion (back_urls de la preferencia). */
+export type ContributionReturnResult = "aprobado" | "pendiente" | "fallido";
+
+export function parseContributionReturnResult(value: unknown): ContributionReturnResult | null {
+  return value === "aprobado" || value === "pendiente" || value === "fallido" ? value : null;
+}
+
 const STATUS_LABELS: Record<ContributionStatus, string> = {
   pending: "Pendiente",
   approved: "Aprobado",
