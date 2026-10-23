@@ -1,4 +1,3 @@
-import type { SubscriptionPlanId } from "@/lib/subscription-plans";
 import type { ServiceMode, VirtualPlatform } from "@/lib/virtual-service";
 import type { PublicTheme } from "@/lib/public-theme";
 import { addDaysToDateKey, addMonthsToMonthKey, formatInTimeZone, resolveTimeZone, startOfDayInTimeZone, toDateKey, toMonthKey, zonedTimeToUtc } from "@/lib/time";
@@ -25,20 +24,6 @@ export type Business = {
   cover_image_key: string | null;
   brand_color: string | null;
   public_theme: PublicTheme;
-  trial_ends_at: string;
-  promotion_starts_at: string | null;
-  promotion_ends_at: string | null;
-  subscription_status: "trialing" | "active" | "past_due" | "cancelled" | "expired";
-  subscription_provider: string | null;
-  subscription_external_id: string | null;
-  subscription_checkout_url: string | null;
-  subscription_current_period_end: string | null;
-  subscription_plan: SubscriptionPlanId;
-  pending_subscription_plan: SubscriptionPlanId | null;
-  subscription_cancel_at_period_end: boolean;
-  subscription_last_payment_id: string | null;
-  subscription_last_payment_status: string | null;
-  subscription_last_payment_at: string | null;
   currency: string;
   timezone: string;
   is_public?: boolean;

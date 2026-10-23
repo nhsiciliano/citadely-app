@@ -1,6 +1,5 @@
 import type { InsForgeClient } from "@insforge/sdk";
 import { getErrorMessage } from "@/lib/auth";
-import { fetchBusinessAccessState, type BusinessAccessState } from "@/lib/business-access";
 import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Service, ServiceAvailabilitySlot } from "@/lib/citadely-db";
 
 // Carga del dataset del panel. La usan el layout de /negocio en el servidor (primer render) y el
@@ -9,7 +8,6 @@ import type { Appointment, Business, BusinessFaq, BusinessGalleryImage, Service,
 type DatabaseClient = Pick<InsForgeClient, "database">;
 
 export type WorkspaceData = {
-  access: BusinessAccessState;
   services: Service[];
   appointments: Appointment[];
   availabilitySlots: ServiceAvailabilitySlot[];
@@ -67,8 +65,7 @@ export async function loadRange<T>(
 }
 
 export async function loadWorkspaceData(client: DatabaseClient, businessId: string, windowStart: string): Promise<WorkspaceData> {
-  const [access, servicesResult, appointments, availabilitySlots, galleryResult, faqResult] = await Promise.all([
-    fetchBusinessAccessState(client, businessId),
+  const [servicesResult, appointments, availabilitySlots, galleryResult, faqResult] = await Promise.all([
     client.database.from("services").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
     loadRange<Appointment>(client, "appointments", businessId, windowStart),
     loadRange<ServiceAvailabilitySlot>(client, "service_availability_slots", businessId, windowStart),
@@ -90,7 +87,6 @@ export async function loadWorkspaceData(client: DatabaseClient, businessId: stri
   if (workspaceError) throw new Error(getErrorMessage(workspaceError));
 
   return {
-    access,
     services: (servicesResult.data ?? []) as Service[],
     appointments,
     availabilitySlots,

@@ -8,12 +8,6 @@ export const isProduction = process.env.VERCEL_ENV === "production";
 
 export const isClientProduction = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
 
-/** Preview-only override: lets Mercado Pago test accounts subscribe with a fixed payer. */
-export function getPayerEmailOverride() {
-  if (isProduction) return undefined;
-  return process.env.MERCADOPAGO_PAYER_EMAIL || undefined;
-}
-
 /** Preview-only secret that lets Mercado Pago webhooks pass Vercel Deployment Protection. */
 export function getProtectionBypassSecret() {
   if (isProduction) return undefined;

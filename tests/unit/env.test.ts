@@ -17,12 +17,10 @@ describe("lib/env", () => {
     expect(getProductionEnvProblems({ VERCEL_ENV: "production", MERCADOPAGO_ACCESS_TOKEN: "APP_USR-1" })).toEqual([]);
   });
 
-  it("ignora el email de pago y el bypass de Vercel en producción", async () => {
-    const preview = await withEnv({ VERCEL_ENV: "preview", MERCADOPAGO_PAYER_EMAIL: "p@test.com", VERCEL_AUTOMATION_BYPASS_SECRET: "s" }, () => import("@/lib/env"));
-    expect(preview.getPayerEmailOverride()).toBe("p@test.com");
+  it("ignora el bypass de Vercel en producción", async () => {
+    const preview = await withEnv({ VERCEL_ENV: "preview", VERCEL_AUTOMATION_BYPASS_SECRET: "s" }, () => import("@/lib/env"));
     expect(preview.getProtectionBypassSecret()).toBe("s");
-    const production = await withEnv({ VERCEL_ENV: "production", MERCADOPAGO_PAYER_EMAIL: "p@test.com", VERCEL_AUTOMATION_BYPASS_SECRET: "s" }, () => import("@/lib/env"));
-    expect(production.getPayerEmailOverride()).toBeUndefined();
+    const production = await withEnv({ VERCEL_ENV: "production", VERCEL_AUTOMATION_BYPASS_SECRET: "s" }, () => import("@/lib/env"));
     expect(production.getProtectionBypassSecret()).toBeUndefined();
   });
 });
