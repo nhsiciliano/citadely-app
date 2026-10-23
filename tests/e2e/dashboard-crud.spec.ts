@@ -12,13 +12,13 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   availabilityDate.setHours(10, 0, 0, 0);
   const monthValue = `${availabilityDate.getFullYear()}-${String(availabilityDate.getMonth() + 1).padStart(2, "0")}`;
 
+  // La landing (/) la sirve Astro vía rewrite (el detalle de SEO está en public-seo.spec.ts): acá solo un chequeo liviano.
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /tomá el control de cada jornada/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Esencial" })).toBeVisible();
-  await expect(page.getByText("$14.000", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Pro", exact: true })).toBeVisible();
-  await expect(page.getByText("$18.000", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: /crear mi cuenta/i }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Citadely es gratis" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Crear mi cuenta" }).first()).toHaveAttribute("href", "/registro");
+
+  await page.goto("/login");
+  await expect(page.getByRole("button", { name: "Ingresar", exact: true })).toBeVisible();
   await signIn(page);
 
   for (const [label, path, heading] of [

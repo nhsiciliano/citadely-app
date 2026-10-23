@@ -1,0 +1,38 @@
+---
+// Port of MarketingHeader in components/marketing-shell.tsx. The anchors keep the leading slash so
+// the header also works on the legal pages; /blog, /login and /registro belong to the Next app.
+import ArrowRight from "@lucide/astro/icons/arrow-right";
+import LogoMark from "./LogoMark.astro";
+
+const NAV_ITEMS = [
+  { href: "/#como-funciona", label: "Cómo funciona" },
+  { href: "/#funciones", label: "Funciones" },
+  { href: "/#rubros", label: "Rubros" },
+  { href: "/#precio", label: "Precio" },
+  { href: "/blog", label: "Blog" },
+  { href: "/#preguntas", label: "Preguntas" },
+];
+---
+
+<header class="sticky top-0 z-50 border-b border-line bg-white">
+  <div class="mx-auto flex h-18 max-w-[1440px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-12">
+    <LogoMark />
+    <nav aria-label="Navegación principal" class="hidden items-center gap-7 text-sm font-medium text-ink-soft lg:flex">
+      {NAV_ITEMS.map(({ href, label }) => <a class="hover:text-primary" href={href}>{label}</a>)}
+    </nav>
+    <div class="hidden items-center gap-2 sm:flex">
+      <a class="button-secondary" href="/login">Ingresar</a>
+      <a class="button-primary" href="/registro">Crear mi cuenta<ArrowRight aria-hidden="true" size={16} /></a>
+    </div>
+    <details class="group relative ml-auto lg:hidden">
+      <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-md border border-line px-4 text-sm font-semibold text-navy marker:hidden">Menú</summary>
+      <nav aria-label="Menú móvil" class="absolute right-0 top-12 z-50 w-64 border border-line bg-white p-2 shadow-raised">
+        {NAV_ITEMS.map(({ href, label }) => <a class="block rounded-md px-3 py-3 text-sm font-medium text-ink hover:bg-primary-soft" href={href}>{label}</a>)}
+        <div class="mt-2 border-t border-line pt-2 sm:hidden">
+          <a class="block rounded-md px-3 py-3 text-sm font-semibold" href="/login">Ingresar</a>
+          <a class="block rounded-md px-3 py-3 text-sm font-semibold text-primary" href="/registro">Crear mi cuenta</a>
+        </div>
+      </nav>
+    </details>
+  </div>
+</header>

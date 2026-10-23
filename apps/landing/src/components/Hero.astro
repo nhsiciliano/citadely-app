@@ -1,0 +1,23 @@
+---
+import ArrowRight from "@lucide/astro/icons/arrow-right";
+import ShieldCheck from "@lucide/astro/icons/shield-check";
+import DemoTimeline from "./DemoTimeline.astro";
+---
+
+<section class="relative border-b border-line bg-surface-subtle">
+  <div aria-hidden="true" class="absolute inset-y-0 left-1/2 hidden w-px bg-line lg:block"></div>
+  <div class="mx-auto grid min-h-[700px] max-w-[1440px] lg:grid-cols-2">
+    <div class="flex items-center px-5 py-16 sm:px-8 lg:px-12 lg:py-20">
+      <div class="max-w-[620px]">
+        <h1 class="font-display text-[clamp(3rem,5vw,3.4rem)] font-semibold leading-[0.96] tracking-[-0.04em] text-navy">Tomá el control de cada jornada.</h1>
+        <p class="mt-7 max-w-[460px] text-lg leading-8 text-ink-soft">Citadely es tu central de turnos: reúne agenda, servicios, clientes, reservas públicas y estados de seña. Menos idas y vueltas; más precisión para operar tu negocio.</p>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <a class="button-primary" href="/registro">Crear mi cuenta<ArrowRight aria-hidden="true" size={16} /></a>
+          <a class="button-secondary" href="#como-funciona">Ver cómo funciona<ArrowRight aria-hidden="true" size={16} /></a>
+        </div>
+        <p class="mt-5 flex items-center gap-2 text-sm text-ink-soft"><ShieldCheck aria-hidden="true" class="text-success" size={17} />Empezá gratis, con todas las funciones incluidas.</p>
+      </div>
+    </div>
+    <div class="flex items-center bg-white px-5 py-12 sm:px-8 lg:px-12 lg:py-16"><DemoTimeline /></div>
+  </div>
+</section>

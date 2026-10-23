@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source not "../apps";
 
 /*
  * Design tokens. This is the only place colors, shadows and fonts are defined.

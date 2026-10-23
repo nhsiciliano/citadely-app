@@ -1,0 +1,54 @@
+---
+import LegalLayout from "../components/LegalLayout.astro";
+import LegalSection from "../components/LegalSection.astro";
+import { LEGAL_PATHS } from "../lib/site";
+---
+
+<LegalLayout
+  title="Condiciones del servicio"
+  metaDescription="Condiciones de uso de Citadely para negocios y personas que reservan turnos."
+  description="Reglas de uso de Citadely para negocios que administran turnos y personas que reservan desde sus páginas públicas."
+  path={LEGAL_PATHS.terms}
+  updatedAt="2026-10-23"
+>
+  <LegalSection title="Qué ofrece Citadely">
+    <p>Citadely permite a negocios de servicios organizar agenda, clientes, servicios y disponibilidad. El negocio también puede publicar una página propia para recibir reservas online.</p>
+    <p>Citadely proporciona herramientas de gestión. El servicio reservado, su prestación, precio, modalidad y condiciones particulares corresponden al negocio que lo ofrece.</p>
+  </LegalSection>
+
+  <LegalSection title="Identificación del titular y contacto">
+    <p>Citadely es el nombre público de la plataforma.</p>
+    <ul>
+      <li><strong>Identificación del titular:</strong> Desarrollado por OnionDEV.</li>
+      <li><strong>Domicilio legal:</strong> Av. Diaz Velez 4762, CABA, Buenos Aires, Argentina.</li>
+      <li><strong>CUIT:</strong> 20-33740915-7.</li>
+      <li><strong>Canal de contacto:</strong> <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</li>
+    </ul>
+  </LegalSection>
+
+  <LegalSection title="Cuentas y uso de la plataforma">
+    <p>Para usar el dashboard, el negocio debe crear una cuenta y mantener actualizados sus datos de acceso. La persona titular de la cuenta es responsable de las acciones realizadas desde ella y de configurar la información pública de su negocio.</p>
+    <p>No se debe usar la plataforma para suplantar identidades, publicar información falsa, afectar a otras personas o interferir con el funcionamiento del servicio.</p>
+  </LegalSection>
+
+  <LegalSection title="Reservas públicas y señas">
+    <p>Quien reserva elige un servicio, fecha y horario disponibles, completa sus datos y recibe la confirmación por correo electrónico. Debe proporcionar información correcta para que el negocio pueda gestionar el turno.</p>
+    <p>El negocio define disponibilidad, precios y, cuando corresponde, monto de la seña y datos propios de transferencia. Citadely muestra y registra el estado de la seña; la recepción y confirmación de esa transferencia quedan a cargo del negocio. Las condiciones de cambio o cancelación de un turno deben acordarse con ese negocio.</p>
+  </LegalSection>
+
+  <LegalSection title="Uso gratuito y aportes voluntarios">
+    <p>Citadely es gratuito para los negocios. No hay planes, período de prueba ni cobros periódicos.</p>
+    <p>El negocio puede realizar aportes voluntarios y únicos a través de Mercado Pago desde su panel. Los aportes no otorgan funciones adicionales ni constituyen una contraprestación por el uso de la plataforma.</p>
+    <p>Los reembolsos y contracargos de los aportes se rigen por las condiciones de Mercado Pago y la normativa aplicable. Para consultas, escribí a <a href="mailto:contacto@citadely.com.ar">contacto@citadely.com.ar</a>.</p>
+  </LegalSection>
+
+  <LegalSection title="Contenido y disponibilidad">
+    <p>El negocio es responsable de los textos, imágenes, horarios, servicios y datos de contacto que publica. Debe contar con autorización para usar ese contenido y mantenerlo actualizado.</p>
+    <p>Citadely puede realizar mantenimiento y correcciones para conservar el funcionamiento de la plataforma. Si una función no está disponible temporalmente, las reservas y operaciones deben verificarse en el dashboard cuando vuelva a estar accesible.</p>
+  </LegalSection>
+
+  <LegalSection title="Privacidad y cambios">
+    <p>El tratamiento de datos personales se describe en la <a href={LEGAL_PATHS.privacy}>Política de privacidad</a>.</p>
+    <p>Los cambios en las condiciones se reflejarán con una nueva fecha de revisión.</p>
+  </LegalSection>
+</LegalLayout>

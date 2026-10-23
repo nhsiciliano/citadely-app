@@ -5,7 +5,6 @@ import { CalendarClock, CheckCircle2, Clock3, CreditCard, MessageSquare, UserRou
 import { FormMessage } from "@/components/ui";
 import { formatAppointmentTime, formatCurrency, type Appointment } from "@/lib/citadely-db";
 import { getErrorMessage } from "@/lib/auth";
-import { READ_ONLY_HINT } from "@/lib/business-access";
 import { insforge } from "@/lib/insforge";
 import { Drawer, StatusBadge } from "../workspace-ui";
 import { APPOINTMENT_STATUS_LABELS, CANCELLATION_REASON_MAX, getStatusOptions, requiresStatusConfirmation, type AppointmentStatus } from "@/lib/appointment-status";
@@ -19,8 +18,7 @@ const APPOINTMENT_SOURCE_LABELS: Record<Appointment["source"], string> = {
 };
 
 export function AppointmentDetailDrawer({ appointment, onClose }: { appointment: Appointment | null; onClose: () => void }) {
-  const { access, business, refresh } = useWorkspace();
-  const readOnly = !access.hasDashboardAccess;
+  const { business, refresh } = useWorkspace();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -113,7 +111,7 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
 
           <label className="form-label">
             Estado del turno
-            <select className="form-control" disabled={pending || readOnly} onChange={(event) => chooseStatus(event.target.value as AppointmentStatus)} value={appointment.status}>
+            <select className="form-control" disabled={pending} onChange={(event) => chooseStatus(event.target.value as AppointmentStatus)} value={appointment.status}>
               {getStatusOptions(appointment, referenceTime).map((status) => <option key={status} value={status}>{APPOINTMENT_STATUS_LABELS[status]}</option>)}
             </select>
           </label>
@@ -144,9 +142,8 @@ export function AppointmentDetailDrawer({ appointment, onClose }: { appointment:
           ) : null}
 
           {appointment.status === "pending_payment" && appointment.deposit_amount_cents > 0 ? (
-            <button className="button-primary" disabled={pending || readOnly} onClick={confirmDeposit} title={readOnly ? READ_ONLY_HINT : undefined} type="button"><CheckCircle2 aria-hidden="true" size={18} />Confirmar seña recibida</button>
+            <button className="button-primary" disabled={pending} onClick={confirmDeposit} type="button"><CheckCircle2 aria-hidden="true" size={18} />Confirmar seña recibida</button>
           ) : null}
-          {readOnly ? <p className="text-sm text-ink-soft">{READ_ONLY_HINT}</p> : null}
           {message ? <FormMessage type="error">{message}</FormMessage> : null}
         </div>
       ) : null}

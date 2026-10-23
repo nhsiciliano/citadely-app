@@ -17,6 +17,11 @@
 .playwright-auth-config.toml
 .local-run/
 
+# astro landing (apps/landing)
+apps/landing/dist/
+apps/landing/node_modules/
+.astro/
+
 # next.js
 /.next/
 /out/

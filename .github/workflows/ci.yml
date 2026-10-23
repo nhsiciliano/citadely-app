@@ -46,6 +46,26 @@ jobs:
           NEXT_PUBLIC_INSFORGE_ANON_KEY: ci-placeholder
           NEXT_PUBLIC_APP_DOMAIN: citadely.com.ar
 
+  landing:
+    name: Landing (Astro check and build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter landing check
+
+      - run: pnpm --filter landing build
+
   e2e:
     name: E2E (Playwright, InsForge backend branch)
     needs: checks
@@ -105,6 +125,9 @@ jobs:
 
       - run: pnpm seed:demo
       - run: pnpm exec playwright install --with-deps chromium
+
+      # playwright.config.ts serves the built landing with `astro preview`; Next rewrites / to it.
+      - run: pnpm --filter landing build
       - run: pnpm test:e2e
 
       - uses: actions/upload-artifact@v4

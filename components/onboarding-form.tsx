@@ -12,7 +12,6 @@ import { ensureFreshSession, insforge } from "@/lib/insforge";
 import { getBusinessPublicUrl } from "@/lib/urls";
 import { saveBusinessNotificationEmail } from "@/lib/business-notifications";
 import { BUSINESS_SLUG_MAX_LENGTH, BUSINESS_SLUG_PATTERN, validateBusinessSlug } from "@/lib/business-slug";
-import { READ_ONLY_HINT } from "@/lib/business-access";
 import { getBusinessCategoryOptions } from "@/lib/business-categories";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { revalidatePublicPage } from "@/lib/revalidate-public-page";
@@ -156,7 +155,7 @@ export function OnboardingForm({ publicOrigin, user }: { publicOrigin: string; u
     let businessError: unknown = null;
 
     if (existingBusinessId) {
-      // Con la suscripción vencida RLS rechaza la escritura: el UPDATE devuelve 0 filas en lugar de un error.
+      // Si RLS rechaza la escritura, el UPDATE devuelve 0 filas en lugar de un error.
       if (!unchanged) {
         const { data: updated, error: updateError } = await insforge.database
           .from("businesses")
@@ -166,7 +165,7 @@ export function OnboardingForm({ publicOrigin, user }: { publicOrigin: string; u
         businessError = updateError;
         if (!updateError && !updated?.length) {
           setPending(false);
-          setError(READ_ONLY_HINT);
+          setError("No se pudieron guardar los cambios. Recargá la página e intentá de nuevo.");
           return;
         }
       }
@@ -285,7 +284,7 @@ export function OnboardingForm({ publicOrigin, user }: { publicOrigin: string; u
             {slugHint}
           </p>
           <p className="text-sm leading-6 text-ink-soft">
-            Tu página pública quedará disponible en <strong>{publicUrl}</strong>. Incluye 7 días de uso gratuito sin restricciones.
+            Tu página pública quedará disponible en <strong>{publicUrl}</strong>. Citadely es gratis, sin planes ni período de prueba.
           </p>
         </div>
 

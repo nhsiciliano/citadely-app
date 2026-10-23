@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+/*
+ * Copied from app/globals.css (tokens, base and the few components the landing uses). Keep the
+ * tokens in sync with the Next app. Fonts are `inline` because they reference the variables the
+ * Astro Fonts API defines (<Font /> in src/layouts/Base.astro).
+ */
+@theme static {
+  --color-canvas: #f2f5fa;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f7f9fc;
+  --color-navy: #071f3d;
+  --color-navy-raised: #0b2b52;
+  --color-primary: #0957d9;
+  --color-primary-strong: #0649bd;
+  --color-primary-soft: #eaf2ff;
+  --color-violet: #6d4bd1;
+  --color-violet-soft: #f0edff;
+  --color-success: #087a55;
+  --color-success-soft: #e7f7f0;
+  --color-warning: #a75900;
+  --color-warning-soft: #fff3df;
+  --color-danger: #c32f3d;
+  --color-danger-soft: #fff0f1;
+  --color-danger-line: #efb7bd;
+  --color-success-line: #a9dcca;
+  --color-ink: #091a33;
+  --color-ink-soft: #526078;
+  --color-ink-muted: #657086;
+  --color-line: #dce3ed;
+  --color-line-strong: #bcc7d6;
+  --color-whatsapp: #148b45;
+  --color-whatsapp-strong: #0e7438;
+  --shadow-surface: 0 2px 5px rgba(8, 31, 63, 0.045), 0 12px 30px rgba(8, 31, 63, 0.035);
+  --shadow-raised: 0 8px 28px rgba(8, 31, 63, 0.14);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-funnel-display);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 4.5rem;
+  }
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: #bad2ff;
+    color: var(--color-navy);
+  }
+}
+
+/* Unlayered on purpose, like app/globals.css: these rules beat Tailwind utilities. */
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    background-color 160ms ease-out,
+    border-color 160ms ease-out,
+    color 160ms ease-out,
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+button {
+  min-width: 24px;
+  min-height: 24px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+.font-display {
+  font-family: var(--font-funnel-display), var(--font-geist-sans), sans-serif;
+}
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  border-radius: 0.375rem;
+  background: white;
+  padding: 0.75rem 1rem;
+  color: var(--color-navy);
+  box-shadow: var(--shadow-raised);
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.375rem;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1;
+}
+.button-primary {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 5px 16px rgba(9, 87, 217, 0.18);
+}
+.button-primary:hover {
+  border-color: var(--color-primary-strong);
+  background: var(--color-primary-strong);
+  transform: translateY(-1px);
+}
+.button-secondary {
+  border: 1px solid var(--color-line);
+  background: white;
+  color: var(--color-ink);
+}
+.button-secondary:hover {
+  border-color: var(--color-line-strong);
+  background: var(--color-surface-subtle);
+}
+.status-badge {
+  display: inline-flex;
+  min-height: 1.7rem;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.status-confirmed {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.status-pending_payment {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}

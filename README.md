@@ -1,12 +1,12 @@
 # Citadely
 
-Central de turnos para negocios: agenda, servicios, clientes, página pública de reservas y suscripción mensual.
+Central de turnos para negocios: agenda, servicios, clientes, página pública de reservas. Gratis, con aportes voluntarios.
 
 ## Stack
 
 - **Next.js 16** (App Router) sobre Node 24, desplegado en **Vercel**.
 - **InsForge** como backend: Postgres con RLS, auth, storage y funciones. El proyecto enlazado está en `.insforge/project.json` (no se commitea).
-- **Mercado Pago** para la suscripción de los negocios y **Resend** para emails transaccionales.
+- **Mercado Pago** para los aportes voluntarios y **Resend** para emails transaccionales.
 - **pnpm** es el único gestor de paquetes (`packageManager` en `package.json`). No usar npm ni yarn.
 
 ## Puesta en marcha
@@ -54,6 +54,28 @@ Settings → Branches → regla para `main`:
 
 Detalle de CI y secretos en [`docs/ci.md`](docs/ci.md).
 
+## Landing (apps/landing)
+
+La landing pública es un sitio **Astro 7 estático** en `apps/landing`, un paquete más del workspace de pnpm. Se despliega como un **segundo proyecto de Vercel**, `citadely-landing`, con Root Directory `apps/landing`. La app Next.js no la importa ni la compila: `tsconfig.json`, ESLint y Tailwind excluyen `apps/`.
+
+Cómo se sirve: bajo `www.citadely.com.ar` la app Next.js reescribe estas rutas hacia `LANDING_ORIGIN` (la URL del proyecto `citadely-landing`):
+
+- `/`
+- `/politica-de-privacidad`
+- `/condiciones-del-servicio`
+- `/landing-assets/*`
+
+Sin `LANDING_ORIGIN`, `/` muestra un placeholder. El `sitemap.xml` y el `robots.txt` los sigue sirviendo Next, no Astro.
+
+| Comando | Qué hace |
+| --- | --- |
+| `pnpm landing:dev` | Servidor de desarrollo de Astro |
+| `pnpm landing:build` | Build estático en `apps/landing/dist/` |
+| `pnpm landing:check` | `astro check` (tipos y contenido) |
+| `pnpm landing:preview` | Sirve el build localmente (puerto 4321) |
+
+El Preview de Next apunta a la landing de **producción**, porque los Previews del proyecto `citadely-landing` están protegidos y no se pueden consumir desde otro proyecto. Un cambio de la landing solo se ve con un deploy de `citadely-landing`.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -84,11 +106,7 @@ Los scripts de `scripts/archive/` son históricos y no se ejecutan.
 
 ## Crons
 
-Vercel Hobby solo permite crons diarios, así que los crons se reparten en dos lugares. Todas las rutas `/api/cron/*` aceptan GET y POST y exigen `Authorization: Bearer $CRON_SECRET`.
-
-**Vercel Cron** (declarado en [`vercel.ts`](vercel.ts), solo corre en producción):
-
-- `/api/cron/reconcile-subscriptions`: diario a las 06:00 UTC. Re-sincroniza suscripciones y detecta huérfanas.
+Vercel Hobby solo permite crons diarios y ninguno de los que necesita la app lo es, así que no queda ningún cron en [`vercel.ts`](vercel.ts) (`crons: []`): todos corren como schedules de InsForge. Todas las rutas `/api/cron/*` aceptan GET y POST y exigen `Authorization: Bearer $CRON_SECRET`.
 
 **Schedules de InsForge** (`POST` contra `https://www.citadely.com.ar/api/cron/<ruta>` con el header `Authorization: Bearer ${{secrets.CRON_SECRET}}`; el secreto `CRON_SECRET` tiene que existir en el proyecto de InsForge):
 
@@ -120,7 +138,7 @@ Verificación: `npx -y @insforge/cli schedules list` muestra los tres activos y 
 
 ## Tests
 
-- `pnpm test:e2e` usa Playwright. El E2E corre contra `next dev` en el puerto 3002 y un mock de Mercado Pago. Requiere las variables de `[Local]` y `SEED_CONFIRM_PROJECT`.
+- `pnpm test:e2e` usa Playwright. El E2E corre contra `next dev` en el puerto 3002 y un mock de Mercado Pago que simula Checkout Pro. Requiere las variables de `[Local]` y `SEED_CONFIRM_PROJECT`.
 - Política de tests unitarios y de RLS: ver los tickets de la fase 7 del plan.
 
 ## Seguridad y anti-abuso
@@ -139,3 +157,5 @@ Límites de reservas, rate limit y decisiones de seguridad están en [`docs/anti
 Push a `main` (vía PR) despliega Production; las ramas despliegan Preview. Antes de promover a Production, aplicar las migraciones al padre y correr el checklist de [`docs/release-checklist.md`](docs/release-checklist.md).
 
 Dominio: el apex `citadely.com.ar` redirige con 308 a `https://www.citadely.com.ar`, que es el host canónico. Los subdominios `<negocio>.citadely.com.ar` son las páginas públicas en producción; fuera de producción se usa `/b/<slug>`.
+
+Bajo `www`, **Astro** (proyecto `citadely-landing`) sirve `/`, `/politica-de-privacidad`, `/condiciones-del-servicio` y `/landing-assets/*`. **Next.js** sirve todo lo demás: la app (`/login`, `/registro`, `/negocio`, ...), la API, el blog, `sitemap.xml` y `robots.txt`. Ver [Landing (apps/landing)](#landing-appslanding).

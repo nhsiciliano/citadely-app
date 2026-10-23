@@ -57,8 +57,8 @@ pointing at Preview URLs). Anything else is drift: resolve it with a migration, 
 
 ## 3. Apply to the parent first
 
-- [ ] `pnpm test:e2e tests/e2e/rls-matrix.spec.ts tests/e2e/subscription-read-only.spec.ts` against the branch is green
-      (access matrix: anon / owner / other owner / expired owner per table and RPC, plus the integrity triggers).
+- [ ] `pnpm test:e2e tests/e2e/rls-matrix.spec.ts` against the branch is green
+      (access matrix: anon / owner / other owner per table and RPC, plus the integrity triggers).
 - [ ] Take a backup: `npx -y @insforge/cli backups create --name pre-release-<date> --wait` (parent linked or
       `--project <id>`).
 - [ ] Apply the pending migrations listed by step 2 to the parent, **one by one and in that order**, **before**
@@ -71,10 +71,10 @@ pointing at Preview URLs). Anything else is drift: resolve it with a migration, 
 ## 4. Deploy and verify
 
 - [ ] Production environment variables in Vercel match `.env.example` (`[Prod+Preview]` entries); Preview-only entries
-      (`MERCADOPAGO_PAYER_EMAIL`, `VERCEL_AUTOMATION_BYPASS_SECRET`, `RESEND_SKIP_DELIVERY=true`) are absent from
+      (`VERCEL_AUTOMATION_BYPASS_SECRET`, `RESEND_SKIP_DELIVERY=true`) are absent from
       Production. `MERCADOPAGO_ACCESS_TOKEN` does not start with `TEST-` (the app refuses to start otherwise).
-- [ ] Deploy. In Vercel → Settings → Cron Jobs only the daily cron from `vercel.ts` (`reconcile-subscriptions`) appears
-      (Hobby only allows daily crons; a more frequent one makes the deploy fail).
+- [ ] Deploy. In Vercel → Settings → Cron Jobs the list is empty: `vercel.ts` declares `crons: []` and every cron runs
+      as an InsForge schedule (Hobby only allows daily crons; a more frequent one makes the deploy fail).
 - [ ] InsForge secret `CRON_SECRET` exists in the parent and matches the Vercel Production `CRON_SECRET`
       (`npx -y @insforge/cli secrets list`).
 - [ ] `Citadely transactional email` (id `6cc3b1f4`) already exists in the parent and returns 200 every minute: do not
@@ -91,10 +91,38 @@ pointing at Preview URLs). Anything else is drift: resolve it with a migration, 
 Code: promote the previous deployment in Vercel. Schema: forward-fix with a new migration; use the pre-release backup
 only as a last resort (`backups restore` overwrites database **and** storage).
 
-## Changing subscription prices
+## Free product release (landing + voluntary contributions)
 
-`public.subscription_plans` is the only source of prices (landing, Settings, Mercado Pago checkout and
-`apply_mercadopago_subscription_payment`). To change a price, in one migration: set the current row of that `code` to
-`is_active = false` and insert a new active row with the new `amount_cents`. Keep the old row: subscribers still
-paying the old preapproval amount keep being recognised. Existing Mercado Pago preapprovals are not updated
-automatically; new checkouts and plan changes use the new price. The landing page refreshes within 5 minutes.
+The release that makes Citadely free (Astro landing, voluntary contributions through Mercado Pago Checkout Pro, no
+subscriptions, plans, trial, promo codes or read-only mode) is one window, with the landing before the product change
+in git. Migrations: M1 `20261024120000_open-access-for-free-product.sql` and M2 `20261024120100_add-contributions.sql`
+are safe with the old code; M3 `20261024120200_drop-subscriptions-and-promo-codes.sql` is not (the old code needs the
+columns it drops), so it goes last and the code can only be rolled back while M3 is not applied.
+
+1. **Rehearsal on the backend branch.** M1–M3 applied, the full E2E suite green (including `rls-matrix` and
+   `contributions`), and `pnpm schema:diff --check-migrations` shows only M1–M3 pending for the parent.
+2. **Landing in production.** The `citadely-landing` project is deployed and `LANDING_ORIGIN` is set in Next
+   (Production and Preview) before the merge: `curl -I https://landing.citadely.com.ar/politica-de-privacidad/` returns 200.
+3. **Parent: backup and M1 + M2.** `npx -y @insforge/cli backups create --name pre-free-<date> --wait`, then apply M1 and
+   M2 (the wrapper `claim_subscription_webhook_event` keeps the old webhook working until the deploy).
+4. **PR `lead-development` → `main`, merge and deploy.** Smoke: `/` serves Astro with its CSS from `/landing-assets/`,
+   the legal pages, `https://<slug>.citadely.com.ar/` still shows the business page, `/sitemap.xml` and `/robots.txt`
+   are unchanged, `/negocio/configuracion` shows the contributions section, and a real $1.000 contribution reaches
+   `approved` through the webhook (confirm in the Mercado Pago panel that the **Pagos** topic is enabled on the same
+   webhook URL).
+5. **Subscriptions already created in Mercado Pago.** There is no cancel script: the owner deletes by hand the
+   businesses that still have a preapproval (they are not professional accounts) and checks Mercado Pago. Their
+   `subscription_preapproval` webhooks are `ignored` by the new webhook.
+6. **Parent: M3 and cleanup.** Apply M3; `pnpm schema:diff --check-migrations` prints `Nothing pending for the parent`;
+   remove `MERCADOPAGO_PAYER_EMAIL` from Vercel Preview; Vercel → Settings → Cron Jobs is empty; the Firewall rule is
+   re-pointed to `/api/public-booking` OR `/api/contributions/checkout` (see `docs/anti-abuse.md`) and published.
+7. **24 h monitoring.** `failure-alerts` output, Sentry and `mercadopago_webhook_events` rows in `failed`; check that a
+   commit that only touches `app/` does not build the landing project.
+
+## Changing the suggested contribution amounts
+
+`public.contribution_options` holds the suggested amounts shown in Settings (`code`, `label`, `amount_cents`, `sort_order`,
+`is_active`). To change one, in one migration: set the current row of that `code` to `is_active = false` and insert a new
+active row with the new `amount_cents` (amounts are in centavos). Keep the old row: past contributions reference its
+`option_code`. The limits of the free amount ("Otro importe") are the CHECK on `contributions.amount_cents` and the
+constants in `lib/contributions.ts`; change both together, in the same release.

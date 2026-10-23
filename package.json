@@ -22,7 +22,11 @@
     "email:export": "email export --dir emails --outDir .react-email/dist",
     "resend:login": "resend login",
     "smoke:resend": "node scripts/test-resend-booking-email.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "landing:dev": "pnpm --filter landing dev",
+    "landing:build": "pnpm --filter landing build",
+    "landing:check": "pnpm --filter landing check",
+    "landing:preview": "pnpm --filter landing preview"
   },
   "dependencies": {
     "@insforge/sdk": "^1.2.9",

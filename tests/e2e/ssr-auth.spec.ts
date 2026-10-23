@@ -165,13 +165,19 @@ test("tras el login, sin recargar, el cliente del navegador escribe con la sesi�
 test("las rutas API del panel reciben la sesión por cookie", async ({ page }) => {
   await signIn(page);
   await page.getByRole("link", { name: "Configuración", exact: true }).click();
-  const redeem = page.waitForResponse((response) => response.url().endsWith("/api/promo-codes/redeem"));
-  await page.getByLabel("Ingresá tu código").fill("CTD-NO-EXISTE-0000");
-  await page.getByRole("button", { name: "Canjear código" }).click();
-  const response = await redeem;
-  expect(response.status()).not.toBe(401);
-  expect(response.status()).not.toBe(403);
-  await expect(page.getByText(/sesión venció/)).toHaveCount(0);
+  await expect(page).toHaveURL(/\/negocio\/configuracion$/);
+  // fetch desde la página: mismo origen y solo la cookie de sesión. Un importe inválido se rechaza recién
+  // después de validar sesión, origen y dueño, así que 400 (y no 401/403/404) prueba que la cookie llegó.
+  const result = await page.evaluate(async (id) => {
+    const response = await fetch("/api/contributions/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ businessId: id, amountCents: 1 }),
+    });
+    return { status: response.status, body: await response.json() as { error?: string } };
+  }, businessId);
+  expect(result.status, JSON.stringify(result.body)).toBe(400);
+  expect(result.body.error).toMatch(/entre \$1\.000 y \$500\.000|sin centavos/);
 });
 
 test("un refresh sin sesión que responde tarde no borra el login que terminó antes", async ({ page }) => {

@@ -5,6 +5,14 @@ import { CitadelyEmail, type CitadelyEmailProps } from "@/emails/citadely-email"
 import { formatCurrency } from "@/lib/citadely-db";
 import { formatInTimeZone } from "@/lib/time";
 
+// Lo encola apply_contribution_payment (20261024120100) cuando un aporte pasa a approved.
+type ContributionPayload = {
+  amount_cents: number;
+  currency: string;
+  business_name: string | null;
+  contribution_id: string;
+};
+
 type AppointmentPayload = {
   appointmentId: string;
   status: string;
@@ -38,7 +46,14 @@ type AppointmentPayload = {
 
 export type EmailOutboxRow = {
   id: string;
-  event_type: "welcome" | "booking_created" | "deposit_confirmed" | "appointment_cancelled" | "appointment_rescheduled" | "appointment_reminder";
+  event_type:
+    | "welcome"
+    | "booking_created"
+    | "deposit_confirmed"
+    | "appointment_cancelled"
+    | "appointment_rescheduled"
+    | "appointment_reminder"
+    | "contribution_received";
   recipient_kind: "user" | "client" | "owner";
   recipient_email: string;
   reply_to: string | null;
@@ -231,6 +246,10 @@ function appointmentEmailContent(row: EmailOutboxRow, payload: AppointmentPayloa
   };
 }
 
+function appBaseUrl() {
+  return (process.env.APP_BASE_URL || "https://www.citadely.com.ar").replace(/\/$/, "");
+}
+
 function brandAssetUrl() {
   return "https://www.citadely.com.ar/citadely-email-mark.png";
 }
@@ -253,10 +272,30 @@ export async function renderOutboxEmail(row: EmailOutboxRow): Promise<RenderedOu
         { label: "3", value: "Compartí tu página pública" },
       ],
       actionLabel: "Configurar mi negocio",
-      actionUrl: `${(process.env.APP_BASE_URL || "https://www.citadely.com.ar").replace(/\/$/, "")}/onboarding`,
+      actionUrl: `${appBaseUrl()}/onboarding`,
     };
     const element = <CitadelyEmail {...props} />;
     return { subject: "Bienvenido a Citadely", html: await render(element), text: await render(element, { plainText: true }) };
+  }
+
+  if (row.event_type === "contribution_received") {
+    const payload = row.payload as unknown as ContributionPayload;
+    const props: CitadelyEmailProps = {
+      brandAssetUrl: brandAssetUrl(), iconAssetUrl: emailIconUrl("payment"),
+      preview: "Recibimos tu aporte a Citadely", eyebrow: "Aporte recibido",
+      title: "¡Gracias por tu aporte a Citadely!",
+      intro: "Tu aporte voluntario ayuda a sostener el proyecto para todos los negocios que lo usan.",
+      statusLabel: "Aporte aprobado", statusTone: "success",
+      details: [
+        { label: "Importe", value: formatCurrency(payload.amount_cents, payload.currency) },
+        ...(payload.business_name ? [{ label: "Negocio", value: payload.business_name }] : []),
+      ],
+      note: "Citadely sigue siendo gratis: el aporte no cambia las funciones de tu cuenta. El comprobante del pago te lo envía Mercado Pago.",
+      actionLabel: "Ir a mi panel",
+      actionUrl: `${appBaseUrl()}/negocio/configuracion`,
+    };
+    const element = <CitadelyEmail {...props} />;
+    return { subject: "¡Gracias por tu aporte a Citadely!", html: await render(element), text: await render(element, { plainText: true }) };
   }
 
   const payload = row.payload as unknown as AppointmentPayload;
