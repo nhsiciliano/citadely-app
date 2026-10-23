@@ -4,7 +4,7 @@ export const SITE_URL = new URL(SITE_ORIGIN);
 
 export const HOME_TITLE = "Citadely | Agenda y turnos online para negocios";
 export const HOME_DESCRIPTION =
-  "Organizá agenda, servicios, clientes, señas y reservas online con Citadely. Probá gratis durante 7 días y elegí el plan para tu negocio.";
+  "Organizá agenda, servicios, clientes, señas y reservas online con Citadely. Gratis para tu negocio, sin planes ni período de prueba.";
 
 export const NO_INDEX_ROBOTS = {
   index: false,

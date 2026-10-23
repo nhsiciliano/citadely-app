@@ -12,13 +12,9 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   availabilityDate.setHours(10, 0, 0, 0);
   const monthValue = `${availabilityDate.getFullYear()}-${String(availabilityDate.getMonth() + 1).padStart(2, "0")}`;
 
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: /tomá el control de cada jornada/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Esencial" })).toBeVisible();
-  await expect(page.getByText("$14.000", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Pro", exact: true })).toBeVisible();
-  await expect(page.getByText("$18.000", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: /crear mi cuenta/i }).first()).toBeVisible();
+  // La landing (/) la sirve Astro vía rewrite y se prueba en L6/L7; acá solo se chequea que /login carga.
+  await page.goto("/login");
+  await expect(page.getByRole("button", { name: "Ingresar", exact: true })).toBeVisible();
   await signIn(page);
 
   for (const [label, path, heading] of [

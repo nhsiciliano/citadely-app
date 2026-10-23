@@ -30,7 +30,8 @@ export function LogoMark({ linked = true }: { linked?: boolean }) {
   );
 
   return linked
-    ? <Link className="flex items-center gap-3" href="/" aria-label="Citadely, ir al inicio">{content}</Link>
+    // eslint-disable-next-line @next/next/no-html-link-for-pages -- / lo sirve la landing Astro vía rewrite
+    ? <a className="flex items-center gap-3" href="/" aria-label="Citadely, ir al inicio">{content}</a>
     : <span className="flex items-center gap-3">{content}</span>;
 }
 
