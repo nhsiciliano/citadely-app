@@ -1,0 +1,20 @@
+---
+// Port of LogoSymbol + LogoMark from components/ui.tsx in the Next app.
+interface Props {
+  linked?: boolean;
+}
+
+const { linked = true } = Astro.props;
+const Tag = linked ? "a" : "span";
+const linkProps = linked ? { href: "/", "aria-label": "Citadely, ir al inicio" } : {};
+---
+
+<Tag class="flex items-center gap-3" {...linkProps}>
+  <svg aria-hidden="true" focusable="false" class="h-9 w-9 shrink-0 text-primary" width="36" height="36" viewBox="0 0 36 36" fill="none">
+    <rect x="2" y="5" width="32" height="29" rx="5" fill="currentColor" />
+    <path d="M11 3v5M25 3v5" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+    <path d="M10 11h16" stroke="white" stroke-width="2" stroke-linecap="round" />
+    <path d="M23 17.5a7 7 0 1 0 0 10" stroke="white" stroke-width="3.5" stroke-linecap="round" />
+  </svg>
+  <span class="text-xl font-semibold tracking-[-0.035em] text-navy">Citadely</span>
+</Tag>

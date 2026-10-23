@@ -1,0 +1,53 @@
+---
+// Port of components/legal-page-layout.tsx (LegalPageLayout) from the Next app as of 3dcd1a4.
+import ArrowLeft from "@lucide/astro/icons/arrow-left";
+import Base from "../layouts/Base.astro";
+import LogoMark from "./LogoMark.astro";
+
+interface Props {
+  /** Visible h1; the document title gets the " | Citadely" suffix the Next title template used. */
+  title: string;
+  /** Meta description. */
+  metaDescription: string;
+  /** Lead paragraph under the h1. */
+  description: string;
+  path: string;
+  /** ISO date (YYYY-MM-DD) of the last revision. */
+  updatedAt: string;
+}
+
+const { title, metaDescription, description, path, updatedAt } = Astro.props;
+const updatedLabel = new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${updatedAt}T00:00:00Z`));
+---
+
+<Base title={`${title} | Citadely`} description={metaDescription} path={path}>
+  <div class="flex min-h-screen flex-col bg-canvas">
+    <header class="border-b border-line bg-white">
+      <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-12">
+        <LogoMark />
+        <a class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:text-primary-strong" href="/">
+          <ArrowLeft aria-hidden="true" size={17} />
+          <span class="hidden sm:inline">Volver al inicio</span>
+          <span class="sm:hidden">Inicio</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="mx-auto w-full max-w-[1440px] flex-1 px-5 py-12 sm:px-8 sm:py-16 lg:px-12 lg:py-20">
+      <div class="mx-auto max-w-[800px]">
+        <p class="text-xs font-bold uppercase tracking-[0.16em] text-primary">Información legal</p>
+        <h1 class="font-display mt-4 text-4xl font-semibold tracking-[-0.045em] text-navy sm:text-5xl">{title}</h1>
+        <p class="mt-5 max-w-2xl text-base leading-7 text-ink-soft">{description}</p>
+        <p class="mt-5 text-sm text-ink-muted">Última actualización: <time datetime={updatedAt}>{updatedLabel}</time></p>
+
+        <article class="mt-8 border border-line bg-white px-5 py-3 shadow-surface sm:px-9 sm:py-5">
+          <slot />
+        </article>
+      </div>
+    </main>
+
+    <footer class="border-t border-white/10 bg-navy px-5 py-7 text-sm text-white/70 sm:px-8 lg:px-12">
+      <div class="mx-auto max-w-[1440px]">Citadely · Central de turnos para negocios de servicios.</div>
+    </footer>
+  </div>
+</Base>
