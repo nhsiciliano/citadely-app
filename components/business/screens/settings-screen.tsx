@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { Building2, CreditCard, HeartHandshake, LogOut, MessageCircle } from "lucide-react";
+import { Building2, CreditCard, LogOut, MessageCircle } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/ui";
 import { getErrorMessage } from "@/lib/auth";
 import type { ContributionReturnResult } from "@/lib/contributions";
 import { insforge } from "@/lib/insforge";
+import { ContributionsSection } from "../contributions-section";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "../workspace-ui";
 
-// contributionResult llega de ?aporte= al volver de Mercado Pago; lo usa la sección de aportes (C9).
+// contributionResult llega de ?aporte= al volver de Mercado Pago; lo muestra la sección de aportes.
 export function SettingsScreen({ contributionResult }: { contributionResult: ContributionReturnResult | null }) {
   const { business, refresh, signOut, userEmail } = useWorkspace();
   const [paymentPending, setPaymentPending] = useState(false);
@@ -43,10 +44,7 @@ export function SettingsScreen({ contributionResult }: { contributionResult: Con
     <>
       <PageHeader description="Administrá los datos para recibir señas, WhatsApp, el acceso a tu cuenta y tus aportes a Citadely." title="Configuración" />
       <div className="grid gap-6 px-5 py-6 sm:px-8 lg:px-10 lg:py-8 xl:grid-cols-2">
-        {/* C9: <ContributionsSection result={contributionResult} /> reemplaza este bloque. */}
-        <section className="surface-section xl:col-span-2" data-contribution-result={contributionResult ?? undefined} id="aportes">
-          <div className="section-heading-row"><div><h2>Apoyá a Citadely</h2><p>Citadely es gratis para tu negocio.</p></div><HeartHandshake aria-hidden="true" className="text-primary" size={22} /></div>
-        </section>
+        <ContributionsSection result={contributionResult} />
 
         <section className="surface-section">
           <div className="section-heading-row"><div><h2>Señas y transferencias</h2><p>Datos que verá el cliente al reservar.</p></div><CreditCard aria-hidden="true" className="text-primary" size={21} /></div>
