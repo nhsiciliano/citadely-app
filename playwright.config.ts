@@ -35,6 +35,16 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
+      // Serves apps/landing/dist, so it needs `pnpm landing:build` first (the CI e2e job does it). It has to start
+      // before Next: Next's readiness URL is `/`, which it rewrites to this server.
+      command: "pnpm --filter landing preview --host 127.0.0.1 --port 4321",
+      // Astro 7 detaches `astro preview` when it detects an AI agent; Playwright needs the foreground process.
+      env: { ASTRO_PREVIEW_BACKGROUND: "0" },
+      url: "http://127.0.0.1:4321/",
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+    {
       // Direct node call: does not depend on pnpm being on PATH.
       command: "node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3002",
       env: {
@@ -49,6 +59,8 @@ export default defineConfig({
         // Every spec books from 127.0.0.1: skip the per-IP bucket of the public booking limiter (email and business limits stay).
         PUBLIC_BOOKING_SKIP_IP_LIMIT: "true",
         CRON_SECRET: E2E_CRON_SECRET,
+        // next.config.ts rewrites / and the legal pages to this origin (the preview server below).
+        LANDING_ORIGIN: "http://127.0.0.1:4321",
       },
       url: "http://127.0.0.1:3002",
       reuseExistingServer: true,

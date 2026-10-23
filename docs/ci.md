@@ -18,6 +18,9 @@ It type-checks and builds the Astro package in `apps/landing`. The Next.js `chec
 (`tsconfig.json`, ESLint and Tailwind exclude `apps/`), so this job is the only gate on it. Make it a **required status
 check** next to `checks`.
 
+Under `www`, the landing's Analytics and Speed Insights scripts call `/_vercel/insights/*` of the Next project, so the
+landing metrics show up in the Next project's dashboard, not in `citadely-landing` (accepted).
+
 ## `e2e` job (opt-in)
 
 Playwright against a dedicated InsForge **backend branch**. It writes data, so it only runs when the repository
@@ -36,9 +39,12 @@ Settings → Secrets and variables → Actions:
 | Secret | `E2E_ADMIN_PASSWORD_HASH` | scrypt hash of that password (`ADMIN_PASSWORD_HASH` format, see `lib/blog-admin-auth.ts`) |
 | Secret | `E2E_ADMIN_SESSION_SECRET` | Any random string (≥ 32 chars) |
 
-The job also builds the landing (`pnpm --filter landing build`) and starts `astro preview` on port 4321, with
-`LANDING_ORIGIN=http://localhost:4321` for the Next server, so the rewrites for `/`, `/politica-de-privacidad`,
-`/condiciones-del-servicio` and `/landing-assets/*` resolve to the real landing during the specs.
+The job builds the landing (`pnpm --filter landing build`) right before `pnpm test:e2e`. `playwright.config.ts` has a
+third `webServer`, `pnpm --filter landing preview --host 127.0.0.1 --port 4321`, that serves the built `apps/landing/dist`,
+and the Next dev server gets `LANDING_ORIGIN=http://127.0.0.1:4321`, so the rewrites for `/`, `/politica-de-privacidad`,
+`/condiciones-del-servicio` and `/landing-assets/*` resolve to the real landing during the specs. Locally, run
+`pnpm landing:build` before `pnpm test:e2e` (the preview server fails to start without `apps/landing/dist`; it is reused
+if one is already running on :4321).
 
 Never use credentials of the parent (Production) project. Resend delivery is forced off (`RESEND_SKIP_DELIVERY=true`)
 and Mercado Pago runs against the local mock in `tests/fixtures`.
