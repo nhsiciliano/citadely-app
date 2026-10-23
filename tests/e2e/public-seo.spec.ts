@@ -8,7 +8,7 @@ test("SEO público, indexación y errores reales", async ({ page, request }) => 
     `import { createClient } from "@insforge/sdk";
      const client = createClient({ baseUrl: process.env.NEXT_PUBLIC_INSFORGE_BASE_URL, anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY });
      const safe = await client.database.from("businesses").select("id,name,slug").eq("is_public", true).limit(1);
-     const protectedRead = await client.database.from("businesses").select("id,subscription_external_id").limit(1);
+     const protectedRead = await client.database.from("businesses").select("id,owner_id").limit(1);
      if (safe.error || !safe.data?.length || !protectedRead.error) process.exit(1);
      process.stdout.write("ok");`,
   ], { cwd: process.cwd(), encoding: "utf8" });
