@@ -12,7 +12,11 @@ test("landing, navegación operativa, CRUD y reserva pública", async ({ page })
   availabilityDate.setHours(10, 0, 0, 0);
   const monthValue = `${availabilityDate.getFullYear()}-${String(availabilityDate.getMonth() + 1).padStart(2, "0")}`;
 
-  // La landing (/) la sirve Astro vía rewrite y se prueba en L6/L7; acá solo se chequea que /login carga.
+  // La landing (/) la sirve Astro vía rewrite (el detalle de SEO está en public-seo.spec.ts): acá solo un chequeo liviano.
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Citadely es gratis" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Crear mi cuenta" }).first()).toHaveAttribute("href", "/registro");
+
   await page.goto("/login");
   await expect(page.getByRole("button", { name: "Ingresar", exact: true })).toBeVisible();
   await signIn(page);
