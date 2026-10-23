@@ -1,11 +1,81 @@
 ---
-// Provisional home: L3 replaces it with the full landing.
+import BookingMock from "../components/BookingMock.astro";
+import Capabilities from "../components/Capabilities.astro";
+import Cta from "../components/Cta.astro";
+import Faq from "../components/Faq.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import Hero from "../components/Hero.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import Industries from "../components/Industries.astro";
+import Pricing from "../components/Pricing.astro";
 import Base from "../layouts/Base.astro";
-import { HOME_DESCRIPTION, HOME_TITLE } from "../lib/site";
+import { FAQS } from "../lib/faqs";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE_NAME, SITE_ORIGIN, serializeJsonLd } from "../lib/site";
+
+// The only JSON-LD on the page: tests/e2e/public-seo.spec.ts expects exactly one.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_ORIGIN}/#organization`,
+      name: SITE_NAME,
+      url: SITE_ORIGIN,
+      logo: `${SITE_ORIGIN}/icon.svg`,
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_ORIGIN}/#website`,
+      name: SITE_NAME,
+      url: SITE_ORIGIN,
+      inLanguage: "es-AR",
+      publisher: { "@id": `${SITE_ORIGIN}/#organization` },
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: SITE_NAME,
+      url: SITE_ORIGIN,
+      description: HOME_DESCRIPTION,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      inLanguage: "es-AR",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "ARS",
+        url: `${SITE_ORIGIN}/#precio`,
+      },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQS.map(({ question, answer }) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: { "@type": "Answer", text: answer },
+      })),
+    },
+  ],
+};
 ---
 
 <Base title={HOME_TITLE} description={HOME_DESCRIPTION} path="/">
-  <main class="grid min-h-screen place-items-center px-5">
-    <h1 class="font-display text-4xl font-semibold text-navy">Citadely</h1>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={serializeJsonLd(structuredData)} />
+  </Fragment>
+  <main class="min-h-screen overflow-x-clip bg-white">
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+    <Header />
+    <div id="contenido">
+      <Hero />
+      <HowItWorks />
+      <Capabilities />
+      <Industries />
+      <BookingMock />
+      <Faq />
+      <Pricing />
+      <Cta />
+    </div>
+    <Footer />
   </main>
 </Base>

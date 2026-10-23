@@ -1,0 +1,39 @@
+---
+// Citadely is free: no plans, trial or prices. Keeps the two-panel layout the plans section had.
+import ArrowRight from "@lucide/astro/icons/arrow-right";
+import Check from "@lucide/astro/icons/check";
+
+const FEATURES = [
+  "Agenda y turnos",
+  "Servicios y disponibilidad",
+  "Clientes",
+  "Señas y estados",
+  "Métricas operativas",
+  "Página pública editable",
+  "Identidad visual personalizada",
+  "Reservas online de clientes",
+];
+---
+
+<section class="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28" id="precio">
+  <div class="mb-10 max-w-3xl">
+    <h2 class="font-display text-4xl font-semibold tracking-[-0.035em] text-navy sm:text-5xl">Citadely es gratis</h2>
+    <p class="mt-4 max-w-2xl leading-7 text-ink-soft">Todas las funciones, sin planes ni período de prueba. Si te sirve, podés aportar desde el panel.</p>
+  </div>
+  <div class="grid border border-line bg-white shadow-surface lg:grid-cols-2">
+    <article class="p-7 sm:p-10">
+      <h3 class="font-display text-3xl font-semibold">Gratis</h3>
+      <p class="mt-3 min-h-12 text-sm leading-6 text-ink-soft">Dashboard completo y página pública de reservas para tu negocio.</p>
+      <p class="mt-7 font-mono text-4xl font-semibold tracking-[-0.04em]">$0</p>
+      <p class="mt-1 text-sm text-ink-muted">ARS · sin vencimiento</p>
+      <a class="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-strong" href="/registro">Empezá gratis<ArrowRight aria-hidden="true" size={17} /></a>
+    </article>
+    <article class="border-t border-line bg-navy p-7 text-white sm:p-10 lg:border-l lg:border-t-0">
+      <h3 class="font-display text-3xl font-semibold">Todo incluido</h3>
+      <p class="mt-3 min-h-12 text-sm leading-6 text-white/70">Las mismas funciones para todos los negocios. Los aportes no desbloquean nada extra.</p>
+      <ul class="mt-7 grid gap-3 sm:grid-cols-2">
+        {FEATURES.map((item) => <li class="flex items-center gap-2 text-sm font-semibold"><Check aria-hidden="true" class="shrink-0 text-white" size={17} />{item}</li>)}
+      </ul>
+    </article>
+  </div>
+</section>

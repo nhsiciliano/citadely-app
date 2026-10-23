@@ -1,0 +1,25 @@
+---
+import { FAQS } from "../lib/faqs";
+---
+
+<section class="border-y border-line bg-surface-subtle" id="preguntas">
+  <div class="mx-auto grid max-w-[1440px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.7fr_1.3fr] lg:px-12">
+    <div>
+      <h2 class="font-display text-4xl font-semibold tracking-[-0.035em] text-navy">Preguntas frecuentes</h2>
+      <p class="mt-4 leading-7 text-ink-soft">Lo esencial antes de empezar a organizar tus turnos.</p>
+    </div>
+    <div class="border-t border-line">
+      {
+        FAQS.map(({ question, answer }) => (
+          <details class="group border-b border-line">
+            <summary class="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 font-semibold">
+              {question}
+              <span aria-hidden="true" class="text-primary group-open:rotate-45">+</span>
+            </summary>
+            <p class="max-w-2xl pb-6 text-sm leading-6 text-ink-soft">{answer}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>

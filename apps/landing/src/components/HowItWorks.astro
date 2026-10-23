@@ -1,0 +1,33 @@
+---
+import CalendarCheck from "@lucide/astro/icons/calendar-check";
+import Clock3 from "@lucide/astro/icons/clock-3";
+import CreditCard from "@lucide/astro/icons/credit-card";
+import MousePointerClick from "@lucide/astro/icons/mouse-pointer-click";
+
+const STEPS = [
+  { icon: MousePointerClick, title: "Elegí servicio", text: "El cliente encuentra la opción correcta en la página pública." },
+  { icon: Clock3, title: "Seleccioná fecha y hora", text: "La disponibilidad publicada evita intercambios manuales." },
+  { icon: CreditCard, title: "Confirmá la seña", text: "Las instrucciones y el estado quedan asociados a la reserva." },
+  { icon: CalendarCheck, title: "Operá la jornada", text: "El turno aparece en agenda con toda la información necesaria." },
+];
+---
+
+<section class="border-b border-line bg-white" id="como-funciona">
+  <div class="mx-auto max-w-[1440px] px-5 pb-8 pt-4 sm:px-8 lg:px-12">
+    <div class="text-center">
+      <h2 class="font-display text-2xl font-semibold tracking-[-0.035em] text-navy sm:text-3xl">De la reserva al horario confirmado.</h2>
+      <p class="mx-auto mt-3 max-w-2xl leading-7 text-ink-soft">El mismo flujo conecta lo que hace el cliente con lo que necesita resolver el responsable del negocio.</p>
+    </div>
+    <ol class="mt-6 grid border-l border-t border-line sm:grid-cols-2 lg:grid-cols-4">
+      {
+        STEPS.map(({ icon: Icon, title, text }) => (
+          <li class="border-b border-r border-line p-6">
+            <Icon aria-hidden="true" class="text-primary" size={24} />
+            <h3 class="mt-6 font-semibold text-ink">{title}</h3>
+            <p class="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

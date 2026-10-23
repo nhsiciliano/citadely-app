@@ -1,0 +1,45 @@
+---
+// Illustration of a business booking page; the buttons are decorative and do nothing.
+import ArrowRight from "@lucide/astro/icons/arrow-right";
+
+const STEPS = ["Servicio", "Fecha y hora", "Datos", "Confirmación"];
+const TIMES = ["10:00", "11:30", "14:00", "16:30"];
+---
+
+<section class="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
+  <div class="grid overflow-hidden border border-line bg-white shadow-raised lg:grid-cols-[.9fr_1.1fr]">
+    <div class="bg-navy p-7 text-white sm:p-10">
+      <h2 class="font-display text-4xl font-semibold tracking-[-0.035em]">Una página de reservas con la identidad de tu negocio.</h2>
+      <p class="mt-5 max-w-md leading-7 text-white/68">Logo, portada, descripción y color propio. Citadely queda en segundo plano para que tu marca lidere.</p>
+      <div class="mt-9 space-y-4">
+        {
+          STEPS.map((step, index) => (
+            <div class="flex items-center gap-4">
+              <span class="grid h-8 w-8 place-items-center rounded-full border border-white/25 font-mono text-xs">{index + 1}</span>
+              <span class="font-semibold">{step}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div class="bg-surface-subtle p-6 sm:p-10">
+      <div class="border border-line bg-white p-5 shadow-surface">
+        <div class="flex items-center justify-between border-b border-line pb-4">
+          <div>
+            <p class="text-lg font-semibold">Estudio Norte</p>
+            <p class="mt-1 text-xs text-ink-soft">Reservá tu próximo turno</p>
+          </div>
+          <span class="grid h-10 w-10 place-items-center rounded-md bg-primary font-semibold text-white">E</span>
+        </div>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+          <button class="border border-primary bg-primary-soft p-4 text-left" type="button"><strong class="text-sm">Consulta inicial</strong><span class="mt-1 block text-xs text-ink-soft">45 min · $20.000</span></button>
+          <button class="border border-line p-4 text-left" type="button"><strong class="text-sm">Seguimiento</strong><span class="mt-1 block text-xs text-ink-soft">30 min · $15.000</span></button>
+        </div>
+        <div class="mt-5 grid grid-cols-4 gap-2">
+          {TIMES.map((time) => <button class="rounded-md border border-line px-2 py-3 font-mono text-xs font-semibold hover:border-primary" type="button">{time}</button>)}
+        </div>
+        <button class="button-primary mt-5 w-full" type="button">Continuar<ArrowRight aria-hidden="true" size={16} /></button>
+      </div>
+    </div>
+  </div>
+</section>
