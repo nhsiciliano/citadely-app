@@ -52,7 +52,7 @@ export function Sidebar({ collapsed, mobileOpen, onNavigate, onToggle }: Sidebar
           <span className="ws-label">
             <span className="block w-[150px] whitespace-normal lg:w-[124px]">
               <span className="line-clamp-2 break-words text-sm font-semibold">{business.name}</span>
-              {business.is_demo ? <span className="mt-0.5 block truncate text-xs text-white/60">Cuenta demo · datos ficticios</span> : null}
+              {business.is_demo ? <span className="mt-0.5 block truncate text-xs text-white/60">Cuenta demo</span> : null}
             </span>
           </span>
           <button
@@ -80,7 +80,7 @@ export function Sidebar({ collapsed, mobileOpen, onNavigate, onToggle }: Sidebar
       </div>
 
       <nav aria-label="Navegación del negocio" className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
-        {NAV_SECTIONS.map((section) => {
+        {NAV_SECTIONS.map((section, index) => {
           const headingId = `navegacion-seccion-${section.id}`;
           return (
             <div aria-labelledby={headingId} className="mt-4 first:mt-0" key={section.id} role="group">
@@ -89,7 +89,8 @@ export function Sidebar({ collapsed, mobileOpen, onNavigate, onToggle }: Sidebar
                 <span className="ws-label text-[11px] font-semibold uppercase tracking-[0.08em] text-white/55" id={headingId}>
                   {section.title}
                 </span>
-                <span aria-hidden="true" className="ws-collapsed-only absolute inset-x-2 top-1/2 h-px bg-white/15" />
+                {/* El primer grupo no lleva divisor: ya lo separa el borde de la cabecera. */}
+                {index > 0 ? <span aria-hidden="true" className="ws-collapsed-only absolute inset-x-2 top-1/2 h-px bg-white/15" /> : null}
               </div>
               <div className="space-y-1">
                 {NAV_ITEMS.filter((item) => item.section === section.id).map((item) => (
