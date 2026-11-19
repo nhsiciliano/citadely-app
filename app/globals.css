@@ -930,6 +930,38 @@ dialog[open] {
   }
 }
 
+/* Modelo C · lateral claro. TEMP(sidebar-variants): se borra en S6 si no se elige. */
+.ws-c-handle {
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  z-index: 1;
+  width: 28px;
+  height: 56px;
+  place-items: center;
+  border-radius: 6px;
+  translate: 0 -50%;
+  cursor: pointer;
+}
+.ws-c-handle-pill {
+  display: block;
+  width: 4px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--color-ink-muted);
+  transition:
+    height 160ms ease-out,
+    background-color 160ms ease-out;
+}
+.ws-c-handle:hover .ws-c-handle-pill,
+.ws-c-handle:focus-visible .ws-c-handle-pill {
+  height: 44px;
+  background: var(--color-primary);
+}
+.ws-c-handle:focus-visible {
+  outline-offset: 0;
+}
+
 /* TEMP(sidebar-variants): selector A · B · C para comparar modelos fuera de producción. */
 .ws-variant-switcher {
   position: fixed;
