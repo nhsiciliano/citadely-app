@@ -905,6 +905,31 @@ dialog[open] {
   }
 }
 
+/* Modelo A · riel de marca. TEMP(sidebar-variants): se borra en S6 si no se elige. */
+.ws-a-header {
+  height: 72px;
+  transition: height 240ms var(--ws-ease);
+}
+.ws-a-toggle {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  transition:
+    top 240ms var(--ws-ease),
+    right 240ms var(--ws-ease),
+    background-color 160ms ease-out,
+    color 160ms ease-out;
+}
+@media (min-width: 64rem) {
+  .ws-sidebar[data-collapsed="true"] .ws-a-header {
+    height: 124px;
+  }
+  .ws-sidebar[data-collapsed="true"] .ws-a-toggle {
+    top: 72px;
+    right: 14px;
+  }
+}
+
 /* TEMP(sidebar-variants): selector A · B · C para comparar modelos fuera de producción. */
 .ws-variant-switcher {
   position: fixed;
