@@ -1,6 +1,6 @@
 import { CalendarDays, Globe2, LayoutDashboard, Settings, Sparkles, UsersRound, type LucideIcon } from "lucide-react";
 
-// Módulo sin "use client": el layout del servidor lee SIDEBAR_COOKIE y los modelos comparten el resto.
+// Módulo sin "use client": el layout del servidor lee SIDEBAR_COOKIE y el lateral usa el resto.
 
 export const SIDEBAR_ID = "navegacion-principal";
 export const SIDEBAR_COOKIE = "citadely_sidebar";
@@ -9,7 +9,14 @@ export const DESKTOP_QUERY = "(min-width: 64rem)";
 /** Anchos finales de escritorio; `--workspace-sidebar-width` los publica para los drawers (globals.css). */
 export const SIDEBAR_WIDTH = { expanded: 256, collapsed: 72 } as const;
 
-export type NavItem = { href: string; label: string; icon: LucideIcon; section: "operacion" | "negocio" };
+export type NavSection = "operacion" | "negocio";
+export type NavItem = { href: string; label: string; icon: LucideIcon; section: NavSection };
+
+/** Grupos rotulados del lateral, en orden; cada destino declara el suyo en NAV_ITEMS. */
+export const NAV_SECTIONS: readonly { id: NavSection; title: string }[] = [
+  { id: "operacion", title: "Operación" },
+  { id: "negocio", title: "Negocio" },
+];
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/negocio", label: "Inicio", icon: LayoutDashboard, section: "operacion" },

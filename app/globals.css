@@ -827,7 +827,7 @@ dialog[open] {
     width: 72px;
   }
 }
-.ws-sidebar[data-tone="dark"] :is(a, button):focus-visible {
+.ws-sidebar :is(a, button):focus-visible {
   outline-color: #fff;
   outline-offset: 2px;
 }
@@ -841,14 +841,7 @@ dialog[open] {
   white-space: nowrap;
   transition: opacity 180ms ease-out 90ms;
 }
-/* Interactive extras (public-page shortcut, chevrons) leave the tab order when collapsed. */
-.ws-hideable {
-  transition:
-    opacity 180ms ease-out 90ms,
-    visibility 0s,
-    background-color 160ms ease-out,
-    color 160ms ease-out;
-}
+/* Section dividers that replace the group labels while collapsed. */
 .ws-collapsed-only {
   opacity: 0;
   transition: opacity 120ms ease-out;
@@ -857,13 +850,6 @@ dialog[open] {
   .ws-sidebar[data-collapsed="true"] .ws-label {
     opacity: 0;
     transition: opacity 90ms ease-out;
-  }
-  .ws-sidebar[data-collapsed="true"] .ws-hideable {
-    opacity: 0;
-    visibility: hidden;
-    transition:
-      opacity 90ms ease-out,
-      visibility 0s linear 90ms;
   }
   .ws-sidebar[data-collapsed="true"] .ws-collapsed-only {
     opacity: 1;
@@ -905,12 +891,12 @@ dialog[open] {
   }
 }
 
-/* Modelo A · riel de marca. TEMP(sidebar-variants): se borra en S6 si no se elige. */
-.ws-a-header {
+/* Header: the collapse toggle sits beside the business name and drops below the avatar at 72px. */
+.ws-header {
   height: 72px;
   transition: height 240ms var(--ws-ease);
 }
-.ws-a-toggle {
+.ws-toggle {
   position: absolute;
   top: 14px;
   right: 12px;
@@ -921,87 +907,13 @@ dialog[open] {
     color 160ms ease-out;
 }
 @media (min-width: 64rem) {
-  .ws-sidebar[data-collapsed="true"] .ws-a-header {
+  .ws-sidebar[data-collapsed="true"] .ws-header {
     height: 124px;
   }
-  .ws-sidebar[data-collapsed="true"] .ws-a-toggle {
+  .ws-sidebar[data-collapsed="true"] .ws-toggle {
     top: 72px;
     right: 14px;
   }
-}
-
-/* Modelo C · lateral claro. TEMP(sidebar-variants): se borra en S6 si no se elige. */
-.ws-c-handle {
-  position: absolute;
-  top: 50%;
-  right: -14px;
-  z-index: 1;
-  width: 28px;
-  height: 56px;
-  place-items: center;
-  border-radius: 6px;
-  translate: 0 -50%;
-  cursor: pointer;
-}
-.ws-c-handle-pill {
-  display: block;
-  width: 4px;
-  height: 28px;
-  border-radius: 9999px;
-  background: var(--color-ink-muted);
-  transition:
-    height 160ms ease-out,
-    background-color 160ms ease-out;
-}
-.ws-c-handle:hover .ws-c-handle-pill,
-.ws-c-handle:focus-visible .ws-c-handle-pill {
-  height: 44px;
-  background: var(--color-primary);
-}
-.ws-c-handle:focus-visible {
-  outline-offset: 0;
-}
-
-/* TEMP(sidebar-variants): selector A · B · C para comparar modelos fuera de producción. */
-.ws-variant-switcher {
-  position: fixed;
-  bottom: 16px;
-  left: calc(var(--workspace-sidebar-width) + 16px);
-  z-index: 45;
-  display: none;
-  align-items: center;
-  gap: 2px;
-  border-radius: 8px;
-  background: var(--color-navy);
-  padding: 4px;
-  box-shadow: var(--shadow-raised);
-}
-@media (min-width: 64rem) {
-  .ws-variant-switcher {
-    display: flex;
-  }
-}
-.ws-variant-option {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  border-radius: 6px;
-  color: rgb(255 255 255 / 0.72);
-  font-size: 13px;
-  font-weight: 650;
-}
-.ws-variant-option:hover {
-  background: rgb(255 255 255 / 0.1);
-  color: #fff;
-}
-.ws-variant-option[aria-pressed="true"] {
-  background: var(--color-primary);
-  color: #fff;
-}
-.ws-variant-option:focus-visible {
-  outline-color: #fff;
-  outline-offset: 1px;
 }
 
 @media (prefers-reduced-motion: reduce) {

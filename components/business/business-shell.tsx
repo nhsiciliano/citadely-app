@@ -3,14 +3,9 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Menu } from "lucide-react";
-import { isClientProduction } from "@/lib/env";
 import { SIDEBAR_ID, SIDEBAR_WIDTH } from "./sidebar/constants";
-import { SidebarA } from "./sidebar/sidebar-a";
-import { SidebarB } from "./sidebar/sidebar-b";
-import { SidebarC } from "./sidebar/sidebar-c";
-import type { SidebarModelProps } from "./sidebar/shared";
+import { Sidebar } from "./sidebar/sidebar";
 import { useSidebarCollapse } from "./sidebar/use-sidebar-collapse";
-import { SidebarVariantSwitcher, useSidebarVariant, type SidebarVariant } from "./sidebar/variant-switcher"; // TEMP(sidebar-variants)
 import { useWorkspace } from "./workspace-context";
 
 const LEGACY_HASHES: Record<string, string> = {
@@ -20,11 +15,8 @@ const LEGACY_HASHES: Record<string, string> = {
   "#pagina": "/negocio/pagina-publica",
 };
 
-// TEMP(sidebar-variants): en S6 queda un único modelo y este mapa desaparece.
-const SIDEBAR_MODELS: Record<SidebarVariant, (props: SidebarModelProps) => ReactNode> = { a: SidebarA, b: SidebarB, c: SidebarC };
-
-// Contenedor del panel: skip-link, drawer móvil (overlay, Escape, `inert` en main) y el área principal.
-// El lateral en sí lo dibuja el modelo elegido.
+// Contenedor del panel: skip-link, drawer móvil (overlay, Escape, `inert` en main), estado de colapso
+// y el área principal. El lateral en sí vive en ./sidebar/sidebar.
 export function BusinessShell({ children, initialCollapsed }: { children: ReactNode; initialCollapsed: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -32,8 +24,6 @@ export function BusinessShell({ children, initialCollapsed }: { children: ReactN
   const { collapsed, toggle } = useSidebarCollapse(initialCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const variant = useSidebarVariant(); // TEMP(sidebar-variants)
-  const Sidebar = SIDEBAR_MODELS[variant];
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   useEffect(() => {
@@ -79,8 +69,6 @@ export function BusinessShell({ children, initialCollapsed }: { children: ReactN
         {error ? <p className="border-b border-danger-line bg-danger-soft px-5 py-3 text-sm font-semibold text-danger" role="alert">{error}</p> : null}
         {children}
       </main>
-
-      {isClientProduction ? null : <SidebarVariantSwitcher current={variant} />}
     </div>
   );
 }

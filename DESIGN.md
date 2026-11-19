@@ -196,7 +196,7 @@ La paleta combina una base fría y clínica con acentos saturados reservados par
 
 La estructura se apoya en divisiones, no en grupos de tarjetas flotantes. La landing utiliza un contenedor máximo de 1440px y gutters de 20px en móvil, 32px desde `sm` y 48px desde `lg`; la reserva pública se contiene en 1280px. Las secciones de persuasión alternan mitades, bandas y grillas delineadas, mientras el workspace conserva una columna continua para la navegación y un lienzo flexible para la operación.
 
-En escritorio, la barra lateral mide 256px y puede contraerse a 84px. En móvil se transforma en un panel superpuesto de 286px y deja el contenido completo detrás. Los encabezados operativos usan 20px de gutter móvil, 32px desde `sm` y 40px desde `lg`; los bloques de trabajo repiten un ritmo vertical de 24px.
+En escritorio, la barra lateral mide 256px y puede contraerse a 72px. En móvil se transforma en un panel superpuesto de 286px y deja el contenido completo detrás. Los encabezados operativos usan 20px de gutter móvil, 32px desde `sm` y 40px desde `lg`; los bloques de trabajo repiten un ritmo vertical de 24px.
 
 Los puntos de cambio observados son 640px (`sm`), 768px (`md`), 1024px (`lg`) y 1280px (`xl`). La agenda fuerza vista diaria por debajo de 768px; la vista semanal conserva un ancho mínimo de 1020px con desplazamiento horizontal. Los drawers ocupan todo el ancho móvil y se limitan a 420px o 480px desde `sm`; a partir de 1280px, el contenido principal descuenta su ancho para mantener el contexto visible.
 
@@ -261,7 +261,11 @@ Los bordes son continuos de 1px; los vacíos y cargas de archivos usan línea di
 
 ### Navigation
 
-La navegación del workspace vive sobre azul noche. Cada destino mide al menos 44px, usa Geist de 14px/500 e iconos lineales de 19px. El activo se llena de cobalto; el reposo usa blanco atenuado y el hover aumenta contraste con un velo blanco mínimo. En móvil la barra se desplaza desde la izquierda sobre un overlay oscuro; en escritorio puede reducirse a iconos sin perder `title` ni nombre accesible.
+La navegación del workspace vive sobre azul noche. Arriba está la identidad del negocio: un avatar de 40px con su logo o, si no lo cargó, un monograma de dos letras (`getBusinessInitials` saltea conectores como «de» o «la»), junto al nombre y, en cuentas demo, la aclaración «Cuenta demo · datos ficticios». El nombre ocupa hasta dos líneas y recién desde la tercera se trunca con elipsis; una palabra larga se parte antes de desbordar. Su bloque conserva el ancho del lateral expandido, así que al contraer se recorta y se desvanece sin reacomodarse ni cambiar de alto. En la misma fila vive el control de colapso, un botón integrado de 44px con icono de panel; nunca un círculo flotante sobre el borde.
+
+Los destinos se agrupan con rótulos pequeños en mayúsculas (Geist 11px/600, tracking 0.08em, blanco al 55%): «Operación» reúne Inicio, Agenda, Servicios y Clientes; «Negocio», Página pública y Configuración. Cada grupo es un `role="group"` nombrado por su rótulo dentro del `nav` «Navegación del negocio». Cada destino mide al menos 44px, usa Geist de 14px/500 e iconos lineales de 19px. El activo se llena de cobalto; el reposo usa blanco atenuado y el hover aumenta contraste con un velo blanco mínimo. Al pie quedan «Abrir página pública», «Cerrar sesión», el correo de la cuenta y la firma de Citadely reducida.
+
+En escritorio la barra se contrae de 256px a 72px animando el ancho en 240ms con `cubic-bezier(.2,.8,.2,1)`: los textos se desvanecen y recortan sin `display: none`, los rótulos de grupo se convierten en divisores finos de la misma altura y los íconos conservan su eje, así nada salta. Contraída, cada control muestra un tooltip propio en hover y en foco de teclado (no `title`), que se cierra con Escape; el del botón de colapso indica el atajo Ctrl/⌘ + B, que también alterna la barra. La preferencia se guarda en la cookie `citadely_sidebar` y el servidor la lee, de modo que la primera pintura ya llega en el estado elegido. Con `prefers-reduced-motion` el cambio es instantáneo. En móvil la barra se desplaza desde la izquierda sobre un overlay oscuro, siempre expandida y con los rótulos de grupo visibles; Escape la cierra y devuelve el foco al botón de menú.
 
 ### Agenda Calendar
 
