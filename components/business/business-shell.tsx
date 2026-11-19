@@ -1,34 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  CircleUserRound,
-  ExternalLink,
-  Globe2,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Settings,
-  Sparkles,
-  UsersRound,
-  X,
-} from "lucide-react";
-import { LogoSymbol } from "@/components/ui";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Menu } from "lucide-react";
+import { SIDEBAR_ID, SIDEBAR_WIDTH } from "./sidebar/constants";
+import { Sidebar } from "./sidebar/sidebar";
+import { useSidebarCollapse } from "./sidebar/use-sidebar-collapse";
 import { useWorkspace } from "./workspace-context";
-
-const NAV_ITEMS = [
-  { href: "/negocio", label: "Inicio", icon: LayoutDashboard },
-  { href: "/negocio/agenda", label: "Agenda", icon: CalendarDays },
-  { href: "/negocio/servicios", label: "Servicios", icon: Sparkles },
-  { href: "/negocio/clientes", label: "Clientes", icon: UsersRound },
-  { href: "/negocio/pagina-publica", label: "Página pública", icon: Globe2 },
-  { href: "/negocio/configuracion", label: "Configuración", icon: Settings },
-] as const;
 
 const LEGACY_HASHES: Record<string, string> = {
   "#agenda": "/negocio/agenda",
@@ -37,14 +15,16 @@ const LEGACY_HASHES: Record<string, string> = {
   "#pagina": "/negocio/pagina-publica",
 };
 
-export function BusinessShell({ children }: { children: ReactNode }) {
+// Contenedor del panel: skip-link, drawer móvil (overlay, Escape, `inert` en main), estado de colapso
+// y el área principal. El lateral en sí vive en ./sidebar/sidebar.
+export function BusinessShell({ children, initialCollapsed }: { children: ReactNode; initialCollapsed: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { business, error, publicUrl, signOut, userEmail } = useWorkspace();
-  const [collapsed, setCollapsed] = useState(false);
+  const { error } = useWorkspace();
+  const { collapsed, toggle } = useSidebarCollapse(initialCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isDemoWorkspace = business.is_demo === true;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -63,12 +43,14 @@ export function BusinessShell({ children }: { children: ReactNode }) {
     if (target) router.replace(target);
   }, [pathname, router]);
 
+  const sidebarWidth = collapsed ? SIDEBAR_WIDTH.collapsed : SIDEBAR_WIDTH.expanded;
+
   return (
-    <div className="min-h-screen bg-canvas text-ink lg:grid lg:grid-cols-[auto_minmax(0,1fr)]" style={{ "--workspace-sidebar-width": collapsed ? "84px" : "256px" } as CSSProperties}>
+    <div className="min-h-screen bg-canvas text-ink lg:grid lg:grid-cols-[auto_minmax(0,1fr)]" style={{ "--workspace-sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
       <a className="skip-link" href="#contenido-principal">Saltar al contenido</a>
 
       <button
-        aria-controls="navegacion-principal"
+        aria-controls={SIDEBAR_ID}
         aria-expanded={mobileOpen}
         aria-label="Abrir navegación"
         ref={menuButtonRef}
@@ -79,66 +61,9 @@ export function BusinessShell({ children }: { children: ReactNode }) {
         <Menu aria-hidden="true" size={21} />
       </button>
 
-      {mobileOpen ? <button aria-label="Cerrar navegación" className="fixed inset-0 z-40 bg-[rgba(4,20,42,.48)] lg:hidden" onClick={() => setMobileOpen(false)} type="button" /> : null}
+      {mobileOpen ? <button aria-label="Cerrar navegación" className="fixed inset-0 z-40 bg-[rgba(4,20,42,.48)] lg:hidden" onClick={closeMobile} type="button" /> : null}
 
-      <aside id="navegacion-principal" className={`fixed inset-y-0 left-0 z-50 flex w-[286px] flex-col bg-navy text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[84px]" : "lg:w-[256px]"}`}>
-        <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
-          <Link aria-label="Ir al inicio de Citadely" className="flex min-w-0 items-center gap-3" href="/negocio" onClick={() => setMobileOpen(false)}>
-            <LogoSymbol />
-            <span className={`text-xl font-semibold tracking-[-0.03em] ${collapsed ? "lg:hidden" : ""}`}>Citadely</span>
-          </Link>
-          <button aria-label="Cerrar navegación" className="grid h-10 w-10 place-items-center rounded-md text-white/70 hover:bg-white/10 hover:text-white lg:hidden" onClick={() => setMobileOpen(false)} type="button">
-            <X aria-hidden="true" size={20} />
-          </button>
-        </div>
-
-        <div className={`border-b border-white/10 px-5 py-4 ${collapsed ? "lg:px-3 lg:text-center" : ""}`}>
-          <p className={`truncate text-sm font-semibold ${collapsed ? "lg:hidden" : ""}`}>{business.name}</p>
-          <p className={`mt-1 text-xs text-white/55 ${collapsed ? "lg:hidden" : ""}`}>{isDemoWorkspace ? "Cuenta demo · datos ficticios" : "Plan gratuito"}</p>
-          {collapsed ? <span className="hidden text-sm font-bold lg:inline">{business.name.slice(0, 1).toUpperCase()}</span> : null}
-        </div>
-
-        <nav aria-label="Navegación del negocio" className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
-            const active = href === "/negocio" ? pathname === href : pathname.startsWith(href);
-            return (
-              <Link
-                aria-current={active ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors ${active ? "bg-primary text-white" : "text-white/68 hover:bg-white/8 hover:text-white"} ${collapsed ? "lg:justify-center lg:px-0" : ""}`}
-                href={href}
-                key={href}
-                onClick={() => setMobileOpen(false)}
-                title={collapsed ? label : undefined}
-              >
-                <Icon aria-hidden="true" size={19} strokeWidth={1.8} />
-                <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="border-t border-white/10 p-3">
-          {business.is_public ? <Link className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-3 text-sm font-medium text-white/68 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${collapsed ? "lg:justify-center lg:px-0" : ""}`} href={publicUrl} target="_blank">
-            <ExternalLink aria-hidden="true" size={18} />
-            <span className={collapsed ? "lg:hidden" : ""}>Abrir página pública</span>
-          </Link> : null}
-          <button className={`mt-1 flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-md px-3 text-left text-sm font-medium text-white/68 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${collapsed ? "lg:justify-center lg:px-0" : ""}`} onClick={signOut} type="button">
-            <LogOut aria-hidden="true" size={18} />
-            <span className={collapsed ? "lg:hidden" : ""}>Cerrar sesión</span>
-          </button>
-          <div className={`mt-3 flex items-center gap-3 border-t border-white/10 px-3 pt-4 ${collapsed ? "lg:justify-center lg:px-0" : ""}`}>
-            <CircleUserRound aria-hidden="true" className="shrink-0 text-white/70" size={25} />
-            <div className={`min-w-0 ${collapsed ? "lg:hidden" : ""}`}>
-              <p className="truncate text-xs font-semibold">{business.name}</p>
-              <p className="mt-0.5 truncate text-xs text-white/65">{userEmail}</p>
-            </div>
-          </div>
-        </div>
-
-        <button aria-label={collapsed ? "Expandir navegación" : "Contraer navegación"} className="absolute -right-3 top-24 hidden h-7 w-7 place-items-center rounded-full border border-line bg-white text-navy shadow-sm lg:grid" onClick={() => setCollapsed((value) => !value)} type="button">
-          {collapsed ? <ChevronRight aria-hidden="true" size={15} /> : <ChevronLeft aria-hidden="true" size={15} />}
-        </button>
-      </aside>
+      <Sidebar collapsed={collapsed} mobileOpen={mobileOpen} onNavigate={closeMobile} onToggle={toggle} />
 
       <main className="min-w-0" id="contenido-principal" inert={mobileOpen}>
         {error ? <p className="border-b border-danger-line bg-danger-soft px-5 py-3 text-sm font-semibold text-danger" role="alert">{error}</p> : null}

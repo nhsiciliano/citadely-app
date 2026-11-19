@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { BusinessShell } from "@/components/business/business-shell";
+import { SIDEBAR_COOKIE, parseSidebarCookie } from "@/components/business/sidebar/constants";
 import { WorkspaceProvider } from "@/components/business/workspace-context";
 import { getErrorMessage, getPostAuthPath } from "@/lib/auth";
 import type { Business } from "@/lib/citadely-db";
@@ -37,11 +39,13 @@ export default async function BusinessLayout({ children }: { children: ReactNode
 
   const business = businessRow as Business;
   const historyStart = getHistoryStart();
-  const [data, publicOrigin] = await Promise.all([loadWorkspaceData(client, business.id, historyStart), getRequestOrigin()]);
+  const [data, publicOrigin, cookieStore] = await Promise.all([loadWorkspaceData(client, business.id, historyStart), getRequestOrigin(), cookies()]);
+  // El estado del lateral viaja en el primer HTML: sin parpadeo expandido → colapsado al recargar.
+  const sidebarCollapsed = parseSidebarCookie(cookieStore.get(SIDEBAR_COOKIE)?.value);
 
   return (
     <WorkspaceProvider initial={{ ...data, business, userEmail: user.email ?? "", historyStart, publicOrigin }}>
-      <BusinessShell>{children}</BusinessShell>
+      <BusinessShell initialCollapsed={sidebarCollapsed}>{children}</BusinessShell>
     </WorkspaceProvider>
   );
 }
