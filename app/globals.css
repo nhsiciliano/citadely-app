@@ -801,6 +801,152 @@ dialog[open] {
     width: calc(100vw - var(--workspace-sidebar-width) - 420px);
   }
 }
+/*
+ * Workspace sidebar (components/business/sidebar). Unlayered on purpose: the base `a`/`button`
+ * transition and focus rules above would beat Tailwind's transition and outline utilities.
+ * Mobile (< 64rem): 286px drawer that slides in from the left over an overlay.
+ * Desktop: sticky column whose width animates between 256px and 72px (SIDEBAR_WIDTH); labels fade
+ * and clip instead of display:none so nothing reflows, and icons keep a fixed 36px axis.
+ */
+.ws-sidebar {
+  --ws-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 286px;
+  transition: translate 300ms var(--ws-ease);
+}
+@media (max-width: 63.99rem) {
+  .ws-sidebar[data-mobile-open="false"] {
+    translate: -100% 0;
+  }
+}
+@media (min-width: 64rem) {
+  .ws-sidebar {
+    width: 256px;
+    transition: width 240ms var(--ws-ease);
+  }
+  .ws-sidebar[data-collapsed="true"] {
+    width: 72px;
+  }
+}
+.ws-sidebar[data-tone="dark"] :is(a, button):focus-visible {
+  outline-color: #fff;
+  outline-offset: 2px;
+}
+.ws-item {
+  white-space: nowrap;
+}
+.ws-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 180ms ease-out 90ms;
+}
+/* Interactive extras (public-page shortcut, chevrons) leave the tab order when collapsed. */
+.ws-hideable {
+  transition:
+    opacity 180ms ease-out 90ms,
+    visibility 0s,
+    background-color 160ms ease-out,
+    color 160ms ease-out;
+}
+.ws-collapsed-only {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+@media (min-width: 64rem) {
+  .ws-sidebar[data-collapsed="true"] .ws-label {
+    opacity: 0;
+    transition: opacity 90ms ease-out;
+  }
+  .ws-sidebar[data-collapsed="true"] .ws-hideable {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 90ms ease-out,
+      visibility 0s linear 90ms;
+  }
+  .ws-sidebar[data-collapsed="true"] .ws-collapsed-only {
+    opacity: 1;
+    transition: opacity 180ms ease-out 120ms;
+  }
+}
+.ws-tooltip {
+  position: fixed;
+  z-index: 70;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  background: var(--color-navy);
+  padding: 6px 10px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-50%);
+  animation: ws-tooltip-in 120ms ease-out;
+}
+.ws-tooltip-kbd {
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.14);
+  padding: 1px 5px;
+  color: rgb(255 255 255 / 0.82);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+}
+@keyframes ws-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translate(-4px, -50%);
+  }
+}
+
+/* TEMP(sidebar-variants): selector A · B · C para comparar modelos fuera de producción. */
+.ws-variant-switcher {
+  position: fixed;
+  bottom: 16px;
+  left: calc(var(--workspace-sidebar-width) + 16px);
+  z-index: 45;
+  display: none;
+  align-items: center;
+  gap: 2px;
+  border-radius: 8px;
+  background: var(--color-navy);
+  padding: 4px;
+  box-shadow: var(--shadow-raised);
+}
+@media (min-width: 64rem) {
+  .ws-variant-switcher {
+    display: flex;
+  }
+}
+.ws-variant-option {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 6px;
+  color: rgb(255 255 255 / 0.72);
+  font-size: 13px;
+  font-weight: 650;
+}
+.ws-variant-option:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+.ws-variant-option[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: #fff;
+}
+.ws-variant-option:focus-visible {
+  outline-color: #fff;
+  outline-offset: 1px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -811,6 +957,12 @@ dialog[open] {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  /* Sidebar labels reveal with a delay; reduced motion makes collapse instant. */
+  .ws-sidebar,
+  .ws-sidebar *,
+  .ws-tooltip {
+    transition-delay: 0s !important;
   }
 }
 
